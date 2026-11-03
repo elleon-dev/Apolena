@@ -5,22 +5,32 @@ import Image from "next/image";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("estilos"); // Sección activa por defecto
+  const [activeSection, setActiveSection] = useState("inicio");
 
   const navItems = [
+    { id: "inicio", label: "Inicio", href: "#" },
     { id: "estilos", label: "Estilos", href: "#estilos" },
     { id: "retrato-final", label: "Retrato Final", href: "#retrato-final" },
     { id: "testimonios", label: "Casos de Éxito", href: "#testimonios" },
     { id: "faq", label: "Preguntas Frecuentes", href: "#faq" },
   ];
 
+  const handleScrollToTop = () => {
+    setActiveSection("inicio");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#E5C378]/50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-3">
         
-        {/* Identidad de Marca */}
-        <a href="#" className="flex items-center gap-2.5 focus:outline-none">
-          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden border-2 border-[#D4A343] bg-white flex items-center justify-center p-0.5 shrink-0">
+        {/* Identidad de Marca: Redirige al Inicio */}
+        <a 
+          href="#" 
+          onClick={handleScrollToTop}
+          className="flex items-center gap-2.5 focus:outline-none group"
+        >
+          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden border-2 border-[#D4A343] bg-white flex items-center justify-center p-0.5 shrink-0 transition-transform group-hover:scale-105">
             <Image
               src="/logo.png"
               alt="Apolena Logo"
@@ -40,7 +50,7 @@ export function Header() {
           </div>
         </a>
 
-        {/* Navegación Desktop con Estado Activo */}
+        {/* Navegación Desktop */}
         <nav className="hidden md:flex items-center gap-1 bg-[#F3EBE0] px-3 py-1.5 rounded-full border border-[#E5C378]/40">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
@@ -61,18 +71,17 @@ export function Header() {
           })}
         </nav>
 
-        {/* Acciones Móvil y Desktop */}
+        {/* Acción de Reinicio Rápido */}
         <div className="flex items-center gap-2">
-          {/* Botón CTA Dorado Permanente */}
-          <a
-            href="#crear"
+          <button
+            onClick={handleScrollToTop}
             style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
             className="text-xs sm:text-sm font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-md text-center whitespace-nowrap active:scale-95 transition-transform"
           >
-            Crear Retrato
-          </a>
+            Nuevo Retrato
+          </button>
 
-          {/* Botón Menú Móvil */}
+          {/* Menú Móvil */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden px-3 py-2 rounded-full bg-[#F3EBE0] border border-[#E5C378]/40 text-xs font-bold text-[#1C1B1A]"

@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import SliderSection from '@/components/SliderSection';
+import ResultSection from '@/components/ResultSection';
 
 export default function Home() {
   return (
@@ -8,6 +9,7 @@ export default function Home() {
       <Header />
       <HeroSection />
       <SliderSection />
+      <ResultSection />
     </main>
   );
 }
