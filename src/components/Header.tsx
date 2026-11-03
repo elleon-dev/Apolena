@@ -1,8 +1,15 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { PawPrint, SlidersHorizontal, Camera, Palette, Frame, ChevronRight } from 'lucide-react';
-import { AIProviderId, AI_PROVIDERS } from '@/lib/types';
+import React from "react";
+import {
+  PawPrint,
+  SlidersHorizontal,
+  Camera,
+  Palette,
+  Frame,
+  ChevronRight,
+} from "lucide-react";
+import { AIProviderId, AI_PROVIDERS } from "@/lib/types";
 
 interface HeaderProps {
   currentStep: 1 | 2 | 3;
@@ -15,24 +22,24 @@ interface HeaderProps {
 export function Header({
   currentStep,
   onReset,
-  selectedProvider = 'openai',
+  selectedProvider = "openai",
   onOpenSettings,
-  hasActiveKey = false
+  hasActiveKey = false,
 }: HeaderProps) {
-  const providerObj = AI_PROVIDERS.find((p) => p.id === selectedProvider) || AI_PROVIDERS[0];
+  const providerObj =
+    AI_PROVIDERS.find((p) => p.id === selectedProvider) || AI_PROVIDERS[0];
 
   const steps = [
-    { num: 1, label: 'Tu Mascota', icon: Camera },
-    { num: 2, label: 'Estilo y Escena', icon: Palette },
-    { num: 3, label: 'Retrato Final', icon: Frame }
+    { num: 1, label: "Tu Mascota", icon: Camera },
+    { num: 2, label: "Estilo y Escena", icon: Palette },
+    { num: 3, label: "Retrato Final", icon: Frame },
   ] as const;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-cream-200 bg-cream-50/90 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
-        
         {/* Brand Identity */}
-        <button 
+        <button
           onClick={onReset}
           className="flex items-center gap-3.5 text-left group focus:outline-none"
         >
@@ -55,7 +62,10 @@ export function Header({
         </button>
 
         {/* Center Stepper */}
-        <nav aria-label="Progreso del retrato" className="hidden sm:flex items-center gap-1.5 text-xs">
+        <nav
+          aria-label="Progreso del retrato"
+          className="hidden sm:flex items-center gap-1.5 text-xs"
+        >
           {steps.map((s, idx) => {
             const Icon = s.icon;
             const isActive = currentStep === s.num;
@@ -66,10 +76,10 @@ export function Header({
                 <div
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-full transition-all ${
                     isActive
-                      ? 'bg-stone-900 text-white font-medium shadow-soft'
+                      ? "bg-stone-900 text-white font-medium shadow-soft"
                       : isDone
-                      ? 'bg-sage-50 text-sage-700 border border-sage-100 font-medium'
-                      : 'text-stone-500 bg-transparent'
+                        ? "bg-sage-50 text-sage-700 border border-sage-100 font-medium"
+                        : "text-stone-500 bg-transparent"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -92,13 +102,14 @@ export function Header({
           >
             <span
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: hasActiveKey ? '#3B6E52' : '#C85A32' }}
+              style={{ backgroundColor: hasActiveKey ? "#3B6E52" : "#C85A32" }}
             />
-            <span className="hidden md:inline text-stone-800">Credenciales API</span>
+            <span className="hidden md:inline text-stone-800">
+              Credenciales API
+            </span>
             <SlidersHorizontal className="w-3.5 h-3.5 text-stone-500" />
           </button>
         )}
-
       </div>
     </header>
   );

@@ -1,11 +1,11 @@
-import { NextRequest } from 'next/server';
-import { getJobById } from '@/lib/supabase';
+import { NextRequest } from "next/server";
+import { getJobById } from "@/lib/supabase";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const jobId = params.id;
   const encoder = new TextEncoder();
@@ -23,7 +23,9 @@ export async function GET(
 
         if (!job) {
           controller.enqueue(
-            encoder.encode(`event: error\ndata: ${JSON.stringify({ error: 'Job no encontrado' })}\n\n`)
+            encoder.encode(
+              `event: error\ndata: ${JSON.stringify({ error: "Job no encontrado" })}\n\n`,
+            ),
           );
           clearInterval(interval);
           controller.close();
@@ -31,32 +33,40 @@ export async function GET(
         }
 
         // Send update if progress or status changed
-        if (job.progress !== lastProgress || job.status === 'completed' || job.status === 'failed') {
+        if (
+          job.progress !== lastProgress ||
+          job.status === "completed" ||
+          job.status === "failed"
+        ) {
           lastProgress = job.progress;
           controller.enqueue(
-            encoder.encode(`event: message\ndata: ${JSON.stringify(job)}\n\n`)
+            encoder.encode(`event: message\ndata: ${JSON.stringify(job)}\n\n`),
           );
         }
 
-        if (job.status === 'completed' || job.status === 'failed' || attempts >= maxAttempts) {
+        if (
+          job.status === "completed" ||
+          job.status === "failed" ||
+          attempts >= maxAttempts
+        ) {
           isDone = true;
           clearInterval(interval);
           controller.close();
         }
       }, 500);
 
-      req.signal.addEventListener('abort', () => {
+      req.signal.addEventListener("abort", () => {
         clearInterval(interval);
         if (!isDone) controller.close();
       });
-    }
+    },
   });
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
     },
   });
 }

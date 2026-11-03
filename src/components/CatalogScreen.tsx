@@ -1,32 +1,52 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { TEMPLATES, Template } from '@/data/templates';
-import { Sparkles, Sun, Check, Search, ShieldCheck, Dog, Cat, ArrowRight, Eye, Star } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import { TEMPLATES, Template } from "@/data/templates";
+import {
+  Sparkles,
+  Sun,
+  Check,
+  Search,
+  ShieldCheck,
+  Dog,
+  Cat,
+  ArrowRight,
+  Eye,
+  Star,
+} from "lucide-react";
 
 interface CatalogScreenProps {
   onSelectTemplate: (template: Template) => void;
   selectedTemplateId?: string;
 }
 
-export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogScreenProps) {
-  const [speciesFilter, setSpeciesFilter] = useState<'all' | 'dog' | 'cat'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+export function CatalogScreen({
+  onSelectTemplate,
+  selectedTemplateId,
+}: CatalogScreenProps) {
+  const [speciesFilter, setSpeciesFilter] = useState<"all" | "dog" | "cat">(
+    "all",
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const categories = useMemo(() => {
-    const set = new Set(TEMPLATES.map(t => t.category));
-    return ['all', ...Array.from(set)];
+    const set = new Set(TEMPLATES.map((t) => t.category));
+    return ["all", ...Array.from(set)];
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    return TEMPLATES.filter(t => {
+    return TEMPLATES.filter((t) => {
       // Species match
-      if (speciesFilter !== 'all' && t.species !== 'both' && t.species !== speciesFilter) {
+      if (
+        speciesFilter !== "all" &&
+        t.species !== "both" &&
+        t.species !== speciesFilter
+      ) {
         return false;
       }
       // Category match
-      if (selectedCategory !== 'all' && t.category !== selectedCategory) {
+      if (selectedCategory !== "all" && t.category !== selectedCategory) {
         return false;
       }
       // Search match
@@ -45,7 +65,6 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
 
   return (
     <div className="space-y-10">
-      
       {/* Hero Banner */}
       <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-navy-900 via-navy-950 to-amber-950/40 p-8 md:p-12 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
@@ -55,10 +74,15 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
             <span>Colección de Atuendos Base Calibrados para FLUX.1</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Convierte a tu Mascota en una <span className="text-amber-400 italic">Obra Maestra</span> de Galería
+            Convierte a tu Mascota en una{" "}
+            <span className="text-amber-400 italic">Obra Maestra</span> de
+            Galería
           </h1>
           <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
-            Selecciona un atuendo estandarizado de nuestro catálogo. Cada plantilla cuenta con máscara morfológica 8-bit e iluminación de estudio calibrada para una fusión perfecta de rostro y cuello sin deformidades.
+            Selecciona un atuendo estandarizado de nuestro catálogo. Cada
+            plantilla cuenta con máscara morfológica 8-bit e iluminación de
+            estudio calibrada para una fusión perfecta de rostro y cuello sin
+            deformidades.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-6 text-xs text-slate-400">
@@ -80,36 +104,35 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
 
       {/* Filter Toolbar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-        
         {/* Species Tabs */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
           <button
-            onClick={() => setSpeciesFilter('all')}
+            onClick={() => setSpeciesFilter("all")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              speciesFilter === 'all'
-                ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-white'
+              speciesFilter === "all"
+                ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Todos ({TEMPLATES.length})
           </button>
           <button
-            onClick={() => setSpeciesFilter('dog')}
+            onClick={() => setSpeciesFilter("dog")}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              speciesFilter === 'dog'
-                ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-white'
+              speciesFilter === "dog"
+                ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <Dog className="w-3.5 h-3.5" />
             <span>Perros</span>
           </button>
           <button
-            onClick={() => setSpeciesFilter('cat')}
+            onClick={() => setSpeciesFilter("cat")}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              speciesFilter === 'cat'
-                ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-white'
+              speciesFilter === "cat"
+                ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <Cat className="w-3.5 h-3.5" />
@@ -128,7 +151,6 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
             className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40"
           />
         </div>
-
       </div>
 
       {/* Grid of Templates */}
@@ -142,8 +164,8 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
               onClick={() => onSelectTemplate(template)}
               className={`group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
                 isSelected
-                  ? 'border-amber-500 ring-2 ring-amber-500/50 bg-slate-900 shadow-xl shadow-amber-500/10 scale-[1.02]'
-                  : 'border-slate-800 hover:border-amber-500/40 bg-slate-900/60 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1'
+                  ? "border-amber-500 ring-2 ring-amber-500/50 bg-slate-900 shadow-xl shadow-amber-500/10 scale-[1.02]"
+                  : "border-slate-800 hover:border-amber-500/40 bg-slate-900/60 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1"
               }`}
             >
               {/* Image Preview Container */}
@@ -167,21 +189,27 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
 
                 {/* Badge Top Left */}
                 <div className="absolute top-3 left-3">
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${template.badgeColor}`}>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full border backdrop-blur-md ${template.badgeColor}`}
+                  >
                     {template.badgeText}
                   </span>
                 </div>
 
                 {/* Species Icon Top Right */}
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 backdrop-blur-md text-slate-300 border border-white/10 text-[10px]">
-                  {template.species === 'both' && (
+                  {template.species === "both" && (
                     <>
                       <Dog className="w-3 h-3 text-amber-400" />
                       <Cat className="w-3 h-3 text-amber-400" />
                     </>
                   )}
-                  {template.species === 'dog' && <Dog className="w-3 h-3 text-amber-400" />}
-                  {template.species === 'cat' && <Cat className="w-3 h-3 text-amber-400" />}
+                  {template.species === "dog" && (
+                    <Dog className="w-3 h-3 text-amber-400" />
+                  )}
+                  {template.species === "cat" && (
+                    <Cat className="w-3 h-3 text-amber-400" />
+                  )}
                 </div>
 
                 {/* Selected Checkmark Overlay */}
@@ -213,15 +241,18 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
                   type="button"
                   className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                     isSelected
-                      ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-800 hover:bg-amber-500 hover:text-navy-950 text-slate-200'
+                      ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
+                      : "bg-slate-800 hover:bg-amber-500 hover:text-navy-950 text-slate-200"
                   }`}
                 >
-                  <span>{isSelected ? 'Plantilla Seleccionada' : 'Elegir Este Atuendo'}</span>
+                  <span>
+                    {isSelected
+                      ? "Plantilla Seleccionada"
+                      : "Elegir Este Atuendo"}
+                  </span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-
             </div>
           );
         })}
@@ -229,16 +260,21 @@ export function CatalogScreen({ onSelectTemplate, selectedTemplateId }: CatalogS
 
       {filteredTemplates.length === 0 && (
         <div className="text-center py-16 space-y-3 bg-slate-900/40 rounded-2xl border border-slate-800">
-          <p className="text-slate-400 text-sm">No encontramos atuendos con ese criterio de búsqueda.</p>
+          <p className="text-slate-400 text-sm">
+            No encontramos atuendos con ese criterio de búsqueda.
+          </p>
           <button
-            onClick={() => { setSpeciesFilter('all'); setSelectedCategory('all'); setSearchQuery(''); }}
+            onClick={() => {
+              setSpeciesFilter("all");
+              setSelectedCategory("all");
+              setSearchQuery("");
+            }}
             className="text-amber-400 hover:underline text-xs font-bold"
           >
             Restablecer filtros
           </button>
         </div>
       )}
-
     </div>
   );
 }

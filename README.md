@@ -7,7 +7,7 @@ Plataforma integral para generar retratos al óleo y fotografías de estudio de 
 ## 1. Arquitectura del Sistema y Stack Tecnológico
 
 ```
-[Usuario / Web Client] 
+[Usuario / Web Client]
        │ (1. Carga foto mascota + Selección de plantilla)
        ▼
 [Frontend: Next.js 14 App Router + Tailwind CSS]
@@ -31,6 +31,7 @@ Plataforma integral para generar retratos al óleo y fotografías de estudio de 
 ```
 
 ### Componentes Clave:
+
 - **Frontend**: Next.js 14 (App Router), React 18, Tailwind CSS, Lucide Icons y Canvas Confetti.
 - **Backend & Persistencia**: Route Handlers nativos en Next.js, Supabase PostgreSQL (`generation_jobs`) y Supabase Storage (`pet-uploads`, `templates`, `portraits-hd`).
 - **Procesamiento Asíncrono**: Despacho desacoplado sin timeouts HTTP (BullMQ / Redis / Memory worker).
@@ -43,11 +44,13 @@ Plataforma integral para generar retratos al óleo y fotografías de estudio de 
 ## 2. Estandarización de Plantillas (Assets Base)
 
 Cada atuendo del catálogo está estandarizado en `public/templates/[template-id]/` con:
+
 1. `template.svg` / `template.jpg`: Base visual y lumínica del cuerpo sin rostro o con cuello neutro.
 2. `mask.png`: Máscara monocromática 8-bit (Blanco `#FFFFFF` en cabeza/cuello; negro `#000000` en el cuerpo).
 3. `config.json`: Prompts positivos/negativos, ángulo de luz (`studio_soft`, `chiaroscuro_side`, etc.), compatibilidad de especie y calibración de inferencia.
 
 ### Catálogo Inicial de 8 Atuendos:
+
 1. **El Magnate Ejecutivo**: Traje de tres piezas italiano azul marino con corbata roja de seda.
 2. **Oficial de Policía K-9**: Uniforme táctico policial con placa dorada, chaleco y gorra oficial.
 3. **Lord / Lady Victoriano**: Atuendo aristocrático de terciopelo carmesí con gorguera de encaje.
@@ -61,12 +64,12 @@ Cada atuendo del catálogo está estandarizado en `public/templates/[template-id
 
 ## 3. Matriz de Costos Estimada por Generación (fal.ai)
 
-| Operación | Modelo / Servicio | Tiempo aprox. | Costo estimado por imagen |
-| :--- | :--- | :--- | :--- |
-| **Inpainting / Fusión** | FLUX.1 [dev] Inpainting | 5 - 8 seg | ~$0.025 - $0.035 USD |
-| **Super-Resolución 4K** | Clarity Upscaler (2x / 300 DPI) | 4 - 6 seg | ~$0.015 - $0.020 USD |
-| **Almacenamiento y Webhook** | Supabase Storage + Compute | Instantáneo | < $0.001 USD |
-| **Costo Total Unitario** | **Pipeline Completo E2E** | **~10 - 14 seg** | **~$0.040 - $0.055 USD** |
+| Operación                    | Modelo / Servicio               | Tiempo aprox.    | Costo estimado por imagen |
+| :--------------------------- | :------------------------------ | :--------------- | :------------------------ |
+| **Inpainting / Fusión**      | FLUX.1 [dev] Inpainting         | 5 - 8 seg        | ~$0.025 - $0.035 USD      |
+| **Super-Resolución 4K**      | Clarity Upscaler (2x / 300 DPI) | 4 - 6 seg        | ~$0.015 - $0.020 USD      |
+| **Almacenamiento y Webhook** | Supabase Storage + Compute      | Instantáneo      | < $0.001 USD              |
+| **Costo Total Unitario**     | **Pipeline Completo E2E**       | **~10 - 14 seg** | **~$0.040 - $0.055 USD**  |
 
 ---
 
@@ -82,26 +85,33 @@ Cada atuendo del catálogo está estandarizado en `public/templates/[template-id
 ## 5. Instalación y Ejecución Local
 
 ### Prerrequisitos
+
 - Node.js 18+ o 20+
 - npm o pnpm
 
 ### Pasos:
+
 1. **Instalar dependencias**:
+
 ```bash
 npm install
 ```
 
 2. **Configurar variables de entorno**:
-Copia `.env.example` a `.env.local`:
+   Copia `.env.example` a `.env.local`:
+
 ```bash
 cp .env.example .env.local
 ```
-> *Nota*: Si dejas `FAL_KEY` en blanco, el sistema operará automáticamente en **Modo Demo/Simulación de Alta Fidelidad**, simulando cada paso del pipeline en tiempo real y entregando las muestras de alta definición para que puedas probar la aplicación inmediatamente sin costo.
+
+> _Nota_: Si dejas `FAL_KEY` en blanco, el sistema operará automáticamente en **Modo Demo/Simulación de Alta Fidelidad**, simulando cada paso del pipeline en tiempo real y entregando las muestras de alta definición para que puedas probar la aplicación inmediatamente sin costo.
 
 3. **Iniciar servidor de desarrollo**:
+
 ```bash
 npm run dev
 ```
+
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---

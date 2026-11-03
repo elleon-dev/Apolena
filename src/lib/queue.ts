@@ -1,7 +1,7 @@
-import { AIProviderId, ApiKeysOverride, GenerationJob } from './types';
-import { getCharacterById, FAMOUS_CHARACTERS } from '@/data/characters';
-import { runMultiModelFusionPipeline } from './ai-providers';
-import { saveJob, localJobs } from './supabase';
+import { AIProviderId, ApiKeysOverride, GenerationJob } from "./types";
+import { getCharacterById, FAMOUS_CHARACTERS } from "@/data/characters";
+import { runMultiModelFusionPipeline } from "./ai-providers";
+import { saveJob, localJobs } from "./supabase";
 
 export interface EnqueueJobParams {
   jobId: string;
@@ -13,7 +13,7 @@ export interface EnqueueJobParams {
   provider?: AIProviderId;
   apiKeys?: ApiKeysOverride;
   petName?: string;
-  species?: 'dog' | 'cat' | 'both';
+  species?: "dog" | "cat" | "both";
 }
 
 // Store transient API keys in memory per job (never persisted to database)
@@ -33,9 +33,9 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     // 1. Processing
     await saveJob({
       ...job,
-      status: 'processing',
+      status: "processing",
       progress: 10,
-      currentStep: `Iniciando fusión con ${character.name} (${job.provider.toUpperCase()})...`
+      currentStep: `Iniciando fusión con ${character.name} (${job.provider.toUpperCase()})...`,
     });
 
     // 2. Execute multi-model pipeline with callbacks
@@ -48,70 +48,75 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       provider: job.provider,
       apiKeys,
       onProgress: async (progress, stepLabel, stage) => {
-        const statusMap: Record<string, GenerationJob['status']> = {
-          analyzing: 'processing',
-          lighting: 'processing',
-          inpainting: 'inpainting',
-          upscaling: 'upscaling',
-          finishing: 'processing'
+        const statusMap: Record<string, GenerationJob["status"]> = {
+          analyzing: "processing",
+          lighting: "processing",
+          inpainting: "inpainting",
+          upscaling: "upscaling",
+          finishing: "processing",
         };
 
         const currentJob = localJobs.get(jobId) || job;
         await saveJob({
           ...currentJob,
-          status: statusMap[stage] || 'processing',
+          status: statusMap[stage] || "processing",
           progress,
-          currentStep: stepLabel
+          currentStep: stepLabel,
         });
-      }
+      },
     });
 
     // 3. Completed
     const currentJob = localJobs.get(jobId) || job;
     await saveJob({
       ...currentJob,
-      status: 'completed',
+      status: "completed",
       progress: 100,
-      currentStep: '¡Retrato revelado con éxito!',
+      currentStep: "¡Retrato revelado con éxito!",
       outputImageUrl: result.outputImageUrl,
       hdOutputImageUrl: result.hdOutputImageUrl,
       variants: result.variants,
       modelUsed: result.modelUsed,
-      executionSeconds: result.executionSeconds
+      executionSeconds: result.executionSeconds,
     });
 
     jobApiKeysMap.delete(jobId);
-    console.log(`[QueueWorker] Job ${jobId} (${result.modelUsed}) finished in ${result.executionSeconds}s`);
+    console.log(
+      `[QueueWorker] Job ${jobId} (${result.modelUsed}) finished in ${result.executionSeconds}s`,
+    );
   } catch (error: any) {
     jobApiKeysMap.delete(jobId);
     console.error(`[QueueWorker] Job ${jobId} failed:`, error);
     const currentJob = localJobs.get(jobId) || job;
     await saveJob({
       ...currentJob,
-      status: 'failed',
+      status: "failed",
       progress: 0,
-      currentStep: 'Error durante la fusión',
-      errorMessage: error?.message || 'Ocurrió un error al fusionar las imágenes'
+      currentStep: "Error durante la fusión",
+      errorMessage:
+        error?.message || "Ocurrió un error al fusionar las imágenes",
     });
   }
 }
 
-export async function enqueueJob(params: EnqueueJobParams): Promise<GenerationJob> {
+export async function enqueueJob(
+  params: EnqueueJobParams,
+): Promise<GenerationJob> {
   const newJob: GenerationJob = {
     id: params.jobId,
     templateId: params.characterId,
-    petName: params.petName || 'Mi Mascota',
-    species: params.species || 'cat',
+    petName: params.petName || "Mi Mascota",
+    species: params.species || "cat",
     petImageUrl: params.petImageUrl,
     secondPetImageUrl: params.secondPetImageUrl || null,
     customThemeImageUrl: params.customThemeImageUrl || null,
     customPrompt: params.customPrompt || null,
-    provider: params.provider || 'openai',
-    status: 'pending',
+    provider: params.provider || "openai",
+    status: "pending",
     progress: 5,
-    currentStep: 'Encolando fusión multimodal de imágenes...',
+    currentStep: "Encolando fusión multimodal de imágenes...",
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 
   if (params.apiKeys) {

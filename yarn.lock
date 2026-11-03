@@ -658,6 +658,11 @@ postcss@^8.4.47:
     picocolors "^1.1.1"
     source-map-js "^1.2.2"
 
+prettier@^3.9.10:
+  version "3.9.10"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.9.10.tgz#ac378e432f1a7381518f2e080816bbaefa38d585"
+  integrity sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==
+
 queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"

@@ -3,14 +3,14 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '15mb',
+      bodySizeLimit: "15mb",
     },
   },
 };

@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useCallback } from 'react';
-import { Template } from '@/data/templates';
-import { 
-  UploadCloud, 
-  ArrowLeft, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle, 
-  RefreshCw, 
-  Crop, 
-  Dog, 
-  Cat, 
-  Eye, 
+import React, { useState, useRef, useCallback } from "react";
+import { Template } from "@/data/templates";
+import {
+  UploadCloud,
+  ArrowLeft,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Crop,
+  Dog,
+  Cat,
+  Eye,
   Sliders,
-  Maximize2
-} from 'lucide-react';
+  Maximize2,
+} from "lucide-react";
 
 interface UploadScreenProps {
   template: Template;
@@ -23,14 +23,20 @@ interface UploadScreenProps {
   onStartGeneration: (data: {
     petImageUrl: string;
     petName: string;
-    species: 'dog' | 'cat' | 'both';
+    species: "dog" | "cat" | "both";
   }) => void;
 }
 
-export function UploadScreen({ template, onBack, onStartGeneration }: UploadScreenProps) {
+export function UploadScreen({
+  template,
+  onBack,
+  onStartGeneration,
+}: UploadScreenProps) {
   const [petImage, setPetImage] = useState<string | null>(null);
-  const [petName, setPetName] = useState<string>('Milo');
-  const [species, setSpecies] = useState<'dog' | 'cat' | 'both'>(template.species === 'cat' ? 'cat' : 'dog');
+  const [petName, setPetName] = useState<string>("Milo");
+  const [species, setSpecies] = useState<"dog" | "cat" | "both">(
+    template.species === "cat" ? "cat" : "dog",
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
@@ -43,8 +49,8 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
    * as specified in Phase 4 of the architectural requirements
    */
   const processAndCompressFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor sube un archivo de imagen válido (JPG, PNG o WEBP).');
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor sube un archivo de imagen válido (JPG, PNG o WEBP).");
       return;
     }
 
@@ -54,7 +60,7 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
         const maxDim = 1500;
@@ -71,10 +77,10 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
 
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
           setPetImage(compressedDataUrl);
         }
         setIsCompressing(false);
@@ -101,9 +107,9 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
 
   // Quick Demo Samples
   const loadDemoCat = () => {
-    setPetImage('/samples/cat-suit.jpg');
-    setPetName('Oliver el Aristócrata');
-    setSpecies('cat');
+    setPetImage("/samples/cat-suit.jpg");
+    setPetName("Oliver el Aristócrata");
+    setSpecies("cat");
   };
 
   const handleSubmit = () => {
@@ -111,13 +117,12 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
     onStartGeneration({
       petImageUrl: petImage,
       petName,
-      species
+      species,
     });
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      
       {/* Top Bar with Navigation */}
       <div className="flex items-center justify-between">
         <button
@@ -138,18 +143,17 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
         {/* Left Column: Upload & Framing Zone (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
           <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 space-y-6">
-            
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-xl font-bold text-white">
                   Carga y Enfoque Facial
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Asegúrate de que la cabeza y el cuello de tu mascota queden bien visibles.
+                  Asegúrate de que la cabeza y el cuello de tu mascota queden
+                  bien visibles.
                 </p>
               </div>
 
@@ -158,12 +162,12 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
                   onClick={() => setShowFaceGuide(!showFaceGuide)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                     showFaceGuide
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                      : 'bg-slate-950 text-slate-400 border-slate-800'
+                      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                      : "bg-slate-950 text-slate-400 border-slate-800"
                   }`}
                 >
                   <Crop className="w-3.5 h-3.5" />
-                  <span>Guía Facial {showFaceGuide ? 'ON' : 'OFF'}</span>
+                  <span>Guía Facial {showFaceGuide ? "ON" : "OFF"}</span>
                 </button>
               )}
             </div>
@@ -171,14 +175,17 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
             {/* Drag & Drop Area or Preview */}
             {!petImage ? (
               <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative aspect-[4/3] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all ${
                   isDragging
-                    ? 'border-amber-400 bg-amber-500/10 scale-[1.01]'
-                    : 'border-slate-700 hover:border-amber-500/50 bg-slate-950/70 hover:bg-slate-950'
+                    ? "border-amber-400 bg-amber-500/10 scale-[1.01]"
+                    : "border-slate-700 hover:border-amber-500/50 bg-slate-950/70 hover:bg-slate-950"
                 }`}
               >
                 <input
@@ -201,7 +208,8 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
                   Arrastra la foto de tu mascota aquí
                 </p>
                 <p className="text-xs text-slate-400 mb-4 max-w-sm">
-                  o haz clic para explorar tus archivos (JPG, PNG o WEBP hasta 15MB). Se optimizará automáticamente a 1500px.
+                  o haz clic para explorar tus archivos (JPG, PNG o WEBP hasta
+                  15MB). Se optimizará automáticamente a 1500px.
                 </p>
 
                 <div className="flex items-center gap-2 text-[11px] font-semibold text-amber-400/90 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">
@@ -288,7 +296,9 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
 
             {/* Quick Demo Photo Loader */}
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-400">¿No tienes una foto a mano?</span>
+              <span className="text-slate-400">
+                ¿No tienes una foto a mano?
+              </span>
               <button
                 type="button"
                 onClick={loadDemoCat}
@@ -298,13 +308,11 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
                 <span>Cargar Mascota Demo (Gato Atigrado)</span>
               </button>
             </div>
-
           </div>
         </div>
 
         {/* Right Column: Pet Details & Validation Warnings (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          
           {/* Metadata Form */}
           <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 space-y-5">
             <h3 className="font-serif text-lg font-bold text-white">
@@ -333,11 +341,11 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setSpecies('dog')}
+                  onClick={() => setSpecies("dog")}
                   className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all ${
-                    species === 'dog'
-                      ? 'bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                    species === "dog"
+                      ? "bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20"
+                      : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700"
                   }`}
                 >
                   <Dog className="w-4 h-4" />
@@ -345,11 +353,11 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSpecies('cat')}
+                  onClick={() => setSpecies("cat")}
                   className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all ${
-                    species === 'cat'
-                      ? 'bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                    species === "cat"
+                      ? "bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20"
+                      : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700"
                   }`}
                 >
                   <Cat className="w-4 h-4" />
@@ -367,15 +375,24 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
               <ul className="space-y-2 text-xs text-slate-400">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span><strong>Iluminación natural o de estudio:</strong> Evita fotos con contraluz extremo o sombras muy duras.</span>
+                  <span>
+                    <strong>Iluminación natural o de estudio:</strong> Evita
+                    fotos con contraluz extremo o sombras muy duras.
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span><strong>Ángulo a la altura de los ojos:</strong> Mirando hacia adelante o 3/4.</span>
+                  <span>
+                    <strong>Ángulo a la altura de los ojos:</strong> Mirando
+                    hacia adelante o 3/4.
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <span><strong>Evitar fotos borrosas o pixeladas:</strong> Cuanta mayor nitidez en el pelaje, mayor detalle en el upscale 4K.</span>
+                  <span>
+                    <strong>Evitar fotos borrosas o pixeladas:</strong> Cuanta
+                    mayor nitidez en el pelaje, mayor detalle en el upscale 4K.
+                  </span>
                 </li>
               </ul>
             </div>
@@ -387,8 +404,8 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
               onClick={handleSubmit}
               className={`w-full py-4 px-6 rounded-2xl font-serif text-sm font-bold flex items-center justify-center gap-3 transition-all ${
                 petImage
-                  ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-navy-950 shadow-xl shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98]'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-navy-950 shadow-xl shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-slate-800 text-slate-500 cursor-not-allowed"
               }`}
             >
               <Sparkles className="w-5 h-5 text-navy-950" />
@@ -398,25 +415,31 @@ export function UploadScreen({ template, onBack, onStartGeneration }: UploadScre
             <p className="text-[11px] text-center text-slate-500">
               Tiempo estimado de generación: <strong>~12 a 18 segundos</strong>.
             </p>
-
           </div>
 
           {/* Selected Template Preview Mini Card */}
           <div className="p-4 rounded-2xl bg-navy-950/70 border border-amber-900/40 flex items-center gap-4">
             <div className="w-16 h-20 rounded-xl overflow-hidden bg-slate-900 flex-shrink-0 border border-amber-500/30">
-              <img src={template.templateUrl} alt={template.name} className="w-full h-full object-cover" />
+              <img
+                src={template.templateUrl}
+                alt={template.name}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase text-amber-400">Atuendo Seleccionado</span>
-              <h4 className="font-serif text-sm font-bold text-white">{template.name}</h4>
-              <p className="text-[11px] text-slate-400">{template.lightingDisplay}</p>
+              <span className="text-[10px] font-bold uppercase text-amber-400">
+                Atuendo Seleccionado
+              </span>
+              <h4 className="font-serif text-sm font-bold text-white">
+                {template.name}
+              </h4>
+              <p className="text-[11px] text-slate-400">
+                {template.lightingDisplay}
+              </p>
             </div>
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

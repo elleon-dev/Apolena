@@ -1,14 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
-import { GenerationJob } from './types';
+import { createClient } from "@supabase/supabase-js";
+import { GenerationJob } from "./types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "";
 
 export const isSupabaseConfigured = Boolean(
-  supabaseUrl && 
-  supabaseKey && 
-  !supabaseUrl.includes('your-project') &&
-  !supabaseKey.includes('your-')
+  supabaseUrl &&
+  supabaseKey &&
+  !supabaseUrl.includes("your-project") &&
+  !supabaseKey.includes("your-"),
 );
 
 export const supabase = isSupabaseConfigured
@@ -27,13 +30,16 @@ class LocalJobStore {
     return this.jobs.get(id);
   }
 
-  update(id: string, updates: Partial<GenerationJob>): GenerationJob | undefined {
+  update(
+    id: string,
+    updates: Partial<GenerationJob>,
+  ): GenerationJob | undefined {
     const existing = this.jobs.get(id);
     if (!existing) return undefined;
     const updated: GenerationJob = {
       ...existing,
       ...updates,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     this.jobs.set(id, updated);
     return updated;
@@ -41,15 +47,19 @@ class LocalJobStore {
 
   list(): GenerationJob[] {
     return Array.from(this.jobs.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }
 }
 
 // Global singleton in dev
-const globalForJobs = globalThis as unknown as { localJobStore?: LocalJobStore };
+const globalForJobs = globalThis as unknown as {
+  localJobStore?: LocalJobStore;
+};
 export const localJobs = globalForJobs.localJobStore ?? new LocalJobStore();
-if (process.env.NODE_ENV !== 'production') globalForJobs.localJobStore = localJobs;
+if (process.env.NODE_ENV !== "production")
+  globalForJobs.localJobStore = localJobs;
 
 /**
  * Saves or updates a generation job in either Supabase or Local Store
@@ -59,7 +69,7 @@ export async function saveJob(job: GenerationJob): Promise<void> {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('generation_jobs').upsert({
+      await supabase.from("generation_jobs").upsert({
         id: job.id,
         user_id: job.userId || null,
         template_id: job.templateId,
@@ -75,10 +85,10 @@ export async function saveJob(job: GenerationJob): Promise<void> {
         error_message: job.errorMessage || null,
         execution_seconds: job.executionSeconds || null,
         created_at: job.createdAt,
-        updated_at: job.updatedAt
+        updated_at: job.updatedAt,
       });
     } catch (err) {
-      console.warn('Supabase save error (falling back to memory):', err);
+      console.warn("Supabase save error (falling back to memory):", err);
     }
   }
 }
@@ -90,9 +100,9 @@ export async function getJobById(id: string): Promise<GenerationJob | null> {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
-        .from('generation_jobs')
-        .select('*')
-        .eq('id', id)
+        .from("generation_jobs")
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (!error && data) {
@@ -103,7 +113,7 @@ export async function getJobById(id: string): Promise<GenerationJob | null> {
           petName: data.pet_name,
           species: data.species,
           petImageUrl: data.pet_image_url,
-          provider: data.provider || 'openai',
+          provider: data.provider || "openai",
           status: data.status,
           progress: data.progress,
           currentStep: data.current_step,
@@ -113,11 +123,11 @@ export async function getJobById(id: string): Promise<GenerationJob | null> {
           errorMessage: data.error_message,
           executionSeconds: data.execution_seconds,
           createdAt: data.created_at,
-          updatedAt: data.updated_at
+          updatedAt: data.updated_at,
         };
       }
     } catch (err) {
-      console.warn('Supabase fetch error:', err);
+      console.warn("Supabase fetch error:", err);
     }
   }
 

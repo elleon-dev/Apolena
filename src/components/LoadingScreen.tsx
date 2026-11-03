@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { PIPELINE_STEPS } from '@/lib/types';
-import { Template } from '@/data/templates';
-import { 
-  Sparkles, 
-  Loader2, 
-  CheckCircle2, 
-  Cpu, 
-  Zap, 
-  ShieldCheck, 
+import React, { useEffect, useState } from "react";
+import { PIPELINE_STEPS } from "@/lib/types";
+import { Template } from "@/data/templates";
+import {
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  Cpu,
+  Zap,
+  ShieldCheck,
   Timer,
   Layers,
-  Sparkle
-} from 'lucide-react';
+  Sparkle,
+} from "lucide-react";
 
 interface LoadingScreenProps {
   jobId: string;
@@ -30,7 +30,7 @@ export function LoadingScreen({
   petImageUrl,
   petName,
   progress,
-  currentStepMessage
+  currentStepMessage,
 }: LoadingScreenProps) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -42,23 +42,21 @@ export function LoadingScreen({
   }, []);
 
   const funFacts = [
-    'Nuestro modelo FLUX.1 evalúa más de 12 puntos anatómicos para fundir el cuello con la solapa sin costuras visibles.',
-    'El Clarity Upscaler reconstruye cada pelo individual a 300 DPI, garantizando nitidez perfecta en cuadros impresos.',
-    'La iluminación de la plantilla se armoniza dinámicamente con el color del pelaje para evitar reflejos artificiales.',
-    'Cada retrato se genera con 32 pasos de inferencia para lograr una textura digna de galería de arte.'
+    "Nuestro modelo FLUX.1 evalúa más de 12 puntos anatómicos para fundir el cuello con la solapa sin costuras visibles.",
+    "El Clarity Upscaler reconstruye cada pelo individual a 300 DPI, garantizando nitidez perfecta en cuadros impresos.",
+    "La iluminación de la plantilla se armoniza dinámicamente con el color del pelaje para evitar reflejos artificiales.",
+    "Cada retrato se genera con 32 pasos de inferencia para lograr una textura digna de galería de arte.",
   ];
 
   const currentFactIndex = Math.min(
     Math.floor((elapsed / 4) % funFacts.length),
-    funFacts.length - 1
+    funFacts.length - 1,
   );
 
   return (
     <div className="max-w-3xl mx-auto space-y-10 py-6">
-      
       {/* Central Visual Hologram Animation */}
       <div className="relative flex flex-col items-center justify-center text-center space-y-6">
-        
         {/* Glow Halo */}
         <div className="absolute w-80 h-80 bg-amber-500/15 rounded-full blur-3xl -z-10 animate-pulse-subtle pointer-events-none" />
 
@@ -90,14 +88,15 @@ export function LoadingScreen({
           </div>
 
           <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-white">
-            Creando el Retrato de <span className="text-amber-400">{petName}</span>
+            Creando el Retrato de{" "}
+            <span className="text-amber-400">{petName}</span>
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
-            {currentStepMessage || 'Inicializando los tensores de inpainting de FLUX.1 y cargando la máscara...'}
+            {currentStepMessage ||
+              "Inicializando los tensores de inpainting de FLUX.1 y cargando la máscara..."}
           </p>
         </div>
-
       </div>
 
       {/* Main Progress Bar */}
@@ -138,17 +137,19 @@ export function LoadingScreen({
             // Determine active/completed based on progress thresholds
             const thresholds = [15, 35, 65, 85, 100];
             const isCompleted = progress >= thresholds[idx];
-            const isActive = progress < thresholds[idx] && (idx === 0 || progress >= thresholds[idx - 1]);
+            const isActive =
+              progress < thresholds[idx] &&
+              (idx === 0 || progress >= thresholds[idx - 1]);
 
             return (
               <div
                 key={step.id}
                 className={`p-4 rounded-2xl border transition-all ${
                   isCompleted
-                    ? 'bg-slate-900/80 border-emerald-500/30 text-white'
+                    ? "bg-slate-900/80 border-emerald-500/30 text-white"
                     : isActive
-                    ? 'bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/10 text-white'
-                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                      ? "bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/10 text-white"
+                      : "bg-slate-950/40 border-slate-800/60 text-slate-500"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -165,7 +166,9 @@ export function LoadingScreen({
                   </div>
 
                   <div className="space-y-1">
-                    <h4 className={`text-xs font-bold ${isActive ? 'text-amber-300' : isCompleted ? 'text-white' : 'text-slate-400'}`}>
+                    <h4
+                      className={`text-xs font-bold ${isActive ? "text-amber-300" : isCompleted ? "text-white" : "text-slate-400"}`}
+                    >
                       {step.label}
                     </h4>
                     <p className="text-[11px] text-slate-400 leading-snug">
@@ -187,7 +190,6 @@ export function LoadingScreen({
           <span>{funFacts[currentFactIndex]}</span>
         </div>
       </div>
-
     </div>
   );
 }
