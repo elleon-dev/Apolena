@@ -1,0 +1,29 @@
+{
+  "template_id": "wild-west-sheriff",
+  "name": "Sheriff del Lejano Oeste",
+  "category": "Aventura & Western",
+  "species_compatibility": "dog",
+  "lighting_angle": "golden_hour_dusty",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a rugged frontier pet wearing a brown leather cowboy vest, vintage silver star sheriff badge, red bandana neckerchief and stetson hat, warm sunset golden hour lighting, cinematic film grain",
+    "negative": "modern, bad anatomy, blurry, cartoon"
+  },
+  "inference_parameters": {
+    "strength": 0.91,
+    "guidance_scale": 3.5,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

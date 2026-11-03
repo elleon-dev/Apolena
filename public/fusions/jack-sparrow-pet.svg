@@ -1,0 +1,84 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 750' width='600' height='750'>
+  <defs>
+    <radialGradient id='bgJP' cx='50%' cy='40%' r='65%'>
+      <stop offset='0%' stop-color='#3b2210'/>
+      <stop offset='60%' stop-color='#170b04'/>
+      <stop offset='100%' stop-color='#050201'/>
+    </radialGradient>
+    <linearGradient id='furJP' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#b45309'/>
+      <stop offset='40%' stop-color='#d97706'/>
+      <stop offset='100%' stop-color='#92400e'/>
+    </linearGradient>
+    <linearGradient id='bandanaJP' x1='0%' y1='0%' x2='100%' y2='50%'>
+      <stop offset='0%' stop-color='#dc2626'/>
+      <stop offset='100%' stop-color='#991b1b'/>
+    </linearGradient>
+  </defs>
+  <rect width='600' height='750' fill='url(#bgJP)'/>
+  
+  <!-- Weathered Pirate Frock Coat -->
+  <path d='M90 750 L140 480 L230 510 L300 680 L370 510 L460 480 L510 750 Z' fill='#292524'/>
+  <!-- Linen Shirt with ruffles -->
+  <polygon points='240,490 360,490 300,640' fill='#f5f5f4'/>
+  <path d='M285 500 L315 500 L305 610 L295 610 Z' fill='#44403c'/>
+
+  <!-- Pirate Coat Lapels -->
+  <path d='M140 480 L230 510 L210 680 L130 750 Z' fill='#1c1917'/>
+  <path d='M460 480 L370 510 L390 680 L470 750 Z' fill='#1c1917'/>
+
+  <!-- Braided dreadlocks with pirate beads falling past pet neck -->
+  <path d='M180 340 Q130 450 160 620 Q190 480 210 380 Z' fill='#1c1917'/>
+  <path d='M420 340 Q470 450 440 620 Q410 480 390 380 Z' fill='#1c1917'/>
+  <circle cx='165' cy='460' r='8' fill='#eab308'/>
+  <circle cx='162' cy='485' r='6' fill='#06b6d4'/>
+  <circle cx='435' cy='470' r='7' fill='#f97316'/>
+  <circle cx='438' cy='495' r='7' fill='#eab308'/>
+
+  <!-- Pet Fur Neck seamlessly blending into ruffled linen shirt -->
+  <path d='M250 430 Q300 480 350 430 L340 520 L260 520 Z' fill='url(#furJP)'/>
+
+  <!-- Pet Head & Ears -->
+  <ellipse cx='300' cy='350' rx='105' ry='105' fill='url(#furJP)'/>
+  <!-- Dog/Cat Ears sticking out proudly under bandana -->
+  <path d='M200 280 Q160 210 210 190 Q240 240 230 290 Z' fill='#92400e'/>
+  <path d='M400 280 Q440 210 390 190 Q360 240 370 290 Z' fill='#92400e'/>
+  <path d='M205 260 Q180 220 210 210 Z' fill='#fde68a' opacity='0.7'/>
+  <path d='M395 260 Q420 220 390 210 Z' fill='#fde68a' opacity='0.7'/>
+
+  <!-- Pet Muzzle & Fur Details -->
+  <ellipse cx='300' cy='380' rx='50' ry='38' fill='#fef3c7'/>
+  <!-- Cute Black Nose -->
+  <path d='M285 365 Q300 360 315 365 Q300 385 285 365 Z' fill='#1c1917'/>
+  <!-- Whiskers -->
+  <path d='M270 380 L200 375 M270 388 L195 390 M270 396 L205 405' stroke='#ffffff' stroke-width='1.5' opacity='0.8'/>
+  <path d='M330 380 L400 375 M330 388 L405 390 M330 396 L395 405' stroke='#ffffff' stroke-width='1.5' opacity='0.8'/>
+
+  <!-- Jack Sparrow's Braided Beard Beads under Pet Chin -->
+  <path d='M285 410 Q300 450 315 410 Q308 490 300 510 Q292 490 285 410 Z' fill='#1c1917'/>
+  <circle cx='298' cy='475' r='5' fill='#94a3b8'/>
+  <circle cx='302' cy='495' r='5' fill='#94a3b8'/>
+
+  <!-- Expressive Lifelike Pet Eyes with Jack Sparrow Kohl Eyeliner -->
+  <ellipse cx='260' cy='330' rx='22' ry='16' fill='#0c0a09'/>
+  <ellipse cx='340' cy='330' rx='22' ry='16' fill='#0c0a09'/>
+  <ellipse cx='260' cy='330' rx='15' ry='13' fill='#78350f'/>
+  <ellipse cx='340' cy='330' rx='15' ry='13' fill='#78350f'/>
+  <circle cx='260' cy='330' r='9' fill='#1c1917'/>
+  <circle cx='340' cy='330' r='9' fill='#1c1917'/>
+  <!-- Catchlight in eyes -->
+  <circle cx='263' cy='327' r='3.5' fill='#ffffff'/>
+  <circle cx='343' cy='327' r='3.5' fill='#ffffff'/>
+
+  <!-- Red Pirate Bandana -->
+  <path d='M190 280 Q300 250 410 280 L415 310 Q300 280 185 310 Z' fill='url(#bandanaJP)'/>
+  <path d='M185 290 Q160 330 170 400 L190 390 Q180 340 195 300 Z' fill='url(#bandanaJP)'/>
+
+  <!-- Pirate Tricorn Hat perched on Pet Head -->
+  <path d='M80 250 Q300 160 520 250 Q470 190 300 120 Q130 190 80 250 Z' fill='#292524'/>
+  <path d='M150 210 Q300 90 450 210 Q380 140 300 130 Q220 140 150 210 Z' fill='#1c1917'/>
+
+  <!-- Watermark / Authenticity Tag -->
+  <rect x='30' y='30' width='230' height='32' rx='16' fill='rgba(0,0,0,0.7)' stroke='#eab308' stroke-width='1.5'/>
+  <text x='145' y='51' fill='#fef08a' font-family='system-ui, sans-serif' font-size='11' font-weight='800' text-anchor='middle'>FUSIÓN: PET × JACK SPARROW</text>
+</svg>

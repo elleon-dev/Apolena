@@ -1,0 +1,29 @@
+{
+  "template_id": "master-chef",
+  "name": "Chef de Tres Estrellas Michelin",
+  "category": "Profesiones",
+  "species_compatibility": "both",
+  "lighting_angle": "warm_kitchen",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a proud culinary master pet wearing a white double-breasted chef jacket with black piping, neatly folded neckerchief, chef hat, warm restaurant ambient light, crisp depth of field, adorable expression",
+    "negative": "human hands, dirty, low-res, blur"
+  },
+  "inference_parameters": {
+    "strength": 0.89,
+    "guidance_scale": 3.4,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "template_id": "executive-suit",
+  "name": "El Magnate Ejecutivo",
+  "category": "Formal & Elegante",
+  "species_compatibility": "both",
+  "lighting_angle": "studio_soft",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a majestic regal pet wearing a bespoke navy blue three-piece executive suit with crimson silk tie and crisp white collared shirt, dignified studio lighting, 8k portrait photography, masterwork, sharp focus on fur texture, authentic lifelike eyes",
+    "negative": "human face, deformed neck, cartoon, blurry, low quality"
+  },
+  "inference_parameters": {
+    "strength": 0.91,
+    "guidance_scale": 3.5,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

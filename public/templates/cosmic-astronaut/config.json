@@ -1,0 +1,29 @@
+{
+  "template_id": "cosmic-astronaut",
+  "name": "Comandante Astronauta",
+  "category": "Aventura & Sci-Fi",
+  "species_compatibility": "both",
+  "lighting_angle": "visor_reflection_cool",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "an intrepid pet astronaut wearing a detailed NASA space exploration suit with mission patches, helmet collar ring, subtle reflection of stars and Earth, cinematic lighting, ultra-realistic fur",
+    "negative": "helmet covering face completely, blurry, anime, distorted ears"
+  },
+  "inference_parameters": {
+    "strength": 0.91,
+    "guidance_scale": 3.5,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

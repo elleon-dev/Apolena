@@ -1,0 +1,62 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 750' width='600' height='750'>
+  <defs>
+    <radialGradient id='bgGod' cx='50%' cy='35%' r='65%'>
+      <stop offset='0%' stop-color='#271b0e'/>
+      <stop offset='60%' stop-color='#140d06'/>
+      <stop offset='100%' stop-color='#050301'/>
+    </radialGradient>
+    <linearGradient id='tuxGod' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#1c1917'/>
+      <stop offset='100%' stop-color='#0c0a09'/>
+    </linearGradient>
+    <linearGradient id='skinGod' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#f5d0b5'/>
+      <stop offset='100%' stop-color='#c28d68'/>
+    </linearGradient>
+  </defs>
+  <rect width='600' height='750' fill='url(#bgGod)'/>
+
+  <!-- Black Tuxedo & Torso -->
+  <path d='M90 750 L140 480 L230 510 L300 660 L370 510 L460 480 L510 750 Z' fill='url(#tuxGod)'/>
+  <polygon points='230,500 370,500 300,640' fill='#ffffff'/>
+  
+  <!-- Black Silk Bow Tie -->
+  <polygon points='270,505 330,505 315,525 330,545 270,545 285,525' fill='#09090b'/>
+  <circle cx='300' cy='525' r='7' fill='#18181b'/>
+
+  <!-- Famous Red Rose Boutonniere on Lapel -->
+  <circle cx='215' cy='555' r='12' fill='#b91c1c'/>
+  <circle cx='213' cy='553' r='8' fill='#dc2626'/>
+  <circle cx='211' cy='551' r='4' fill='#ef4444'/>
+  <path d='M225 565 Q235 575 228 585' stroke='#15803d' stroke-width='3' fill='none'/>
+
+  <!-- Slicked Back Grey/Black Hair -->
+  <path d='M190 320 Q180 180 300 170 Q420 180 410 320 Q360 200 300 200 Q240 200 190 320 Z' fill='#334155'/>
+  <path d='M200 260 Q240 210 300 205 Q360 210 400 260 Q350 225 300 220 Q250 225 200 260 Z' fill='#64748b'/>
+
+  <!-- Solemn Face & Jaw -->
+  <path d='M260 420 L340 420 L330 500 L270 500 Z' fill='url(#skinGod)'/>
+  <ellipse cx='300' cy='350' rx='95' ry='110' fill='url(#skinGod)'/>
+
+  <!-- Heavy Jowls & Dignified Expression -->
+  <path d='M230 380 Q215 430 250 450 Q300 465 350 450 Q385 430 370 380 Z' fill='url(#skinGod)' opacity='0.8'/>
+
+  <!-- Deep Set Serious Eyes & Shadows -->
+  <ellipse cx='265' cy='335' rx='16' ry='10' fill='#451a03'/>
+  <ellipse cx='335' cy='335' rx='16' ry='10' fill='#451a03'/>
+  <circle cx='265' cy='335' r='6' fill='#1c1917'/>
+  <circle cx='335' cy='335' r='6' fill='#1c1917'/>
+  <circle cx='267' cy='333' r='2' fill='#ffffff'/>
+  <circle cx='337' cy='333' r='2' fill='#ffffff'/>
+  <!-- Heavy Brow Shadow -->
+  <path d='M245 320 Q265 315 285 325' stroke='#451a03' stroke-width='6' fill='none' stroke-linecap='round'/>
+  <path d='M315 325 Q335 315 355 320' stroke='#451a03' stroke-width='6' fill='none' stroke-linecap='round'/>
+
+  <!-- Thin Mustache & Stern Mouth -->
+  <path d='M275 395 Q300 400 325 395' stroke='#475569' stroke-width='3' fill='none'/>
+  <path d='M275 410 Q300 412 325 410' stroke='#854d0e' stroke-width='3' fill='none'/>
+
+  <!-- Top Badge -->
+  <rect x='30' y='30' width='160' height='32' rx='16' fill='rgba(0,0,0,0.7)' stroke='#e2e8f0' stroke-width='1.5'/>
+  <text x='110' y='51' fill='#f8fafc' font-family='system-ui, sans-serif' font-size='12' font-weight='800' text-anchor='middle'>EL PADRINO</text>
+</svg>

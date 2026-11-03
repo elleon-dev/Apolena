@@ -1,0 +1,29 @@
+{
+  "template_id": "cyberpunk-rebel",
+  "name": "Hacker Cyberpunk 2077",
+  "category": "Futurista",
+  "species_compatibility": "both",
+  "lighting_angle": "neon_rim_cyan_magenta",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a cybernetic pet in a futuristic high-collar leather bomber jacket with glowing neon circuit embroidery, futuristic city rain reflections, cinematic blade runner aesthetic, sharp photorealistic fur",
+    "negative": "deformed, blurry, watermark, human ears"
+  },
+  "inference_parameters": {
+    "strength": 0.92,
+    "guidance_scale": 3.7,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

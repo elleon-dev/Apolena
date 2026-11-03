@@ -1,0 +1,29 @@
+{
+  "template_id": "renaissance-duke",
+  "name": "Duque del Renacimiento",
+  "category": "Arte Clásico",
+  "species_compatibility": "both",
+  "lighting_angle": "rembrandt_soft",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a noble renaissance pet portrait painted by a Dutch master, wearing a ruffled white ruff collar, embroidered brocade doublet with pearls and gemstones, museum canvas texture, exquisite lighting",
+    "negative": "photorealistic modern, lowres, weird eyes, distorted"
+  },
+  "inference_parameters": {
+    "strength": 0.93,
+    "guidance_scale": 3.9,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

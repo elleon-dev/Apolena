@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <radialGradient id="bg-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#292524" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#05070c" stop-opacity="1" />
+    </radialGradient>
+    <linearGradient id="suit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fafaf9" />
+      <stop offset="100%" stop-color="#1c1917" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="600" height="800" fill="url(#bg-grad)" />
+  
+  <!-- Subtle Canvas Texture Grid -->
+  <rect width="600" height="800" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+
+  <!-- Pedestal / Torso Base -->
+  <path d="M100 800 L120 480 Q300 450 480 480 L500 800 Z" fill="url(#suit-grad)" />
+
+  <!-- Shoulders & Coat Jacket -->
+  <path d="M130 520 L220 470 L260 550 L190 750 Z" fill="#1c1917" opacity="0.95" />
+  <path d="M470 520 L380 470 L340 550 L410 750 Z" fill="#1c1917" opacity="0.95" />
+
+  <!-- Shirt V-neck -->
+  <polygon points="260,460 340,460 300,580" fill="#ffffff" />
+
+  <!-- Tie / Neckerchief / Badge -->
+  <polygon points="290,480 310,480 316,590 300,620 284,590" fill="#ef4444" />
+  
+  <!-- Collar Trim -->
+  <polygon points="260,460 300,500 275,505" fill="#ffffff" opacity="0.9" />
+  <polygon points="340,460 300,500 325,505" fill="#ffffff" opacity="0.9" />
+
+  <!-- Inpainting Mask Zone Placeholder / Guide Oval -->
+  <ellipse cx="300" cy="270" rx="140" ry="160" fill="none" stroke="rgba(245, 158, 11, 0.4)" stroke-width="3" stroke-dasharray="8 6" />
+  <ellipse cx="300" cy="270" rx="130" ry="150" fill="rgba(0,0,0,0.35)" />
+
+  <!-- Head Guide Silhouette -->
+  <circle cx="300" cy="240" r="85" fill="rgba(255,255,255,0.06)" />
+  <path d="M240 180 Q220 120 260 145 Z" fill="rgba(255,255,255,0.08)" />
+  <path d="M360 180 Q380 120 340 145 Z" fill="rgba(255,255,255,0.08)" />
+  <text x="300" y="270" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="14" font-weight="600" text-anchor="middle">ZONA DE ENCAJE FACIAL</text>
+  <text x="300" y="295" fill="rgba(245, 158, 11, 0.8)" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">FLUX Inpainting Area</text>
+
+  <!-- Title & Badge at Bottom -->
+  <rect x="40" y="40" width="120" height="28" rx="14" fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.15)" />
+  <text x="100" y="58" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle">GOURMET</text>
+</svg>

@@ -1,0 +1,29 @@
+{
+  "template_id": "police-officer",
+  "name": "Oficial de Policía K-9",
+  "category": "Heroico & Servicio",
+  "species_compatibility": "both",
+  "lighting_angle": "dramatic_direct",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a brave pet in a detailed dark blue police officer uniform with golden badge, tactical utility vest, embroidered patches and police service cap, professional studio hero portrait, rich fur texture, realistic lifelike eyes",
+    "negative": "human head, low resolution, blurry, distorted, cartoon"
+  },
+  "inference_parameters": {
+    "strength": 0.9,
+    "guidance_scale": 3.6,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

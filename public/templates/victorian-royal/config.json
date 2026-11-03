@@ -1,0 +1,29 @@
+{
+  "template_id": "victorian-royal",
+  "name": "Lord / Lady Victoriano",
+  "category": "Época & Realeza",
+  "species_compatibility": "both",
+  "lighting_angle": "chiaroscuro_side",
+  "aspect_ratio": "3:4",
+  "dimensions": {
+    "width": 1024,
+    "height": 1365
+  },
+  "prompts": {
+    "positive": "a royal aristocratic pet dressed in an ornate Victorian velvet coat with gold embroidery, lace jabot collar, royal medal of honor, Rembrandt lighting, dark oil painting textured background, hyper-detailed fur",
+    "negative": "modern clothes, cartoon, blur, extra limbs, human face"
+  },
+  "inference_parameters": {
+    "strength": 0.92,
+    "guidance_scale": 3.8,
+    "num_inference_steps": 32,
+    "output_format": "png"
+  },
+  "upscaler": {
+    "model": "fal-ai/clarity-upscaler",
+    "scale": 2,
+    "resemblance": 0.85,
+    "creativity": 0.25,
+    "target_dpi": 300
+  }
+}

@@ -1,0 +1,59 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 750' width='600' height='750'>
+  <defs>
+    <radialGradient id='bgJP2' cx='50%' cy='35%' r='65%'>
+      <stop offset='0%' stop-color='#1b2e20'/>
+      <stop offset='60%' stop-color='#0c180f'/>
+      <stop offset='100%' stop-color='#020704'/>
+    </radialGradient>
+    <linearGradient id='suitJP2' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#581c87'/>
+      <stop offset='100%' stop-color='#3b0764'/>
+    </linearGradient>
+    <linearGradient id='furJP2' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#f8fafc'/>
+      <stop offset='60%' stop-color='#cbd5e1'/>
+      <stop offset='100%' stop-color='#94a3b8'/>
+    </linearGradient>
+  </defs>
+  <rect width='600' height='750' fill='url(#bgJP2)'/>
+
+  <!-- Tailored Purple Joker Suit -->
+  <path d='M90 750 L150 490 L230 520 L300 660 L370 520 L450 490 L510 750 Z' fill='url(#suitJP2)'/>
+  <polygon points='230,510 370,510 330,660 270,660' fill='#eab308'/>
+  <polygon points='260,500 340,500 300,580' fill='#0284c7'/>
+  <polygon points='290,520 310,520 315,620 300,640 285,620' fill='#16a34a'/>
+
+  <!-- Pet Fur Body seamlessly fitted in collar -->
+  <path d='M250 430 Q300 480 350 430 L340 520 L260 520 Z' fill='url(#furJP2)'/>
+
+  <!-- Pet Head with Green Fur Tuft Accents (Joker hair stylization) -->
+  <ellipse cx='300' cy='350' rx='105' ry='105' fill='url(#furJP2)'/>
+  <!-- Green highlights on ears and head fur -->
+  <path d='M200 280 Q160 210 210 190 Q240 240 230 290 Z' fill='#15803d'/>
+  <path d='M400 280 Q440 210 390 190 Q360 240 370 290 Z' fill='#15803d'/>
+  <path d='M230 240 Q300 170 370 240 Q300 200 230 240 Z' fill='#22c55e'/>
+
+  <!-- Pet Muzzle & Nose -->
+  <ellipse cx='300' cy='380' rx='48' ry='36' fill='#f1f5f9'/>
+  <path d='M285 365 Q300 360 315 365 Q300 382 285 365 Z' fill='#1c1917'/>
+
+  <!-- Iconic Red Joker Smile painted across pet whiskers -->
+  <path d='M230 380 Q300 440 370 380 Q340 420 300 420 Q260 420 230 380 Z' fill='#dc2626'/>
+  <path d='M245 392 Q300 415 355 392' stroke='#991b1b' stroke-width='3' fill='none'/>
+
+  <!-- Lifelike Expressive Dark Eyes with Gotham Shadow -->
+  <ellipse cx='260' cy='330' rx='22' ry='18' fill='#1e293b'/>
+  <ellipse cx='340' cy='330' rx='22' ry='18' fill='#1e293b'/>
+  <circle cx='260' cy='330' r='8' fill='#0f172a'/>
+  <circle cx='340' cy='330' r='8' fill='#0f172a'/>
+  <circle cx='263' cy='327' r='3' fill='#ffffff'/>
+  <circle cx='343' cy='327' r='3' fill='#ffffff'/>
+
+  <!-- Whiskers -->
+  <path d='M265 380 L195 375 M265 388 L190 390' stroke='#ffffff' stroke-width='1.5' opacity='0.8'/>
+  <path d='M335 380 L405 375 M335 388 L410 390' stroke='#ffffff' stroke-width='1.5' opacity='0.8'/>
+
+  <!-- Top Tag -->
+  <rect x='30' y='30' width='200' height='32' rx='16' fill='rgba(0,0,0,0.7)' stroke='#22c55e' stroke-width='1.5'/>
+  <text x='130' y='51' fill='#86efac' font-family='system-ui, sans-serif' font-size='11' font-weight='800' text-anchor='middle'>FUSIÓN: PET × EL JOKER</text>
+</svg>
