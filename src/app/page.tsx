@@ -1,18 +1,17 @@
-"use client";
-
-import React from "react";
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
+import SliderSection from '@/components/SliderSection';
+import ResultSection from '@/components/ResultSection';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-cream-50 text-stone-900">
-      <header>Header</header>
-      <div className="section">slider</div>
-      <div className="steps">
-        <h1>Welcome to Apolena</h1>
-      </div>
-      <div className="casos-de-exito">mostrar videos</div>
-      <div className="questions">Preguntas frecuentes</div>
-      <footer>Footer</footer>
-    </div>
+    <main className="min-h-screen bg-[#FAF6F0] text-[#1C1B1A]">
+      <Header />
+      <HeroSection />
+      <SliderSection />
+      <ResultSection />
+      <Footer />
+    </main>
   );
 }
