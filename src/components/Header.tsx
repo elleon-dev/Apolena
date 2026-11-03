@@ -1,116 +1,125 @@
 "use client";
 
-import React from "react";
-import {
-  PawPrint,
-  SlidersHorizontal,
-  Camera,
-  Palette,
-  Frame,
-  ChevronRight,
-} from "lucide-react";
-import { AIProviderId, AI_PROVIDERS } from "@/lib/types";
+import React, { useState } from "react";
+import Image from "next/image";
 
-interface HeaderProps {
-  currentStep: 1 | 2 | 3;
-  onReset: () => void;
-  selectedProvider?: AIProviderId;
-  onOpenSettings?: () => void;
-  hasActiveKey?: boolean;
-}
+export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("inicio");
 
-export function Header({
-  currentStep,
-  onReset,
-  selectedProvider = "openai",
-  onOpenSettings,
-  hasActiveKey = false,
-}: HeaderProps) {
-  const providerObj =
-    AI_PROVIDERS.find((p) => p.id === selectedProvider) || AI_PROVIDERS[0];
+  const navItems = [
+    { id: "inicio", label: "Inicio", href: "#" },
+    { id: "estilos", label: "Estilos", href: "#estilos" },
+    { id: "retrato-final", label: "Retrato Final", href: "#retrato-final" },
+    { id: "testimonios", label: "Casos de Éxito", href: "#testimonios" },
+    { id: "faq", label: "Preguntas Frecuentes", href: "#faq" },
+  ];
 
-  const steps = [
-    { num: 1, label: "Tu Mascota", icon: Camera },
-    { num: 2, label: "Estilo y Escena", icon: Palette },
-    { num: 3, label: "Retrato Final", icon: Frame },
-  ] as const;
+  const handleScrollToTop = () => {
+    setActiveSection("inicio");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-cream-200 bg-cream-50/90 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
-        {/* Brand Identity */}
-        <button
-          onClick={onReset}
-          className="flex items-center gap-3.5 text-left group focus:outline-none"
+    <header className="sticky top-0 z-50 w-full bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#E5C378]/50 transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-3">
+        
+        {/* Identidad de Marca: Redirige al Inicio */}
+        <a 
+          href="#" 
+          onClick={handleScrollToTop}
+          className="flex items-center gap-2.5 focus:outline-none group"
         >
-          <div className="w-10 h-10 rounded-xl bg-terracotta-50 border border-terracotta-100 flex items-center justify-center text-terracotta-600 transition-colors group-hover:bg-terracotta-500 group-hover:text-white">
-            <PawPrint className="w-5 h-5 stroke-[2]" />
+          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden border-2 border-[#D4A343] bg-white flex items-center justify-center p-0.5 shrink-0 transition-transform group-hover:scale-105">
+            <Image
+              src="/logo.png"
+              alt="Apolena Logo"
+              width={52}
+              height={52}
+              className="object-cover rounded-full"
+              priority
+            />
           </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="font-serif text-2xl font-semibold tracking-tight text-stone-900">
-                Apolena
-              </span>
-              <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-cream-100 text-stone-600 border border-cream-200">
-                Atelier
-              </span>
-            </div>
-            <p className="text-xs text-stone-500 hidden md:block">
-              Retratos fotográficos personalizados para mascotas
-            </p>
+          <div className="flex flex-col">
+            <span className="font-serif text-xl sm:text-2xl font-extrabold tracking-tight text-[#1C1B1A] leading-none">
+              Apolena
+            </span>
+            <span className="text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase text-[#D4A343] mt-0.5">
+              RETRATOS PERSONALIZADOS
+            </span>
           </div>
-        </button>
+        </a>
 
-        {/* Center Stepper */}
-        <nav
-          aria-label="Progreso del retrato"
-          className="hidden sm:flex items-center gap-1.5 text-xs"
-        >
-          {steps.map((s, idx) => {
-            const Icon = s.icon;
-            const isActive = currentStep === s.num;
-            const isDone = currentStep > s.num;
-
+        {/* Navegación Desktop */}
+        <nav className="hidden md:flex items-center gap-1 bg-[#F3EBE0] px-3 py-1.5 rounded-full border border-[#E5C378]/40">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
             return (
-              <React.Fragment key={s.num}>
-                <div
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full transition-all ${
-                    isActive
-                      ? "bg-stone-900 text-white font-medium shadow-soft"
-                      : isDone
-                        ? "bg-sage-50 text-sage-700 border border-sage-100 font-medium"
-                        : "text-stone-500 bg-transparent"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{s.label}</span>
-                </div>
-                {idx < steps.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-stone-300" />
-                )}
-              </React.Fragment>
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setActiveSection(item.id)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                  isActive
+                    ? "bg-white text-[#D4A343] shadow-xs"
+                    : "text-[#1C1B1A] hover:bg-white/60 hover:text-[#D4A343]"
+                }`}
+              >
+                {item.label}
+              </a>
             );
           })}
         </nav>
 
-        {/* Right Studio Configuration */}
-        {onOpenSettings && (
+        {/* Acción de Reinicio Rápido */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={onOpenSettings}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-xs font-medium text-stone-700 transition-all shadow-soft"
-            title="Configurar credenciales de OpenAI y Google Gemini"
+            onClick={handleScrollToTop}
+            style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
+            className="text-xs sm:text-sm font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-md text-center whitespace-nowrap active:scale-95 transition-transform"
           >
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: hasActiveKey ? "#3B6E52" : "#C85A32" }}
-            />
-            <span className="hidden md:inline text-stone-800">
-              Credenciales API
-            </span>
-            <SlidersHorizontal className="w-3.5 h-3.5 text-stone-500" />
+            Nuevo Retrato
           </button>
-        )}
+
+          {/* Menú Móvil */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden px-3 py-2 rounded-full bg-[#F3EBE0] border border-[#E5C378]/40 text-xs font-bold text-[#1C1B1A]"
+            aria-label="Menú"
+          >
+            {isMenuOpen ? "Cerrar" : "Menú"}
+          </button>
+        </div>
+
       </div>
+
+      {/* Menú Desplegable Móvil */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-[#FAF6F0] border-b border-[#E5C378]/40 px-4 py-3 space-y-2">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => {
+                  setActiveSection(item.id);
+                  setIsMenuOpen(false);
+                }}
+                className={`block px-4 py-2.5 rounded-xl text-sm font-bold ${
+                  isActive
+                    ? "bg-white text-[#D4A343] border border-[#E5C378]/40"
+                    : "text-[#1C1B1A] bg-[#F3EBE0]/70"
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 }
+
+export default Header;
