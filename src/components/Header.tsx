@@ -5,6 +5,14 @@ import Image from "next/image";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("estilos"); // Sección activa por defecto
+
+  const navItems = [
+    { id: "estilos", label: "Estilos", href: "#estilos" },
+    { id: "retrato-final", label: "Retrato Final", href: "#retrato-final" },
+    { id: "testimonios", label: "Casos de Éxito", href: "#testimonios" },
+    { id: "faq", label: "Preguntas Frecuentes", href: "#faq" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#E5C378]/50 transition-all">
@@ -32,35 +40,30 @@ export function Header() {
           </div>
         </a>
 
-        <nav className="hidden md:flex items-center gap-1 bg-[#F3EBE0] px-4 py-2 rounded-full border border-[#E5C378]/40">
-          <a
-            href="#estilos"
-            className="px-4 py-2 rounded-full text-xs font-bold text-[#1C1B1A] hover:bg-white hover:text-[#D4A343] transition-all"
-          >
-            Estilos
-          </a>
-          <a
-            href="#retrato-final"
-            className="px-4 py-2 rounded-full text-xs font-bold text-[#1C1B1A] hover:bg-white hover:text-[#D4A343] transition-all"
-          >
-            Retrato Final
-          </a>
-          <a
-            href="#testimonios"
-            className="px-4 py-2 rounded-full text-xs font-bold text-[#1C1B1A] hover:bg-white hover:text-[#D4A343] transition-all"
-          >
-            Casos de Éxito
-          </a>
-          <a
-            href="#faq"
-            className="px-4 py-2 rounded-full text-xs font-bold text-[#1C1B1A] hover:bg-white hover:text-[#D4A343] transition-all"
-          >
-            Preguntas Frecuentes
-          </a>
+        {/* Navegación Desktop con Estado Activo */}
+        <nav className="hidden md:flex items-center gap-1 bg-[#F3EBE0] px-3 py-1.5 rounded-full border border-[#E5C378]/40">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setActiveSection(item.id)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                  isActive
+                    ? "bg-white text-[#D4A343] shadow-xs"
+                    : "text-[#1C1B1A] hover:bg-white/60 hover:text-[#D4A343]"
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </nav>
 
+        {/* Acciones Móvil y Desktop */}
         <div className="flex items-center gap-2">
-
+          {/* Botón CTA Dorado Permanente */}
           <a
             href="#crear"
             style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
@@ -69,6 +72,7 @@ export function Header() {
             Crear Retrato
           </a>
 
+          {/* Botón Menú Móvil */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden px-3 py-2 rounded-full bg-[#F3EBE0] border border-[#E5C378]/40 text-xs font-bold text-[#1C1B1A]"
@@ -80,36 +84,29 @@ export function Header() {
 
       </div>
 
+      {/* Menú Desplegable Móvil */}
       {isMenuOpen && (
         <div className="md:hidden bg-[#FAF6F0] border-b border-[#E5C378]/40 px-4 py-3 space-y-2">
-          <a
-            href="#estilos"
-            onClick={() => setIsMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-[#1C1B1A] bg-[#F3EBE0]/70"
-          >
-            Estilos
-          </a>
-          <a
-            href="#retrato-final"
-            onClick={() => setIsMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-[#1C1B1A] bg-[#F3EBE0]/70"
-          >
-            Retrato Final
-          </a>
-          <a
-            href="#testimonios"
-            onClick={() => setIsMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-[#1C1B1A] bg-[#F3EBE0]/70"
-          >
-            Casos de Éxito
-          </a>
-          <a
-            href="#faq"
-            onClick={() => setIsMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-bold text-[#1C1B1A] bg-[#F3EBE0]/70"
-          >
-            Preguntas Frecuentes
-          </a>
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => {
+                  setActiveSection(item.id);
+                  setIsMenuOpen(false);
+                }}
+                className={`block px-4 py-2.5 rounded-xl text-sm font-bold ${
+                  isActive
+                    ? "bg-white text-[#D4A343] border border-[#E5C378]/40"
+                    : "text-[#1C1B1A] bg-[#F3EBE0]/70"
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </div>
       )}
     </header>
