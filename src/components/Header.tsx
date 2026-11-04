@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import Image from "next/image";
+import {useRouter} from "next/navigation";
+import {SessionUser} from "@/lib/auth";
 
 export function Header() {
+  const router = useRouter();
+
+  const [user, setUser] = useState<SessionUser | null>(null);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("inicio");
+
 
   const navItems = [
     { id: "inicio", label: "Inicio", href: "#" },
@@ -18,6 +25,22 @@ export function Header() {
   const handleScrollToTop = () => {
     setActiveSection("inicio");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.user) setUser(data.user);
+        })
+        .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    router.push("/");
+    router.refresh();
   };
 
   return (
