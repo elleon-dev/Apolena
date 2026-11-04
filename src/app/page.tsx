@@ -1,6 +1,6 @@
-import Header from '@/components/Header';
-import SliderSection from '@/components/SliderSection';
-import ResultSection from '@/components/ResultSection';
+import Header from "@/components/Header";
+import SliderSection from "@/components/SliderSection";
+import ResultSection from "@/components/ResultSection";
 
 export default function Home() {
   return (

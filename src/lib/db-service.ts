@@ -6,17 +6,10 @@ import { PRINT_PRESETS, FRAME_OPTIONS } from "@/lib/print-export";
 import { dispatchEmailWithResend } from "@/lib/email-service";
 
 export type OrderStatus =
-  | "manufacturing"
-  | "in_transit"
-  | "delivered"
-  | "completed"
-  | "cancelled";
+  "manufacturing" | "in_transit" | "delivered" | "completed" | "cancelled";
 
 export type PaymentStatus =
-  | "partial_pending"
-  | "partial_paid"
-  | "paid_full"
-  | "refunded";
+  "partial_pending" | "partial_paid" | "paid_full" | "refunded";
 
 export type PaymentMethod = "yape" | "plin" | "bank_transfer";
 
@@ -567,9 +560,7 @@ export async function findProfileByEmail(
     }
   }
   const db = await readLocalDb();
-  return (
-    db.profiles.find((p) => p.email.toLowerCase() === cleanEmail) || null
-  );
+  return db.profiles.find((p) => p.email.toLowerCase() === cleanEmail) || null;
 }
 
 export async function findProfileById(
@@ -653,9 +644,7 @@ export async function createProfile(input: {
 // PRODUCTS & SETTINGS REPOSITORY
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function getProducts(
-  onlyActive = true,
-): Promise<ProductRecord[]> {
+export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.product.findMany({

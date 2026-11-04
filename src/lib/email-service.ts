@@ -122,7 +122,10 @@ export async function dispatchEmailWithResend(
 
     if (!response.ok) {
       const errText = await response.text();
-      return { sent: false, error: `Resend HTTP ${response.status}: ${errText}` };
+      return {
+        sent: false,
+        error: `Resend HTTP ${response.status}: ${errText}`,
+      };
     }
 
     return { sent: true };

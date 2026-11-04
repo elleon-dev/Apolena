@@ -18,8 +18,8 @@ export function isDatabaseConfigured(): boolean {
   const url = process.env.DATABASE_URL?.trim();
   return Boolean(
     url &&
-      (url.startsWith("postgresql://") || url.startsWith("postgres://")) &&
-      !url.includes("YOUR_PASSWORD") &&
-      !url.includes("placeholder"),
+    (url.startsWith("postgresql://") || url.startsWith("postgres://")) &&
+    !url.includes("YOUR_PASSWORD") &&
+    !url.includes("placeholder"),
   );
 }

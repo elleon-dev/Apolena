@@ -15,6 +15,7 @@ Este skill define la arquitectura de órdenes, paquetes y el flujo de seguimient
 ## 1. Identificadores de Orden y `tracking_id`
 
 Toda orden generada en `orders` posee:
+
 - `id`: UUID interno.
 - `order_code`: Código correlativo legible de orden (ej. `ORD-2026-0001`).
 - `tracking_id`: Código único e indexado de seguimiento (ej. `APO-849201` o `TRK-APOLENA-XXXX`) entregado al usuario por email y visible en su panel de administración (`/dashboard/orders`).
@@ -27,26 +28,30 @@ Toda orden generada en `orders` posee:
 El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de **3 pasos operativos**, seguidos del **cierre exitoso** al completar el 50% restante del pago:
 
 ### Paso 1 — Fabricación (`status = "manufacturing"`)
-- **Descripción para el usuario:** *"En fabricación — Estamos imprimiendo y preparando el cuadro personalizado de tu mascota con acabado de galería."*
+
+- **Descripción para el usuario:** _"En fabricación — Estamos imprimiendo y preparando el cuadro personalizado de tu mascota con acabado de galería."_
 - Se activa al crearse/confirmarse la orden con el 50% de adelanto.
 - Timestamps asociados: `manufacturing_started_at`.
 
 ### Paso 2 — En Camino (`status = "in_transit"`)
-- **Descripción para el usuario:** *"En camino — Tu pedido ya salió de nuestro taller hacia tu dirección de entrega."*
+
+- **Descripción para el usuario:** _"En camino — Tu pedido ya salió de nuestro taller hacia tu dirección de entrega."_
 - El administrador actualiza el paquete (`order_packages`) y la orden a `in_transit`, pudiendo adjuntar `courier`, `carrier_phone` y `estimated_delivery`.
 - Timestamps asociados: `shipped_at`.
 
 ### Paso 3 — Entregado (`status = "delivered"`)
-- **Descripción para el usuario:** *"Entregado — Tu pedido llegó a tu domicilio. Pendiente de cierre del 50% restante contraentrega."*
+
+- **Descripción para el usuario:** _"Entregado — Tu pedido llegó a tu domicilio. Pendiente de cierre del 50% restante contraentrega."_
 - El producto ha sido entregado físicamente al cliente.
 - Timestamps asociados: `delivered_at`.
 
 ### Culminación del Proceso — Exitoso (`status = "completed"`)
+
 - **Condición obligatoria:** La orden se encuentra en `delivered` **Y** el usuario ha completado el pago del **segundo 50% contraentrega** (`payment_status === "paid_full"`).
 - **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y dando por culminado el proceso de principio a fin.
 - Timestamps asociados: `completed_at`.
 
-*(Estado adicional de excepción: `cancelled` si una orden es anulada por administración antes de su entrega).*
+_(Estado adicional de excepción: `cancelled` si una orden es anulada por administración antes de su entrega)._
 
 ---
 

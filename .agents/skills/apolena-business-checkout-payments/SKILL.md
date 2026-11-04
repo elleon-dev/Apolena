@@ -15,6 +15,7 @@ Este skill define la lógica financiera y de checkout inalterable de Apolena, ba
 ## 1. Flujo de Checkout del Comprador
 
 Una vez que el usuario genera y selecciona el retrato de su mascota:
+
 1. **Datos de Contacto y Ubicación para Delivery (`order_shippings`):**
    - Se solicita: Nombre completo (`name`), Teléfono/WhatsApp (`phone`), Email (`email`), Dirección exacta (`address`), Departamento (`department`), Provincia (`province`), Distrito (`district`), Referencia de ubicación (`reference`) y Documento (`document_type`: DNI/CE/RUC, `document_number`).
 2. **Datos de Comprobante (`order_invoices`):**
@@ -31,6 +32,7 @@ Una vez que el usuario genera y selecciona el retrato de su mascota:
 ## 2. Métodos de Pago Soportados (`payment_method`)
 
 Por el momento, todos los pagos operan bajo modalidad manual verificable / contraentrega usando exclusivamente:
+
 - `yape`: Pago vía Yape (QR / Número configurado en `platform_settings`).
 - `plin`: Pago vía Plin (QR / Número configurado en `platform_settings`).
 - `bank_transfer`: Transferencia bancaria (BCP, Interbank, BBVA, CCI configurados en `platform_settings`).
@@ -42,6 +44,7 @@ Por el momento, todos los pagos operan bajo modalidad manual verificable / contr
 Cada orden tiene un ciclo financiero de **2 pagos (50% + 50%)** respaldados en la tabla `payment_transactions`:
 
 ### Etapa 1 — Pago del 50% de Adelanto (`payment_stage = "advance_50"`)
+
 - Al generar la orden en el checkout, el usuario abona el **50% del total** (`advance_amount`) con Yape, Plin o Transferencia Bancaria.
 - Se crea un registro en `payment_transactions` con:
   - `order_id`: ID de la orden.
@@ -55,6 +58,7 @@ Cada orden tiene un ciclo financiero de **2 pagos (50% + 50%)** respaldados en l
   - Inicia en `"partial_pending"` al enviar la orden, y pasa a `"partial_paid"` (50% pagado) cuando el Admin valida el adelanto.
 
 ### Etapa 2 — Pago del 50% Restante Contraentrega (`payment_stage = "final_50"`)
+
 - Una vez que el pedido llega al paso **Entregado (`delivered`)**, el usuario completa el **otro 50%** (`remaining_amount`) al recibir el producto (vía Yape, Plin o Transferencia).
 - Se registra la segunda transacción en `payment_transactions` con `payment_stage = "final_50"`, `amount = remaining_amount` y `status = "verified"`.
 - Estado de pago en `orders.payment_status` pasa a `"paid_full"` (100% pagado).

@@ -10,10 +10,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     if (!user) {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "No autenticado." },
-          { status: 401 },
-        );
+        return NextResponse.json({ error: "No autenticado." }, { status: 401 });
       }
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
@@ -45,7 +42,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Si el usuario ya está autenticado y visita /auth/login o /auth/register
-  if (pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register")) {
+  if (
+    pathname.startsWith("/auth/login") ||
+    pathname.startsWith("/auth/register")
+  ) {
     if (user) {
       const target = user.role === "admin" ? "/admin" : "/dashboard";
       return NextResponse.redirect(new URL(target, request.url));

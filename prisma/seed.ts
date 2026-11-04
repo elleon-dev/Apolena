@@ -55,7 +55,8 @@ async function main() {
       title: DEFAULT_WALL_ART_PRODUCT.title,
       description: DEFAULT_WALL_ART_PRODUCT.description,
       base_price: DEFAULT_WALL_ART_PRODUCT.base_price,
-      customization_config: DEFAULT_WALL_ART_PRODUCT.customization_config as any,
+      customization_config:
+        DEFAULT_WALL_ART_PRODUCT.customization_config as any,
       specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
     },
     create: {
@@ -68,7 +69,8 @@ async function main() {
       status: "active",
       stock: 999,
       specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
-      customization_config: DEFAULT_WALL_ART_PRODUCT.customization_config as any,
+      customization_config:
+        DEFAULT_WALL_ART_PRODUCT.customization_config as any,
       images: {
         create: DEFAULT_WALL_ART_PRODUCT.images.map((img) => ({
           url: img.url,

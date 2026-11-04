@@ -46,7 +46,6 @@ export function SliderSection() {
   return (
     <section id="estilos" className="py-12 sm:py-16 bg-[#FAF6F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        
         {/* Encabezado del Paso 2 */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
           <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#D4A343] bg-[#F3EBE0] px-3 py-1 rounded-full border border-[#E5C378]/40">
@@ -56,7 +55,8 @@ export function SliderSection() {
             Catálogo de Celebridades
           </h2>
           <p className="text-xs sm:text-sm text-[#6B655F] mt-2">
-            Desliza para explorar los personajes disponibles para personalizar el cuadro de tu mascota.
+            Desliza para explorar los personajes disponibles para personalizar
+            el cuadro de tu mascota.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export function SliderSection() {
 
                 <button
                   type="button"
-                  style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
+                  style={{ backgroundColor: "#D4A343", color: "#FFFFFF" }}
                   className="w-full py-2.5 text-xs font-bold rounded-full shadow-xs active:scale-95 transition-transform"
                 >
                   Seleccionar Personaje
@@ -99,7 +99,6 @@ export function SliderSection() {
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

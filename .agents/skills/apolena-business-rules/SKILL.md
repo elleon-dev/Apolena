@@ -12,6 +12,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 > Antes de realizar cualquier modificación en el código, el agente DEBE consultar los skills de negocio aplicables.
 > Si una solicitud o cambio requiere modificar o romper alguna regla contenida en estos skills, el agente **NO DEBE APLICAR EL CAMBIO AUTOMÁTICAMENTE**.
 > En su lugar, DEBE emitir una **alerta explícita al usuario** indicando:
+>
 > 1. Qué regla de negocio se estaría modificando.
 > 2. Por qué el cambio solicitado afecta la lógica establecida.
 > 3. Solicitar la aprobación explícita del usuario para actualizar el skill y la lógica de negocio.
@@ -21,6 +22,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ## 📚 Skills de Dominio de Negocio Disponibles
 
 ### 🔐 Dominio 1: Autenticación, Perfiles y Control de Acceso (RBAC)
+
 1. **`apolena-business-auth-rbac`:**
    - Autenticación persistida con Prisma (`profiles`).
    - Dos roles oficiales: `user` (comprador/cliente) y `admin` (administrador de Apolena).
@@ -31,6 +33,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ---
 
 ### 🎨 Dominio 2: Catálogo Escalable, Fusión IA y Personalizaciones Extensibles
+
 2. **`apolena-business-catalog-customization`:**
    - Tablas centrales: `products`, `product_images`, `generation_jobs`.
    - Producto inicial: **Cuadros Personalizados para Mascotas** (`slug: "personalized-wall-art"`).
@@ -45,6 +48,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ---
 
 ### 💳 Dominio 3: Checkout y Pagos Fraccionados 50% / 50%
+
 3. **`apolena-business-checkout-payments`:**
    - Tablas centrales: `orders`, `payment_transactions`, `platform_settings`.
    - **Regla de Pago 50% / 50% (Adelanto + Contraentrega):**
@@ -55,6 +59,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ---
 
 ### 🚚 Dominio 4: Logística, Tracking ID y Máquina de Estados (3 Pasos + Cierre Exitoso)
+
 4. **`apolena-business-logistics-tracking`:**
    - Tablas centrales: `orders`, `order_shippings`, `order_packages`, `order_items`.
    - **Tracking ID Único (`tracking_id`):** Cada orden genera un código único de seguimiento público y amigable (ej. `APO-2026-XXXXXX`) con el cual el usuario puede rastrear su pedido en tiempo real.
@@ -68,6 +73,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ---
 
 ### 📧 Dominio 5: Notificaciones por Email, Facturación, Reseñas y Configuración
+
 5. **`apolena-business-notifications-invoicing`:**
    - Tablas centrales: `email_queue`, `order_invoices`, `reviews`, `platform_settings`.
    - **Doble Notificación Obligatoria al Crear Orden:**

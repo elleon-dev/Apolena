@@ -42,12 +42,12 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 
 ## 3. Matriz de Rutas Privadas y Públicas
 
-| Ruta / Prefijo | Acceso | Comportamiento si no cumple |
-| :--- | :--- | :--- |
-| `/`, `/products/*`, `/track/*` | **Público** | Accesible para cualquier visitante (permite explorar, probar fusión y rastrear por `tracking_id`). |
-| `/auth/login`, `/auth/register` | **Público (Solo invitados)** | Si ya tiene sesión activa, redirige a `/dashboard` (o `/admin` si es administrador). |
-| `/dashboard`, `/dashboard/*` | **Privado (`user` y `admin`)** | Si no está autenticado, redirige a `/auth/login?callbackUrl=...`. Muestra las órdenes, tracking y retratos del propio usuario. |
-| `/admin`, `/admin/*` | **Privado Exclusivo (`admin`)** | Si no está autenticado → redirige a `/auth/login`. Si está autenticado con `role === "user"` → redirige a `/dashboard` (código 403 en `/api/admin/*`). |
+| Ruta / Prefijo                  | Acceso                          | Comportamiento si no cumple                                                                                                                            |
+| :------------------------------ | :------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`, `/products/*`, `/track/*`  | **Público**                     | Accesible para cualquier visitante (permite explorar, probar fusión y rastrear por `tracking_id`).                                                     |
+| `/auth/login`, `/auth/register` | **Público (Solo invitados)**    | Si ya tiene sesión activa, redirige a `/dashboard` (o `/admin` si es administrador).                                                                   |
+| `/dashboard`, `/dashboard/*`    | **Privado (`user` y `admin`)**  | Si no está autenticado, redirige a `/auth/login?callbackUrl=...`. Muestra las órdenes, tracking y retratos del propio usuario.                         |
+| `/admin`, `/admin/*`            | **Privado Exclusivo (`admin`)** | Si no está autenticado → redirige a `/auth/login`. Si está autenticado con `role === "user"` → redirige a `/dashboard` (código 403 en `/api/admin/*`). |
 
 ---
 

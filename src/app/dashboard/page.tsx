@@ -236,7 +236,10 @@ export default function UserDashboardPage() {
                         <span>S/ {order.total_amount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sage-700 font-medium">
-                        <span>1er 50% (Adelanto {order.payment_method.toUpperCase()}):</span>
+                        <span>
+                          1er 50% (Adelanto {order.payment_method.toUpperCase()}
+                          ):
+                        </span>
                         <span>S/ {order.advance_amount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-stone-700 font-medium">

@@ -184,7 +184,9 @@ export default function personalizedWallArt() {
   const readAndCompressImage = useCallback(
     (file: File, onDone: (dataUrl: string) => void) => {
       if (!file.type.startsWith("image/")) {
-        setFusionError("Por favor selecciona una imagen válida (JPG, PNG o WEBP).");
+        setFusionError(
+          "Por favor selecciona una imagen válida (JPG, PNG o WEBP).",
+        );
         return;
       }
 
@@ -1724,7 +1726,8 @@ export default function personalizedWallArt() {
                       <>
                         <Download className="w-4 h-4" />
                         <span>
-                          Descargar Muestra Digital {selectedPrintPreset.cmDimensions}
+                          Descargar Muestra Digital{" "}
+                          {selectedPrintPreset.cmDimensions}
                         </span>
                       </>
                     )}

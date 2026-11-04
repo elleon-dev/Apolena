@@ -60,7 +60,7 @@ Para que Apolena escale a nuevas personalizaciones (ej. **marcos para cada cuadr
     "frame": {
       "id": "wood-oak",
       "name": "Marco de Madera Roble Natural",
-      "price_modifier": 35.00
+      "price_modifier": 35.0
     },
     "notes": "Ojos bien iluminados"
   }

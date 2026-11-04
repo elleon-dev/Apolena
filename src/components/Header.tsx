@@ -1,9 +1,11 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import {useRouter} from "next/navigation";
-import {SessionUser} from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { SessionUser } from "@/lib/auth";
+import Link from "next/link";
+import { LogOut, PackageSearch, Shield, User } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -12,7 +14,6 @@ export function Header() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("inicio");
-
 
   const navItems = [
     { id: "inicio", label: "Inicio", href: "#" },
@@ -29,11 +30,11 @@ export function Header() {
 
   useEffect(() => {
     fetch("/api/auth/me")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.user) setUser(data.user);
-        })
-        .catch(() => {});
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {});
   }, []);
 
   const handleLogout = async () => {
@@ -46,7 +47,6 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#E5C378]/50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-3">
-
         {/* Identidad de Marca: Redirige al Inicio */}
         <a
           href="#"
@@ -98,11 +98,58 @@ export function Header() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleScrollToTop}
-            style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
+            style={{ backgroundColor: "#D4A343", color: "#FFFFFF" }}
             className="text-xs sm:text-sm font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-md text-center whitespace-nowrap active:scale-95 transition-transform"
           >
             Nuevo Retrato
           </button>
+
+          <Link
+            href="/track"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-xs font-medium text-stone-700 transition-colors shadow-soft"
+          >
+            <PackageSearch className="w-3.5 h-3.5 text-terracotta-600" />
+            <span className="hidden xl:inline">Tracking</span>
+          </Link>
+
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-xs font-medium text-stone-800 transition-colors shadow-soft"
+              >
+                <User className="w-3.5 h-3.5 text-terracotta-600" />
+                <span>Mi Panel</span>
+              </Link>
+
+              {/* REGLA DE GUARDIA RBAC: Solo visible para administradores */}
+              {user.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium transition-colors shadow-soft"
+                >
+                  <Shield className="w-3.5 h-3.5 text-terracotta-400" />
+                  <span>Admin</span>
+                </Link>
+              )}
+
+              <button
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                className="p-2 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-stone-500 hover:text-stone-900 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium transition-colors shadow-soft"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Ingresar</span>
+            </Link>
+          )}
 
           {/* Menú Móvil */}
           <button
@@ -113,7 +160,6 @@ export function Header() {
             {isMenuOpen ? "Cerrar" : "Menú"}
           </button>
         </div>
-
       </div>
 
       {/* Menú Desplegable Móvil */}

@@ -14,7 +14,6 @@ export function HeroSection() {
   return (
     <section className="py-10 sm:py-16 bg-[#FAF6F0] border-b border-[#E5C378]/30">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        
         {/* Titular Principal */}
         <div className="space-y-3">
           <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#D4A343] bg-[#F3EBE0] px-3 py-1 rounded-full border border-[#E5C378]/40">
@@ -24,7 +23,8 @@ export function HeroSection() {
             Convierte a tu mascota en una obra de arte
           </h1>
           <p className="text-xs sm:text-base text-[#6B655F] max-w-xl mx-auto">
-            Sube una foto clara de tu perro o gato y selecciona la celebridad o personaje histórico en el que deseas transformarlo.
+            Sube una foto clara de tu perro o gato y selecciona la celebridad o
+            personaje histórico en el que deseas transformarlo.
           </p>
         </div>
 
@@ -37,7 +37,9 @@ export function HeroSection() {
 
             <div>
               <p className="text-sm font-bold text-[#1C1B1A]">
-                {selectedFile ? selectedFile.name : "Selecciona o arrastra la foto de tu mascota"}
+                {selectedFile
+                  ? selectedFile.name
+                  : "Selecciona o arrastra la foto de tu mascota"}
               </p>
               <p className="text-[11px] text-[#6B655F] mt-1">
                 Formatos JPG, PNG (Recomendado buena iluminación)
@@ -63,14 +65,13 @@ export function HeroSection() {
           <div className="pt-2 animate-fade-in">
             <a
               href="#estilos"
-              style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
+              style={{ backgroundColor: "#D4A343", color: "#FFFFFF" }}
               className="inline-block text-xs sm:text-sm font-extrabold px-8 py-3.5 rounded-full shadow-lg text-center"
             >
               Continuar a Seleccionar Personaje
             </a>
           </div>
         )}
-
       </div>
     </section>
   );

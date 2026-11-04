@@ -33,18 +33,38 @@ export function ResultSection({
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [isSliding, setIsSliding] = useState(false);
 
-  const [selectedPrintSize, setSelectedPrintSize] = useState<"a4" | "medium" | "large">("medium");
+  const [selectedPrintSize, setSelectedPrintSize] = useState<
+    "a4" | "medium" | "large"
+  >("medium");
 
   const printSizes = {
-    a4: { id: "a4", name: "Cuadro A4 (21 × 29.7 cm)", dpi: "300 DPI", use: "Escritorio o repisa" },
-    medium: { id: "medium", name: "Lienzo Mediano (30 × 40 cm)", dpi: "300 DPI", use: "Ideal para sala o dormitorio" },
-    large: { id: "large", name: "Lienzo Grande (50 × 70 cm)", dpi: "300 DPI", use: "Impacto total en pared principal" },
+    a4: {
+      id: "a4",
+      name: "Cuadro A4 (21 × 29.7 cm)",
+      dpi: "300 DPI",
+      use: "Escritorio o repisa",
+    },
+    medium: {
+      id: "medium",
+      name: "Lienzo Mediano (30 × 40 cm)",
+      dpi: "300 DPI",
+      use: "Ideal para sala o dormitorio",
+    },
+    large: {
+      id: "large",
+      name: "Lienzo Grande (50 × 70 cm)",
+      dpi: "300 DPI",
+      use: "Impacto total en pared principal",
+    },
   };
 
   const handleSliderMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!isSliding || viewMode !== "compare") return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const x = Math.max(
+      0,
+      Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
+    );
     setSliderPos(x);
   };
 
@@ -56,14 +76,18 @@ export function ResultSection({
          Disparar aquí la petición POST al endpoint de pedidos /checkout con la medida elegida, 
          la imagen generada y los datos del cliente.
       */
-      console.log(`[BACKEND HOOK]: Pedido iniciado para medida: ${selectedPrintSize}`);
+      console.log(
+        `[BACKEND HOOK]: Pedido iniciado para medida: ${selectedPrintSize}`,
+      );
     }
   };
 
   return (
-    <section id="retrato-final" className="py-12 sm:py-16 bg-[#FAF6F0] border-t border-[#E5C378]/30">
+    <section
+      id="retrato-final"
+      className="py-12 sm:py-16 bg-[#FAF6F0] border-t border-[#E5C378]/30"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-8">
-        
         {/* Encabezado */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#E5C378]/40">
           <div>
@@ -71,10 +95,12 @@ export function ResultSection({
               Paso 3: Retrato Final
             </span>
             <h2 className="font-serif text-2xl sm:text-4xl font-extrabold text-[#1C1B1A]">
-              {petName} — <span className="text-[#D4A343]">{characterTitle}</span>
+              {petName} —{" "}
+              <span className="text-[#D4A343]">{characterTitle}</span>
             </h2>
             <p className="text-xs sm:text-sm text-[#6B655F] mt-1">
-              Visualiza el resultado procesado por IA y selecciona el formato para encargar tu cuadro.
+              Visualiza el resultado procesado por IA y selecciona el formato
+              para encargar tu cuadro.
             </p>
           </div>
 
@@ -90,10 +116,8 @@ export function ResultSection({
 
         {/* Layout Principal: Visor + Panel de Pedido */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
           {/* Visor de Arte (8 Columnas) */}
           <div className="lg:col-span-8 space-y-4">
-            
             {/* Selector de Vistas */}
             <div className="flex items-center gap-2 p-1.5 rounded-full bg-[#F3EBE0] border border-[#E5C378]/40 w-fit">
               <button
@@ -121,7 +145,6 @@ export function ResultSection({
 
             {/* Contenedor del Lienzo A4 */}
             <div className="relative rounded-3xl bg-[#F3EBE0] border border-[#E5C378]/50 p-4 sm:p-6 flex items-center justify-center overflow-hidden shadow-xs">
-              
               {/* BACKEND INTEGRATION NOTE: 
                   Estado 1: Renderizado cuando isLoading=true (petición a la API en progreso).
               */}
@@ -199,13 +222,11 @@ export function ResultSection({
                 */
                 <div className="w-full max-w-[420px] aspect-[3/4] bg-white/50 border border-[#E5C378]/30 rounded-2xl shadow-inner"></div>
               )}
-
             </div>
           </div>
 
           {/* Panel Lateral: Selección de Medida y Pedido (4 Columnas) */}
           <div className="lg:col-span-4 space-y-6">
-            
             <div className="p-5 rounded-3xl bg-[#F3EBE0] border border-[#E5C378]/50 space-y-5">
               <div>
                 <span className="text-[10px] font-bold text-[#D4A343] uppercase tracking-wider block">
@@ -218,7 +239,9 @@ export function ResultSection({
 
               {/* Opciones de Medida */}
               <div className="space-y-2.5">
-                {(Object.keys(printSizes) as Array<keyof typeof printSizes>).map((key) => {
+                {(
+                  Object.keys(printSizes) as Array<keyof typeof printSizes>
+                ).map((key) => {
                   const size = printSizes[key];
                   const isSelected = selectedPrintSize === key;
                   return (
@@ -233,9 +256,13 @@ export function ResultSection({
                     >
                       <div className="flex items-center justify-between text-xs font-bold text-[#1C1B1A]">
                         <span>{size.name}</span>
-                        <span className="text-[#D4A343] text-[11px]">{size.dpi}</span>
+                        <span className="text-[#D4A343] text-[11px]">
+                          {size.dpi}
+                        </span>
                       </div>
-                      <p className="text-[10px] text-[#6B655F] mt-1">{size.use}</p>
+                      <p className="text-[10px] text-[#6B655F] mt-1">
+                        {size.use}
+                      </p>
                     </div>
                   );
                 })}
@@ -245,7 +272,7 @@ export function ResultSection({
               <button
                 type="button"
                 onClick={handleOrderClick}
-                style={{ backgroundColor: '#D4A343', color: '#FFFFFF' }}
+                style={{ backgroundColor: "#D4A343", color: "#FFFFFF" }}
                 className="w-full py-3.5 text-xs sm:text-sm font-extrabold rounded-full shadow-md active:scale-95 transition-transform text-center"
               >
                 Personalizar y Finalizar Pedido
@@ -257,11 +284,8 @@ export function ResultSection({
                 Incluye impresión a 300 DPI y marco de madera listo para colgar.
               </p>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </section>
   );

@@ -27,7 +27,8 @@ export const FRAME_OPTIONS: FrameOption[] = [
   {
     id: "canvas-bastidor",
     name: "Lienzo en Bastidor de Galería",
-    description: "Lienzo tensado sobre bastidor de madera pino seco al horno (listo para colgar)",
+    description:
+      "Lienzo tensado sobre bastidor de madera pino seco al horno (listo para colgar)",
     colorHex: "#E8E2D9",
     priceModifierPen: 0,
     isAvailable: true,
@@ -35,7 +36,8 @@ export const FRAME_OPTIONS: FrameOption[] = [
   {
     id: "frame-oak",
     name: "Marco de Madera Roble Natural",
-    description: "Moldura flotante de madera natural con acabado satinado cálido",
+    description:
+      "Moldura flotante de madera natural con acabado satinado cálido",
     colorHex: "#B6895B",
     priceModifierPen: 35,
     isAvailable: true,
@@ -43,7 +45,8 @@ export const FRAME_OPTIONS: FrameOption[] = [
   {
     id: "frame-black",
     name: "Marco Negro Galería Mate",
-    description: "Moldura minimalista en negro mate de museo con vidrio antirreflejo",
+    description:
+      "Moldura minimalista en negro mate de museo con vidrio antirreflejo",
     colorHex: "#1C1917",
     priceModifierPen: 40,
     isAvailable: true,
@@ -51,7 +54,8 @@ export const FRAME_OPTIONS: FrameOption[] = [
   {
     id: "frame-gold",
     name: "Marco Dorado Clásico Imperial",
-    description: "Moldura tallada en tono bronce/dorado envejecido ideal para retratos reales",
+    description:
+      "Moldura tallada en tono bronce/dorado envejecido ideal para retratos reales",
     colorHex: "#C59B27",
     priceModifierPen: 50,
     isAvailable: true,
