@@ -8,7 +8,55 @@ export interface PrintPreset {
   baseWidthPx: number;
   baseHeightPx: number;
   recommendedUse: string;
+  pricePen: number;
 }
+
+export interface FrameOption {
+  id: string;
+  name: string;
+  description: string;
+  colorHex: string;
+  priceModifierPen: number;
+  isAvailable: boolean;
+}
+
+/**
+ * Extensible Frame Options for Personalized Wall Art (escalable desde platform_settings / products.customization_config)
+ */
+export const FRAME_OPTIONS: FrameOption[] = [
+  {
+    id: "canvas-bastidor",
+    name: "Lienzo en Bastidor de Galería",
+    description: "Lienzo tensado sobre bastidor de madera pino seco al horno (listo para colgar)",
+    colorHex: "#E8E2D9",
+    priceModifierPen: 0,
+    isAvailable: true,
+  },
+  {
+    id: "frame-oak",
+    name: "Marco de Madera Roble Natural",
+    description: "Moldura flotante de madera natural con acabado satinado cálido",
+    colorHex: "#B6895B",
+    priceModifierPen: 35,
+    isAvailable: true,
+  },
+  {
+    id: "frame-black",
+    name: "Marco Negro Galería Mate",
+    description: "Moldura minimalista en negro mate de museo con vidrio antirreflejo",
+    colorHex: "#1C1917",
+    priceModifierPen: 40,
+    isAvailable: true,
+  },
+  {
+    id: "frame-gold",
+    name: "Marco Dorado Clásico Imperial",
+    description: "Moldura tallada en tono bronce/dorado envejecido ideal para retratos reales",
+    colorHex: "#C59B27",
+    priceModifierPen: 50,
+    isAvailable: true,
+  },
+];
 
 /**
  * Predefined print sizes ordered from Largest (XL) to Smallest (S)
@@ -24,6 +72,7 @@ export const PRINT_PRESETS: PrintPreset[] = [
     baseWidthPx: 3500,
     baseHeightPx: 4900,
     recommendedUse: "Pared principal de sala o comedor",
+    pricePen: 220,
   },
   {
     id: "lg-40x50",
@@ -35,6 +84,7 @@ export const PRINT_PRESETS: PrintPreset[] = [
     baseWidthPx: 3000,
     baseHeightPx: 3750,
     recommendedUse: "Lienzo protagonista en dormitorio o estudio",
+    pricePen: 180,
   },
   {
     id: "md-30x40",
@@ -46,6 +96,7 @@ export const PRINT_PRESETS: PrintPreset[] = [
     baseWidthPx: 2400,
     baseHeightPx: 3200,
     recommendedUse: "Cuadro clásico de galería o pasillo",
+    pricePen: 140,
   },
   {
     id: "sq-30x30",
@@ -57,6 +108,7 @@ export const PRINT_PRESETS: PrintPreset[] = [
     baseWidthPx: 3000,
     baseHeightPx: 3000,
     recommendedUse: "Formato cuadrado simétrico sin recorte",
+    pricePen: 130,
   },
   {
     id: "sm-20x25",
@@ -68,6 +120,7 @@ export const PRINT_PRESETS: PrintPreset[] = [
     baseWidthPx: 1800,
     baseHeightPx: 2250,
     recommendedUse: "Portarretrato de escritorio, repisa o regalo",
+    pricePen: 100,
   },
 ];
 

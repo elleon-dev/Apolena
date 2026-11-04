@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import {
@@ -13,6 +14,8 @@ import {
   PRINT_PRESETS,
   PrintPreset,
   PrintFinishMode,
+  FRAME_OPTIONS,
+  FrameOption,
   exportPrintReadyImage,
 } from "@/lib/print-export";
 import {
@@ -45,9 +48,11 @@ import {
   Loader2,
   Printer,
   Frame,
+  ShoppingBag,
 } from "lucide-react";
 
 export default function personalizedWallArt() {
+  const router = useRouter();
   // 3-step state: 1 = Upload Pet(s), 2 = Choose Theme & Studio Engine, 3 = Result Portrait
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -106,12 +111,15 @@ export default function personalizedWallArt() {
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Print Size & Finish Export state (ordered from Largest XL to Smallest S)
+  // Print Size, Finish & Extensible Frame state (ordered from Largest XL to Smallest S)
   const [selectedPrintPreset, setSelectedPrintPreset] = useState<PrintPreset>(
-    PRINT_PRESETS[0],
+    PRINT_PRESETS[1],
   );
   const [printFinishMode, setPrintFinishMode] =
     useState<PrintFinishMode>("full-bleed");
+  const [selectedFrame, setSelectedFrame] = useState<FrameOption>(
+    FRAME_OPTIONS[0],
+  );
   const [isExportingPrint, setIsExportingPrint] = useState(false);
 
   const fileInput1Ref = useRef<HTMLInputElement>(null);
@@ -176,7 +184,7 @@ export default function personalizedWallArt() {
   const readAndCompressImage = useCallback(
     (file: File, onDone: (dataUrl: string) => void) => {
       if (!file.type.startsWith("image/")) {
-        alert("Por favor selecciona una imagen válida (JPG, PNG o WEBP).");
+        setFusionError("Por favor selecciona una imagen válida (JPG, PNG o WEBP).");
         return;
       }
 
@@ -406,6 +414,42 @@ export default function personalizedWallArt() {
     useCustomTheme && customThemeImage
       ? "Referencia Personalizada"
       : selectedCharacter.name;
+
+  const currentUnitPrice =
+    selectedPrintPreset.pricePen + selectedFrame.priceModifierPen;
+  const currentAdvance50 = Number((currentUnitPrice * 0.5).toFixed(2));
+
+  const handleProceedToCheckout = () => {
+    const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
+    const draft = {
+      product_id: "00000000-0000-4000-8000-000000000101",
+      pet_photo_url: petImage,
+      generated_art_url: finalArtUrl,
+      unit_price: currentUnitPrice,
+      customizations: {
+        theme_id: useCustomTheme ? "custom" : selectedCharacter.id,
+        theme_name: activeThemeName,
+        size_id: selectedPrintPreset.id,
+        size_label: `${selectedPrintPreset.tier} · ${selectedPrintPreset.cmDimensions}`,
+        cm_dimensions: selectedPrintPreset.cmDimensions,
+        dpi: selectedPrintPreset.dpi,
+        finish_mode: printFinishMode,
+        finish_label:
+          printFinishMode === "museum-matte"
+            ? "Con Paspartú de Galería"
+            : "Lienzo Completo",
+        frame_id: selectedFrame.id,
+        frame_name: selectedFrame.name,
+        frame_price_pen: selectedFrame.priceModifierPen,
+        pet_count: secondPetImage ? 2 : 1,
+        notes: customPrompt.trim() || null,
+      },
+    };
+    try {
+      localStorage.setItem("apolena_checkout_draft", JSON.stringify(draft));
+    } catch {}
+    router.push("/checkout");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-cream-50 text-stone-900">
@@ -1374,14 +1418,25 @@ export default function personalizedWallArt() {
                   }}
                   className="relative rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 min-h-[480px] flex items-center justify-center p-6 sm:p-10 select-none shadow-soft"
                 >
-                  {/* MODE 1: FULL PORTRAIT IN GALLERY MATTE */}
+                  {/* MODE 1: FULL PORTRAIT IN GALLERY MATTE + LIVE FRAME PREVIEW */}
                   {viewMode === "fusion" && (
                     <div
-                      className={`relative bg-white rounded-2xl shadow-card border border-cream-200 transition-all ${
+                      className={`relative bg-white rounded-2xl shadow-card transition-all ${
                         printFinishMode === "museum-matte"
                           ? "p-6 sm:p-10"
                           : "p-2.5 sm:p-3.5"
                       }`}
+                      style={
+                        selectedFrame.id === "canvas-bastidor"
+                          ? { border: "2px solid #E8E2D9" }
+                          : {
+                              borderWidth: "14px",
+                              borderStyle: "solid",
+                              borderColor: selectedFrame.colorHex,
+                              boxShadow:
+                                "0 20px 40px -15px rgba(28, 25, 23, 0.35), inset 0 0 12px rgba(0,0,0,0.18)",
+                            }
+                      }
                     >
                       <img
                         src={
@@ -1524,9 +1579,14 @@ export default function personalizedWallArt() {
                                 {preset.tier}
                               </span>
                             </div>
-                            <span className="text-xs font-semibold text-terracotta-600">
-                              {preset.cmDimensions}
-                            </span>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold text-terracotta-600 block">
+                                S/ {preset.pricePen}.00
+                              </span>
+                              <span className="text-[11px] text-stone-500">
+                                {preset.cmDimensions}
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between mt-1.5 text-[11px] text-stone-500">
@@ -1543,6 +1603,49 @@ export default function personalizedWallArt() {
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Extensible Frame Customization Selector (Escalable) */}
+                  <div className="pt-3 border-t border-cream-200 space-y-2.5">
+                    <span className="text-xs font-semibold text-stone-800 block">
+                      Marco / Acabado de Galería (Extensible):
+                    </span>
+                    <div className="space-y-2">
+                      {FRAME_OPTIONS.map((frame) => {
+                        const isFrameSelected = selectedFrame.id === frame.id;
+                        return (
+                          <div
+                            key={frame.id}
+                            onClick={() => setSelectedFrame(frame)}
+                            className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
+                              isFrameSelected
+                                ? "border-terracotta-500 bg-terracotta-50/40"
+                                : "border-cream-200 bg-cream-50/50 hover:border-stone-300"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span
+                                className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0"
+                                style={{ backgroundColor: frame.colorHex }}
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-stone-900 truncate">
+                                  {frame.name}
+                                </p>
+                                <p className="text-[10px] text-stone-500 truncate">
+                                  {frame.description}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold text-stone-800 whitespace-nowrap">
+                              {frame.priceModifierPen === 0
+                                ? "Incluido"
+                                : `+ S/ ${frame.priceModifierPen}`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Print Finish Mode: Full Bleed vs Museum Matte */}
@@ -1576,11 +1679,41 @@ export default function personalizedWallArt() {
                     </div>
                   </div>
 
-                  {/* Export Print-Ready File CTA */}
+                  {/* Price & 50% Split Payment Box */}
+                  <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-stone-600">
+                      <span>Precio del cuadro personalizado:</span>
+                      <span className="font-semibold text-stone-900">
+                        S/ {currentUnitPrice.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-terracotta-700 font-semibold">
+                      <span>Adelanto hoy (50% iniciar fabricación):</span>
+                      <span>S/ {currentAdvance50.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-stone-500 text-[11px]">
+                      <span>Restante 50% (Contraentrega al recibir):</span>
+                      <span>S/ {currentAdvance50.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Primary Order & Checkout CTA */}
+                  <button
+                    onClick={handleProceedToCheckout}
+                    className="w-full py-4 px-5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>
+                      Ordenar Cuadro · Adelanto 50% (S/{" "}
+                      {currentAdvance50.toFixed(2)})
+                    </span>
+                  </button>
+
+                  {/* Secondary Export Print-Ready File CTA */}
                   <button
                     onClick={() => handleDownload(selectedPrintPreset)}
                     disabled={isExportingPrint}
-                    className="w-full py-3.5 px-5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-60 text-white text-xs font-medium flex items-center justify-center gap-2 shadow-soft transition-all"
+                    className="w-full py-3 px-5 rounded-full bg-white hover:bg-cream-100 border border-cream-200 disabled:opacity-60 text-stone-800 text-xs font-medium flex items-center justify-center gap-2 transition-all"
                   >
                     {isExportingPrint ? (
                       <>
@@ -1591,8 +1724,7 @@ export default function personalizedWallArt() {
                       <>
                         <Download className="w-4 h-4" />
                         <span>
-                          Descargar Cuadro {selectedPrintPreset.cmDimensions}{" "}
-                          (300 DPI)
+                          Descargar Muestra Digital {selectedPrintPreset.cmDimensions}
                         </span>
                       </>
                     )}

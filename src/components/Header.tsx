@@ -23,10 +23,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#E5C378]/50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-3">
-        
+
         {/* Identidad de Marca: Redirige al Inicio */}
-        <a 
-          href="#" 
+        <a
+          href="#"
           onClick={handleScrollToTop}
           className="flex items-center gap-2.5 focus:outline-none group"
         >

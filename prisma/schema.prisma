@@ -1,0 +1,350 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PROFILE — Usuario autenticado (comprador "user" o administrador "admin")
+// ═══════════════════════════════════════════════════════════════════════
+
+model Profile {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @unique
+  password_hash String?
+  name          String?
+  phone         String?
+  avatar_url    String?
+  role          String    @default("user") // "user" | "admin"
+  address       String?
+  department    String?
+  province      String?
+  district      String?
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  orders         Order[]         @relation("BuyerOrders")
+  reviews        Review[]
+  generationJobs GenerationJob[]
+
+  @@index([role])
+  @@map("profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PRODUCT — Catálogo extensible (Cuadros personalizados y futuros productos)
+// ═══════════════════════════════════════════════════════════════════════
+
+model Product {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                String
+  slug                 String    @unique
+  description          String?
+  category             String    @default("wall_art") // "wall_art" | "accessories" | "apparel"
+  base_price           Decimal   @db.Decimal(10, 2)
+  status               String    @default("active") // "active" | "inactive" | "archived"
+  stock                Int       @default(999)
+  specifications       Json      @default("{}")
+  customization_config Json      @default("{}") // Grupos extensibles: sizes, finishes, frames (marcos), etc.
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  images     ProductImage[]
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  @@index([status])
+  @@index([category])
+  @@map("products")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PRODUCT IMAGE — Galería de imágenes del producto
+// ═══════════════════════════════════════════════════════════════════════
+
+model ProductImage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String   @db.Uuid
+  url        String
+  alt_text   String?
+  position   Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([product_id])
+  @@map("product_images")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// GENERATION JOB — Tareas de fusión IA de mascotas con temáticas
+// ═══════════════════════════════════════════════════════════════════════
+
+model GenerationJob {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String?  @db.Uuid
+  template_id            String
+  pet_name               String   @default("Mi Mascota")
+  species                String   @default("dog")
+  pet_image_url          String
+  second_pet_image_url   String?
+  custom_theme_image_url String?
+  custom_prompt          String?
+  provider               String   @default("openai")
+  model_used             String?
+  status                 String   @default("pending") // "pending" | "processing" | "inpainting" | "upscaling" | "completed" | "failed"
+  progress               Int      @default(0)
+  current_step           String   @default("Inicializando tarea...")
+  output_image_url       String?
+  hd_output_image_url    String?
+  variants               Json?
+  error_message          String?
+  settings               Json     @default("{}")
+  execution_seconds      Decimal? @db.Decimal(6, 2)
+  created_at             DateTime @default(now()) @db.Timestamptz
+  updated_at             DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  user       Profile?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@index([user_id])
+  @@index([status])
+  @@map("generation_jobs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ORDER — Cabecera de compra con Tracking ID y esquema 50% / 50%
+// ═══════════════════════════════════════════════════════════════════════
+
+model Order {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_code               String    @unique // Ej: ORD-2026-0001
+  tracking_id              String    @unique // Ej: APO-849201 (Para seguimiento en 3 pasos)
+  buyer_id                 String    @db.Uuid
+  status                   String    @default("manufacturing") // "manufacturing" | "in_transit" | "delivered" | "completed" | "cancelled"
+  payment_status           String    @default("partial_pending") // "partial_pending" | "partial_paid" | "paid_full" | "refunded"
+  payment_method           String    @default("yape") // "yape" | "plin" | "bank_transfer"
+  subtotal                 Decimal   @default(0) @db.Decimal(10, 2)
+  shipping_cost            Decimal   @default(0) @db.Decimal(10, 2)
+  tax_amount               Decimal   @default(0) @db.Decimal(10, 2)
+  total_amount             Decimal   @default(0) @db.Decimal(10, 2)
+  advance_amount           Decimal   @default(0) @db.Decimal(10, 2) // 50% inicial
+  remaining_amount         Decimal   @default(0) @db.Decimal(10, 2) // 50% contraentrega
+  notes                    String?
+  manufacturing_started_at DateTime? @default(now()) @db.Timestamptz
+  shipped_at               DateTime? @db.Timestamptz
+  delivered_at             DateTime? @db.Timestamptz
+  completed_at             DateTime? @db.Timestamptz
+  created_at               DateTime  @default(now()) @db.Timestamptz
+  updated_at               DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  buyer               Profile              @relation("BuyerOrders", fields: [buyer_id], references: [id])
+  shipping            OrderShipping?
+  invoice             OrderInvoice?
+  packages            OrderPackage[]
+  paymentTransactions PaymentTransaction[]
+  reviews             Review[]
+
+  @@index([buyer_id])
+  @@index([tracking_id])
+  @@index([status])
+  @@index([payment_status])
+  @@map("orders")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ORDER SHIPPING — Snapshot de contacto y ubicación de delivery (1:1)
+// ═══════════════════════════════════════════════════════════════════════
+
+model OrderShipping {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id        String  @unique @db.Uuid
+  name            String
+  phone           String
+  email           String?
+  address         String
+  department      String?
+  province        String?
+  district        String?
+  reference       String?
+  document_type   String? @default("DNI")
+  document_number String?
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_shippings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ORDER INVOICE — Comprobante fiscal Boleta / Factura (1:1)
+// ═══════════════════════════════════════════════════════════════════════
+
+model OrderInvoice {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id      String  @unique @db.Uuid
+  type          String  @default("boleta") // "boleta" | "factura"
+  doc_type      String? @default("DNI")    // "DNI" | "RUC" | "CE"
+  number        String?
+  legal_name    String?
+  tax_address   String?
+  sunat_status  String? @default("pending")
+  sunat_pdf_url String?
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_invoices")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ORDER PACKAGE — Paquete logístico (Fabricación -> En Camino -> Entregado)
+// ═══════════════════════════════════════════════════════════════════════
+
+model OrderPackage {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id            String    @db.Uuid
+  package_number      Int       @default(1)
+  total_packages      Int       @default(1)
+  status              String    @default("manufacturing") // "manufacturing" | "in_transit" | "delivered" | "completed"
+  courier             String?
+  tracking_number     String?
+  tracking_url        String?
+  carrier_phone       String?
+  estimated_delivery  DateTime? @db.Timestamptz
+  destination_address String?
+  subtotal            Decimal   @default(0) @db.Decimal(10, 2)
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  order Order       @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([order_id])
+  @@map("order_packages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ORDER ITEM — Ítem personalizado dentro del paquete (extensible)
+// ═══════════════════════════════════════════════════════════════════════
+
+model OrderItem {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  package_id        String   @db.Uuid
+  product_id        String   @db.Uuid
+  generation_job_id String?  @db.Uuid
+  quantity          Int      @default(1)
+  unit_price        Decimal  @default(0) @db.Decimal(10, 2)
+  subtotal          Decimal  @default(0) @db.Decimal(10, 2)
+  status            String   @default("manufacturing")
+  pet_photo_url     String?
+  generated_art_url String?
+  customizations    Json     @default("{}") // Snapshot extensible: size, finish_mode, frame (marco), theme, notes
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  package       OrderPackage   @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  generationJob GenerationJob? @relation(fields: [generation_job_id], references: [id], onDelete: SetNull)
+
+  @@index([package_id])
+  @@index([product_id])
+  @@map("order_items")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PAYMENT TRANSACTION — Pagos 50% Adelanto y 50% Contraentrega
+// ═══════════════════════════════════════════════════════════════════════
+
+model PaymentTransaction {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id         String    @db.Uuid
+  payment_stage    String    @default("advance_50") // "advance_50" (50% inicial) | "final_50" (50% contraentrega)
+  payment_method   String    @default("yape")       // "yape" | "plin" | "bank_transfer"
+  status           String    @default("pending_verification") // "pending_verification" | "verified" | "rejected"
+  amount           Decimal   @db.Decimal(10, 2)
+  currency         String    @default("PEN")
+  operation_number String?
+  proof_image_url  String?
+  payer_name       String?
+  payer_phone      String?
+  notes            String?
+  verified_by      String?   @db.Uuid
+  verified_at      DateTime? @db.Timestamptz
+  raw_metadata     Json?
+  created_at       DateTime  @default(now()) @db.Timestamptz
+  updated_at       DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id])
+  @@index([payment_stage])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// REVIEW — Reseñas post-entrega
+// ═══════════════════════════════════════════════════════════════════════
+
+model Review {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String   @db.Uuid
+  buyer_id   String   @db.Uuid
+  order_id   String?  @db.Uuid
+  rating     Int
+  comment    String?
+  photo_url  String?
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  buyer   Profile @relation(fields: [buyer_id], references: [id], onDelete: Cascade)
+  order   Order?  @relation(fields: [order_id], references: [id], onDelete: SetNull)
+
+  @@unique([buyer_id, order_id, product_id])
+  @@index([product_id])
+  @@index([buyer_id])
+  @@map("reviews")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLATFORM SETTING — Configuración dinámica (Yape, Plin, Bancos, Tarifas)
+// ═══════════════════════════════════════════════════════════════════════
+
+model PlatformSetting {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique
+  value       Json
+  description String?
+  category    String   @default("general") // "payments" | "shipping" | "notifications" | "catalog"
+  updated_by  String?  @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@map("platform_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EMAIL QUEUE — Cola de correos transaccionales con reintentos
+// ═══════════════════════════════════════════════════════════════════════
+
+model EmailQueue {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  to_email     String
+  subject      String
+  template     String   // "order_created_buyer" | "order_created_admin" | "order_status_updated"
+  data         Json
+  cc           String[] @default([])
+  status       String   @default("pending") // "pending" | "sent" | "failed"
+  attempts     Int      @default(0)
+  max_attempts Int      @default(3)
+  last_error   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@index([status])
+  @@index([created_at])
+  @@map("email_queue")
+}
