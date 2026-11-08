@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import {
   Lock,
   Mail,
@@ -14,6 +15,29 @@ import {
   User,
 } from "lucide-react";
 
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,6 +47,56 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Si Supabase redirige de vuelta con #access_token o ?code a /auth/login
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasHashToken = window.location.hash.includes("access_token=");
+    const hasCode = searchParams.get("code");
+    if (hasHashToken || hasCode) {
+      const targetCallback = `/auth/callback${window.location.search}${window.location.hash}`;
+      router.replace(targetCallback);
+    }
+  }, [router, searchParams]);
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsGoogleLoading(true);
+    try {
+      if (!supabaseBrowser) {
+        setError(
+          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        );
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      const redirectUrl = new URL("/auth/callback", window.location.origin);
+      if (callbackUrl) {
+        redirectUrl.searchParams.set("callbackUrl", callbackUrl);
+      }
+
+      const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl.toString(),
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (oauthError) {
+        setError(oauthError.message || "Error al conectar con Google.");
+        setIsGoogleLoading(false);
+      }
+    } catch {
+      setError("No se pudo iniciar la autenticación con Google.");
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +113,17 @@ function LoginForm() {
         setError(data.error || "Error al iniciar sesión.");
         return;
       }
+      const isAdmin =
+        data.user?.role === "admin" || data.user?.role === "super_admin";
+      const safeCallbackUrl =
+        callbackUrl &&
+        !isAdmin &&
+        (callbackUrl.startsWith("/dashboard") ||
+          callbackUrl.startsWith("/admin"))
+          ? "/orders"
+          : callbackUrl;
       const target =
-        callbackUrl ||
-        data.redirectTo ||
-        (data.user?.role === "admin" ? "/admin" : "/dashboard");
+        safeCallbackUrl || data.redirectTo || (isAdmin ? "/dashboard" : "/orders");
       router.push(target);
       router.refresh();
     } catch {
@@ -79,6 +160,34 @@ function LoginForm() {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Botón OAuth con Google */}
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        disabled={isGoogleLoading || isLoading}
+        className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-stone-50 border border-stone-200 disabled:opacity-60 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all"
+      >
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin text-stone-600" />
+            <span>Redirigiendo a Google...</span>
+          </>
+        ) : (
+          <>
+            <GoogleIcon />
+            <span>Continuar con Google</span>
+          </>
+        )}
+      </button>
+
+      <div className="relative flex items-center justify-center">
+        <div className="border-t border-cream-200 w-full" />
+        <span className="bg-white px-3 text-[11px] font-medium text-stone-400 uppercase tracking-wider shrink-0">
+          o ingresa con tu correo
+        </span>
+        <div className="border-t border-cream-200 w-full" />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
@@ -139,22 +248,30 @@ function LoginForm() {
         <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider text-center">
           Accesos rápidos de prueba (Prisma RBAC)
         </p>
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
+        <div className="grid grid-cols-3 gap-2 text-xs">
           <button
             type="button"
             onClick={() => fillDemo("cliente@apolena.pe", "cliente123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium flex items-center justify-center gap-1.5 transition-colors"
+            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium flex items-center justify-center gap-1 transition-colors"
           >
             <User className="w-3.5 h-3.5 text-terracotta-500" />
-            <span>Rol Usuario</span>
+            <span>Usuario</span>
           </button>
           <button
             type="button"
             onClick={() => fillDemo("admin@apolena.pe", "admin123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-800 font-medium flex items-center justify-center gap-1.5 transition-colors"
+            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-800 font-medium flex items-center justify-center gap-1 transition-colors"
           >
-            <Shield className="w-3.5 h-3.5 text-stone-900" />
-            <span>Rol Admin</span>
+            <Shield className="w-3.5 h-3.5 text-stone-700" />
+            <span>Admin</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fillDemo("nmoriano26@gmail.com", "admin123")}
+            className="p-2.5 rounded-2xl border border-terracotta-200 bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-800 font-semibold flex items-center justify-center gap-1 transition-colors"
+          >
+            <Shield className="w-3.5 h-3.5 text-terracotta-600" />
+            <span>Super Admin</span>
           </button>
         </div>
       </div>

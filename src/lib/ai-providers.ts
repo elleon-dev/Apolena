@@ -110,39 +110,289 @@ async function resolveImageData(source: string): Promise<ResolvedImageData> {
 }
 
 /**
- * Builds the comprehensive multi-image fusion prompt
+ * Sanitizes any character prompt so it is 100% species-neutral and never forces
+ * a hardcoded animal (such as "an orange tabby cat", "a majestic cat", "tabby cat",
+ * "feline", "dog", "canine") over the user's actual uploaded pet photo.
+ */
+export function sanitizeCharacterPromptToSpeciesNeutral(
+  rawPrompt: string,
+  hasSecondPet: boolean = false,
+): string {
+  const replacementSubject = hasSecondPet
+    ? "the uploaded pets from the reference photos"
+    : "the uploaded pet from the reference photo";
+
+  let cleaned = rawPrompt || "";
+
+  // Replace specific multi-word animal subject phrases first
+  cleaned = cleaned.replace(
+    /\b(?:a|an|the)\s+(?:majestic\s+|regal\s+|noble\s+|cute\s+|adorable\s+|photorealistic\s+)*(?:portrait\s+of\s+(?:a|an|the)\s+)?(?:orange\s+tabby\s+|black\s+and\s+white\s+|tuxedo\s+|siamese\s+|persian\s+|tabby\s+|ginger\s+|golden\s+retriever\s+|french\s+bulldog\s+|pug\s+)*(?:cat|cats|kitten|kittens|feline|felines|dog|dogs|puppy|puppies|canine|canines)\b/gi,
+    `a majestic portrait of ${replacementSubject}`,
+  );
+
+  // Replace remaining standalone species terms that might bias generation
+  cleaned = cleaned.replace(
+    /\b(?:orange\s+tabby\s+cat|tabby\s+cat|tuxedo\s+cat|siamese\s+cat|feline|cat|kitten)\b/gi,
+    replacementSubject,
+  );
+
+  // Clean up accidental duplicate "of a majestic portrait of"
+  cleaned = cleaned.replace(
+    /portrait\s+of\s+a\s+majestic\s+portrait\s+of/gi,
+    "portrait of",
+  );
+
+  return cleaned;
+}
+
+/**
+ * Extracts a concise, high-precision physical fingerprint of the user's uploaded pet(s)
+ * so that every image generation engine prioritizes the user's exact pet as the #1 protagonist.
+ */
+async function extractPetIdentityFingerprint(
+  pet1Data: ResolvedImageData,
+  pet2Data: ResolvedImageData | null,
+  openaiKey?: string,
+  geminiKey?: string,
+): Promise<string | null> {
+  const promptText = `Inspect the uploaded pet photo(s) carefully. Write a concise, exact physical description (max 65 words) of ${pet2Data ? "Pet #1 (first image) and Pet #2 (second image)" : "the pet in the image"} to lock its identity for a portrait artist.
+Explicitly state:
+1. Exact animal species (state clearly: DOG or CAT) and specific breed/mix.
+2. Exact fur/coat colors, pattern/markings on face and chest, and fur length/texture.
+3. Exact snout/muzzle shape, nose color, eye color, ear shape/posture (e.g., floppy retriever ears vs upright ears), and natural expression.
+Output ONLY the factual physical description of the pet(s), nothing else.`;
+
+  if (openaiKey && !openaiKey.includes("your_")) {
+    try {
+      const content: any[] = [
+        { type: "text", text: promptText },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${pet1Data.mimeType};base64,${pet1Data.base64}`,
+            detail: "low",
+          },
+        },
+      ];
+      if (pet2Data) {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${pet2Data.mimeType};base64,${pet2Data.base64}`,
+            detail: "low",
+          },
+        });
+      }
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content }],
+          max_tokens: 150,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.choices?.[0]?.message?.content?.trim();
+        if (text) return text;
+      }
+    } catch (e) {
+      console.warn("[extractPetIdentityFingerprint OpenAI warning]:", e);
+    }
+  }
+
+  if (geminiKey && !geminiKey.includes("your_")) {
+    try {
+      const parts: any[] = [
+        {
+          inlineData: {
+            mimeType: pet1Data.mimeType,
+            data: pet1Data.base64,
+          },
+        },
+      ];
+      if (pet2Data) {
+        parts.push({
+          inlineData: {
+            mimeType: pet2Data.mimeType,
+            data: pet2Data.base64,
+          },
+        });
+      }
+      parts.push({ text: promptText });
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p.text || "")
+          .join(" ")
+          .trim();
+        if (text) return text;
+      }
+    } catch (e) {
+      console.warn("[extractPetIdentityFingerprint Gemini warning]:", e);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Builds the universal pet portrait fusion prompt where the user's uploaded pet
+ * is ALWAYS the #1 protagonist and the selected character's reference image acts
+ * strictly as a wardrobe, accessory, lighting, and background guide (no per-character prompt needed).
  */
 function buildFusionPrompt(
   character: FamousCharacter,
   hasSecondPet: boolean,
-  hasCustomThemeImage: boolean,
   customPrompt?: string | null,
+  extractedWardrobeDescription?: string | null,
+  petIdentityFingerprint?: string | null,
 ): string {
   const petCountText = hasSecondPet
-    ? "BOTH uploaded pets (Pet #1 from the first image and Pet #2 from the second image) side by side"
-    : "the uploaded pet from the first image";
+    ? "BOTH uploaded pets (Pet #1 from the first input image and Pet #2 from the second input image) side by side"
+    : "the exact uploaded pet shown in the first input image";
 
-  const baseInstruction = hasCustomThemeImage
-    ? `Create an ultra-realistic, cohesive cinematic photograph that fuses ${petCountText} into the exact costume, accessories, cultural theme, lighting, and background environment shown in the last reference image (the theme reference image).`
-    : `Create an ultra-realistic, cohesive cinematic photograph of ${petCountText}: ${character.prompt}`;
+  const themeGuideText =
+    extractedWardrobeDescription ||
+    `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${character.description}`;
+
+  const protagonistSection = `PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST ALWAYS BE CLEARLY VISIBLE AND RECOGNIZABLE):
+Create an ultra-realistic 8K fine art portrait of ${petCountText}.${
+    petIdentityFingerprint
+      ? `\nEXACT UPLOADED PET IDENTITY TO PRESERVE 100%: ${petIdentityFingerprint}`
+      : ""
+  }`;
+
+  const themeGuideSection = `
+THEMATIC WARDROBE & SCENE GUIDE (SECONDARY - USE "${character.name}" ONLY AS A COSTUME & ENVIRONMENT GUIDE AROUND THE USER'S PET):
+Adapt the following thematic attire, accessories, lighting mood, and background setting onto the user's pet:
+${themeGuideText}`;
 
   const identityRules = `
-CRITICAL IDENTITY, PROPORTION & PHOTOREALISM RULES:
-1. EXACT PET IDENTITY: Preserve 100% of the uploaded pet's authentic facial identity from the first reference image: exact breed, fur colors, Siamese/tabby/bicolor markings, nose color, eye color, ear shape, and natural expression.
-2. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural feline/canine head-to-shoulder and neck proportions. NEVER make the head oversized, bobble-headed, stylized, 3D-rendered, or smooth plastic.
-3. ORGANIC WARDROBE INTEGRATION: Dress the pet naturally in the exact garments, collar, lapel, headwear, and accessories from the theme reference image, with real fur micro-textures overlapping the fabric collar naturally.
-4. PHOTOGRAPHY SPECS: Shot on 35mm full-frame camera, 85mm f/1.8 prime lens, natural studio or golden-hour lighting matching the reference scene, authentic film grain and sharp eye catchlights. No watermarks, no text.`;
+MANDATORY PET VISIBILITY & PROTAGONIST RULES:
+1. THE USER'S PET IS THE STAR: The generated portrait MUST unmistakably look like the user's specific uploaded pet. Preserve 100% of its exact species (DOG vs CAT), breed, facial bone structure, snout/muzzle length, nose color, eye color, fur colors, facial markings, and authentic expression from the input pet photo.
+2. UNOBSTRUCTED PET FACE & EARS: Never let crowns, hats, helmets, wigs, collars, or costumes hide, replace, or distort the pet's face, eyes, muzzle, or distinctive ears. Any headwear from the theme guide must sit lightly and naturally on top of the head as an accessory so the pet's natural ears, forehead fur, and head silhouette remain 100% visible.
+3. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural canine/feline head-to-shoulder and neck proportions. Never make the head bobble-headed, cartoon, 3D-rendered, or plastic.
+4. ORGANIC WARDROBE FIT: Tailor the character's garments, collar, and accessories around the pet's natural neck and shoulders with real fur micro-textures overlapping the collar edge.
+5. PHOTOGRAPHY SPECS: Shot on 35mm full-frame camera, 85mm f/1.8 prime lens, museum-grade fine art lighting, sharp eye catchlights. No watermarks, no text.`;
 
   const extraUserPrompt = customPrompt?.trim()
-    ? `\nADDITIONAL USER INSTRUCTIONS: ${customPrompt.trim()}`
+    ? `\nADDITIONAL STUDIO DIRECTION: ${customPrompt.trim()}`
     : "";
 
-  return `${baseInstruction}\n${identityRules}${extraUserPrompt}`;
+  return `${protagonistSection}\n${themeGuideSection}\n${identityRules}${extraUserPrompt}`;
+}
+
+/**
+ * Extracts a 100% species-neutral wardrobe & background description from any character/theme reference image
+ * so the character reference image serves strictly as a visual guide for clothing and background.
+ */
+async function extractWardrobeFromThemeImage(
+  themeData: ResolvedImageData,
+  characterName: string,
+  characterDescription?: string,
+  openaiKey?: string,
+  geminiKey?: string,
+): Promise<string | null> {
+  const promptText = `You are a costume and set design analyst. Inspect this reference image for "${characterName}"${characterDescription ? ` (${characterDescription})` : ""} and describe ONLY in English:
+1. The exact clothing, tunic, coat, cape, fabrics, colors, and embroidery patterns.
+2. The exact headwear, crown, diadem, hat, earrings, necklaces, or props.
+3. The background environment, architecture, and lighting atmosphere.
+CRITICAL RULE: Completely ignore whatever animal or person is wearing the costume. Do NOT mention any animal species (never write "cat", "dog", "feline", "canine", "tabby", "fur", or "person"). Describe ONLY the wardrobe, accessories, and background in 75 words or less.`;
+
+  if (openaiKey && !openaiKey.includes("your_")) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: promptText },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${themeData.mimeType};base64,${themeData.base64}`,
+                    detail: "low",
+                  },
+                },
+              ],
+            },
+          ],
+          max_tokens: 180,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.choices?.[0]?.message?.content?.trim();
+        if (text) return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+      }
+    } catch (e) {
+      console.warn("[extractWardrobeFromThemeImage OpenAI warning]:", e);
+    }
+  }
+
+  if (geminiKey && !geminiKey.includes("your_")) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: themeData.mimeType,
+                    data: themeData.base64,
+                  },
+                },
+                { text: promptText },
+              ],
+            },
+          ],
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p.text || "")
+          .join(" ")
+          .trim();
+        if (text) return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+      }
+    } catch (e) {
+      console.warn("[extractWardrobeFromThemeImage Gemini warning]:", e);
+    }
+  }
+
+  return null;
 }
 
 /**
  * ============================================================================
- * 1. OPENAI PIPELINE: gpt-image-1 (Multi-Image Edit) + GPT-4o Vision Fallback
+ * 1. OPENAI PIPELINE: gpt-image-1.5 (Pet Image Edit) + GPT-4o Vision Fallback
  * ============================================================================
  */
 async function runOpenAIFusion(
@@ -154,6 +404,8 @@ async function runOpenAIFusion(
     "chatgpt-image-latest",
     "gpt-image-2",
   ],
+  precomputedPetFingerprint?: string | null,
+  precomputedWardrobeDesc?: string | null,
 ): Promise<{ imageUrl: string; modelUsed: string }> {
   const {
     petImageUrl,
@@ -167,7 +419,7 @@ async function runOpenAIFusion(
 
   onProgress?.(
     20,
-    "Preparando imágenes de referencia para OpenAI...",
+    "Preparando boceto inicial y paleta de iluminación...",
     "analyzing",
   );
 
@@ -175,23 +427,45 @@ async function runOpenAIFusion(
   const pet2Data = secondPetImageUrl
     ? await resolveImageData(secondPetImageUrl)
     : null;
-  const themeData = await resolveImageData(themeSource);
+
+  const petIdentityFingerprint =
+    precomputedPetFingerprint ??
+    (await extractPetIdentityFingerprint(pet1Data, pet2Data, openaiKey));
+
+  let wardrobeDesc = precomputedWardrobeDesc ?? null;
+  if (!wardrobeDesc && themeSource) {
+    try {
+      const themeData = await resolveImageData(themeSource);
+      wardrobeDesc = await extractWardrobeFromThemeImage(
+        themeData,
+        character.name,
+        character.description,
+        openaiKey,
+      );
+    } catch (e) {
+      console.warn("[OpenAI theme wardrobe extraction fallback]:", e);
+    }
+  }
 
   const fusionPrompt = buildFusionPrompt(
     character,
     hasSecondPet,
-    Boolean(customThemeImageUrl),
     customPrompt,
+    wardrobeDesc,
+    petIdentityFingerprint,
   );
 
-  // Attempt 1: Native Multi-Image Fusion with preferred models (/v1/images/edits)
+  // Attempt 1: Native Pet Image Transformation (/v1/images/edits)
+  // IMPORTANT: We ONLY pass the user's pet photo(s) (pet1Data, and pet2Data if present) in `image[]`.
+  // We NEVER pass the catalog character's reference image into `image[]` because catalog reference images
+  // often depict another animal (e.g. a sample cat) or human whose face/species would overwrite the user's pet!
   const editModels = preferredModels;
 
   for (const editModel of editModels) {
     try {
       onProgress?.(
         45,
-        `Fusionando ${hasSecondPet ? "las 2 mascotas" : "tu mascota"} + temática en OpenAI (${editModel})...`,
+        `Pintando textura y composición del retrato en estilo ${character.name}...`,
         "inpainting",
       );
 
@@ -202,7 +476,7 @@ async function runOpenAIFusion(
       // Cost-optimized quality tier: 'medium' reduces cost by ~75% ($0.034 vs $0.133) while preserving photorealism
       formData.append("quality", "medium");
 
-      // Append Pet 1, optional Pet 2, and Theme Reference Image
+      // Append ONLY Pet 1 (and optional Pet 2) so the subject species & identity is 100% the user's pet
       formData.append(
         "image[]",
         new Blob([new Uint8Array(pet1Data.buffer)], {
@@ -219,13 +493,6 @@ async function runOpenAIFusion(
           `pet2.${pet2Data.ext}`,
         );
       }
-      formData.append(
-        "image[]",
-        new Blob([new Uint8Array(themeData.buffer)], {
-          type: themeData.mimeType,
-        }),
-        `theme.${themeData.ext}`,
-      );
 
       const editRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
@@ -242,23 +509,23 @@ async function runOpenAIFusion(
         if (b64) {
           onProgress?.(
             95,
-            `Retrato revelado con OpenAI ${editModel}`,
+            "Retrato revelado con técnica de óleo fino",
             "finishing",
           );
           return {
             imageUrl: `data:image/png;base64,${b64}`,
-            modelUsed: `OpenAI ${editModel}`,
+            modelUsed: "Técnica Óleo Bellas Artes",
           };
         }
         if (url) {
           onProgress?.(
             95,
-            `Retrato revelado con OpenAI ${editModel}`,
+            "Retrato revelado con técnica de óleo fino",
             "finishing",
           );
           return {
             imageUrl: url,
-            modelUsed: `OpenAI ${editModel}`,
+            modelUsed: "Técnica Óleo Bellas Artes",
           };
         }
       } else {
@@ -289,25 +556,30 @@ async function runOpenAIFusion(
     }
   }
 
-  // Attempt 2: Cost-optimized Multimodal GPT-4o-mini Vision Analysis + OpenAI Image Generation (medium quality)
+  // Attempt 2: Cost-optimized Multimodal GPT-4o-mini Vision Analysis of Pet(s) + OpenAI Image Generation
   onProgress?.(
     60,
-    "Analizando fisonomía y vestimenta con GPT-4o-mini Vision...",
+    "Armonizando facciones naturales y vestimenta de época...",
     "analyzing",
   );
+
+  const wardrobeSpec =
+    wardrobeDesc ||
+    `${character.name} (${character.characterTitle || character.universe}): ${character.description}`;
 
   const visionContent: any[] = [
     {
       type: "text",
       text: `You are an expert visual director for photorealistic pet portrait fusion.
-Inspect the attached images carefully:
+Inspect the attached pet photo(s) carefully:
 - Image 1 is Pet #1.${pet2Data ? "\n- Image 2 is Pet #2." : ""}
-- The last image is the Theme/Costume Reference (${character.name}).
 
-Write a single, detailed English image generation prompt (max 140 words) for a photorealistic 8K photograph showing ${hasSecondPet ? "both pets side by side" : "this exact pet"} dressed in the exact costume, headpieces, jewelry, and setting of the theme reference image.
+Write a single, detailed English image generation prompt (max 140 words) for a photorealistic 8K fine art portrait showing ${hasSecondPet ? "both uploaded pets side by side" : "this exact uploaded pet"} dressed in the following royal/character attire and setting:
+"${wardrobeSpec}"
+
 You MUST explicitly describe:
-1. Pet #1's exact species, breed, fur colors, tabby stripes or patches, eye color, nose color/markings, and facial expression.${pet2Data ? "\n2. Pet #2's exact species, breed, fur colors, bicolor/tuxedo patches or markings, eye color, nose markings, and expression." : ""}
-3. Every detail of the royal/character garments, golden crowns/diadems, necklaces, fabric patterns, and background scenery from the theme image.
+1. Pet #1's exact animal species (DOG vs CAT), exact breed, snout/muzzle shape, ear shape and position, fur colors, coat texture/markings, eye color, nose color, and facial expression.${pet2Data ? "\n2. Pet #2's exact animal species (DOG vs CAT), exact breed, snout/muzzle shape, ear shape, fur colors, markings, eye color, nose color, and expression." : ""}
+3. Every detail of the royal/character garments, crowns/headpieces, necklaces, fabric patterns, and background scenery from the wardrobe specification above, naturally fitted onto ${hasSecondPet ? "these exact pets" : "this exact pet"} without covering or obscuring their ears or faces.
 ${customPrompt ? `4. Also incorporate: ${customPrompt}` : ""}
 Output ONLY the raw prompt text, nothing else.`,
     },
@@ -329,14 +601,6 @@ Output ONLY the raw prompt text, nothing else.`,
       },
     });
   }
-
-  visionContent.push({
-    type: "image_url",
-    image_url: {
-      url: `data:${themeData.mimeType};base64,${themeData.base64}`,
-      detail: "low",
-    },
-  });
 
   let detailedPrompt = fusionPrompt;
   const visionRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -362,7 +626,7 @@ Output ONLY the raw prompt text, nothing else.`,
 
   onProgress?.(
     80,
-    "Renderizando fotografía de estudio con OpenAI gpt-image-1.5...",
+    "Aplicando técnica de óleo y barniz de estudio...",
     "inpainting",
   );
 
@@ -383,7 +647,7 @@ Output ONLY the raw prompt text, nothing else.`,
 
   if (!genRes.ok) {
     const errText = await genRes.text();
-    throw new Error(`Error en OpenAI API: ${errText}`);
+    throw new Error(`Error en atelier artístico: ${errText}`);
   }
 
   const genJson = await genRes.json();
@@ -392,13 +656,13 @@ Output ONLY the raw prompt text, nothing else.`,
   if (b64) {
     return {
       imageUrl: `data:image/png;base64,${b64}`,
-      modelUsed: "OpenAI gpt-image-1.5 (Medium)",
+      modelUsed: "Técnica Óleo Bellas Artes",
     };
   }
   if (genUrl) {
     return {
       imageUrl: genUrl,
-      modelUsed: "OpenAI gpt-image-1.5 (Medium)",
+      modelUsed: "Técnica Óleo Bellas Artes",
     };
   }
   throw new Error("OpenAI no devolvió una imagen válida.");
@@ -414,6 +678,8 @@ async function runGeminiFusion(
   character: FamousCharacter,
   geminiKey: string,
   openaiKeyFallback?: string,
+  precomputedPetFingerprint?: string | null,
+  precomputedWardrobeDesc?: string | null,
 ): Promise<{ imageUrl: string; modelUsed: string }> {
   const {
     petImageUrl,
@@ -427,7 +693,7 @@ async function runGeminiFusion(
 
   onProgress?.(
     20,
-    "Codificando imágenes de referencia para Google Gemini...",
+    "Elaborando propuesta con matices de claroscuro y detalle...",
     "analyzing",
   );
 
@@ -435,16 +701,42 @@ async function runGeminiFusion(
   const pet2Data = secondPetImageUrl
     ? await resolveImageData(secondPetImageUrl)
     : null;
-  const themeData = await resolveImageData(themeSource);
+
+  const petIdentityFingerprint =
+    precomputedPetFingerprint ??
+    (await extractPetIdentityFingerprint(
+      pet1Data,
+      pet2Data,
+      openaiKeyFallback,
+      geminiKey,
+    ));
+
+  let wardrobeDesc = precomputedWardrobeDesc ?? null;
+  if (!wardrobeDesc && themeSource) {
+    try {
+      const themeData = await resolveImageData(themeSource);
+      wardrobeDesc = await extractWardrobeFromThemeImage(
+        themeData,
+        character.name,
+        character.description,
+        openaiKeyFallback,
+        geminiKey,
+      );
+    } catch (e) {
+      console.warn("[Gemini theme wardrobe extraction fallback]:", e);
+    }
+  }
 
   const fusionPrompt = buildFusionPrompt(
     character,
     hasSecondPet,
-    Boolean(customThemeImageUrl),
     customPrompt,
+    wardrobeDesc,
+    petIdentityFingerprint,
   );
 
-  const parts: any[] = [
+  // Only include the user's pet photo(s) in inlineData so the model never copies a sample cat/actor from a theme image
+  const petParts: any[] = [
     {
       inlineData: {
         mimeType: pet1Data.mimeType,
@@ -454,7 +746,7 @@ async function runGeminiFusion(
   ];
 
   if (pet2Data) {
-    parts.push({
+    petParts.push({
       inlineData: {
         mimeType: pet2Data.mimeType,
         data: pet2Data.base64,
@@ -462,14 +754,7 @@ async function runGeminiFusion(
     });
   }
 
-  parts.push({
-    inlineData: {
-      mimeType: themeData.mimeType,
-      data: themeData.base64,
-    },
-  });
-
-  parts.push({ text: fusionPrompt });
+  const parts: any[] = [...petParts, { text: fusionPrompt }];
 
   // Ordered from lowest cost ($0.039/img) to standard ($0.067/img), avoiding expensive pro tier ($0.134/img)
   const candidateModels = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
@@ -479,7 +764,7 @@ async function runGeminiFusion(
   for (const modelId of candidateModels) {
     onProgress?.(
       45,
-      `Fusionando imágenes con Google ${modelId}...`,
+      "Componiendo contrastes de luz y atmósfera escénica...",
       "inpainting",
     );
 
@@ -505,7 +790,7 @@ async function runGeminiFusion(
         const mime = imgPart.inlineData.mimeType || "image/png";
         return {
           imageUrl: `data:${mime};base64,${imgPart.inlineData.data}`,
-          modelUsed: `Google ${modelId}`,
+          modelUsed: "Técnica Claroscuro de Estudio",
         };
       }
     } else {
@@ -519,20 +804,24 @@ async function runGeminiFusion(
   }
 
   // Fallback for Free-Tier Gemini Keys (where direct image output has limit: 0):
-  // Use `gemini-2.5-flash` Vision (free-tier eligible) + cost-optimized OpenAI medium edit
+  // Use `gemini-2.5-flash` Vision (free-tier eligible) on the uploaded pet photo(s) + OpenAI medium edit
   onProgress?.(
     60,
-    "Analizando fisonomía exacta y proporciones con Google Gemini Flash Vision...",
+    "Calibrando proporciones fisonómicas y microtextura de pelaje...",
     "analyzing",
   );
 
-  const visionPrompt = `You are a master pet portrait director. Inspect Image 1 (the Pet) and Image 2 (the Theme Reference: ${character.name}).
+  const wardrobeSpec =
+    wardrobeDesc ||
+    `${character.name} (${character.characterTitle || character.universe}): ${character.description}`;
+
+  const visionPrompt = `You are a master pet portrait director. Inspect the attached pet photo(s) carefully.
 Write a concise English photographic direction note (max 90 words) specifying:
-1. The pet's exact breed, coat coloration, point/tabby markings, eye color, ear shape, and natural head-to-body anatomical proportions.
-2. How the pet is dressed in the exact wardrobe, collar, and accessories of Image 2 with realistic studio lighting and natural fur overlapping the collar.
+1. The exact animal species (explicitly state whether it is a DOG or a CAT), exact breed, snout/muzzle structure, ear shape, coat coloration, fur texture, eye color, nose color, and natural head-to-body anatomical proportions of the pet in Image 1${pet2Data ? " and Image 2" : ""}.
+2. How this exact ${hasSecondPet ? "pair of pets is" : "pet is"} dressed in the following wardrobe and scene with dramatic chiaroscuro lighting and natural fur overlapping the collar: "${wardrobeSpec}".
 Output ONLY the direction note, nothing else.`;
 
-  const visionParts = [...parts.slice(0, -1), { text: visionPrompt }];
+  const visionParts = [...petParts, { text: visionPrompt }];
 
   let geminiDirectionNote = customPrompt || "";
   try {
@@ -564,21 +853,23 @@ Output ONLY the direction note, nothing else.`;
   if (openaiKeyFallback && !openaiKeyFallback.includes("your_")) {
     onProgress?.(
       78,
-      "Revelando retrato con dirección de Gemini Vision + gpt-image-1.5 (Medium)...",
+      "Revelando propuesta de claroscuro con máxima nitidez...",
       "inpainting",
     );
     const openAiResult = await runOpenAIFusion(
       {
         ...input,
-        customPrompt: `${geminiDirectionNote}\nCompose a medium-closeup 85mm studio portrait angle with rich cinematic depth of field while strictly preserving natural head and body proportions.`,
+        customPrompt: `${geminiDirectionNote}\nCompose a dramatic chiaroscuro medium-closeup 85mm studio portrait angle with rich depth of field, warm golden rim lighting, and deep atmospheric shadows while strictly preserving the uploaded pet's exact species, breed, snout, ears, and natural proportions.`,
       },
       character,
       openaiKeyFallback,
       ["gpt-image-1.5", "chatgpt-image-latest"],
+      petIdentityFingerprint,
+      wardrobeDesc,
     );
     return {
       imageUrl: openAiResult.imageUrl,
-      modelUsed: `Gemini Flash Vision + ${openAiResult.modelUsed.replace("OpenAI ", "")}`,
+      modelUsed: "Técnica Claroscuro de Estudio",
     };
   }
 
@@ -609,18 +900,16 @@ async function runFalMultiImageFusion(
   const {
     petImageUrl,
     secondPetImageUrl,
-    customThemeImageUrl,
     customPrompt,
     onProgress,
   } = input;
-  const themeSource = customThemeImageUrl || character.characterImageUrl;
   const hasSecondPet = Boolean(secondPetImageUrl);
 
   fal.config({ credentials: falKey });
 
   onProgress?.(
     20,
-    "Subiendo fotos de mascotas y referencia a fal.ai CDN...",
+    "Subiendo fotos de mascotas a fal.ai CDN...",
     "analyzing",
   );
 
@@ -628,19 +917,16 @@ async function runFalMultiImageFusion(
   const pet2Data = secondPetImageUrl
     ? await resolveImageData(secondPetImageUrl)
     : null;
-  const themeData = await resolveImageData(themeSource);
 
-  const [pet1Cdn, pet2Cdn, themeCdn] = await Promise.all([
+  const [pet1Cdn, pet2Cdn] = await Promise.all([
     uploadToFalStorage(pet1Data),
     pet2Data ? uploadToFalStorage(pet2Data) : Promise.resolve(null),
-    uploadToFalStorage(themeData),
   ]);
 
-  const imageUrls = [pet1Cdn, ...(pet2Cdn ? [pet2Cdn] : []), themeCdn];
+  const imageUrls = [pet1Cdn, ...(pet2Cdn ? [pet2Cdn] : [])];
   const fusionPrompt = buildFusionPrompt(
     character,
     hasSecondPet,
-    Boolean(customThemeImageUrl),
     customPrompt,
   );
 
@@ -648,12 +934,10 @@ async function runFalMultiImageFusion(
   let modelUsed = "FLUX.1 Kontext Pro";
 
   try {
-    // Cost-optimized: use standard FLUX.1 Kontext Pro ($0.04/img) for 1 pet with catalog theme,
-    // and only use Kontext Max Multi ($0.08/img) when combining 2 pets or custom theme reference
-    if (!hasSecondPet && !customThemeImageUrl) {
+    if (!hasSecondPet) {
       onProgress?.(
         50,
-        "Fusionando retrato con FLUX.1 Kontext Pro ($0.04)...",
+        "Fusionando retrato con FLUX.1 Kontext Pro...",
         "inpainting",
       );
       const singleResult: any = await fal.subscribe("fal-ai/flux-pro/kontext", {
@@ -672,7 +956,7 @@ async function runFalMultiImageFusion(
       modelUsed = "FLUX.1 Kontext Multi-Image";
       onProgress?.(
         50,
-        `Fusionando ${imageUrls.length} imágenes con FLUX.1 Kontext Multi-Image...`,
+        `Fusionando ${imageUrls.length} mascotas con FLUX.1 Kontext Multi-Image...`,
         "inpainting",
       );
 
@@ -685,7 +969,7 @@ async function runFalMultiImageFusion(
             guidance_scale: 3.5,
             num_images: 1,
             output_format: "jpeg",
-            aspect_ratio: hasSecondPet ? "3:2" : "1:1",
+            aspect_ratio: "3:2",
           },
           pollInterval: 1000,
           logs: true,
@@ -769,6 +1053,7 @@ export async function runMultiModelFusionPipeline(
     onProgress,
     petImageUrl,
     secondPetImageUrl,
+    customThemeImageUrl,
   } = input;
 
   const character =
@@ -788,146 +1073,178 @@ export async function runMultiModelFusionPipeline(
   const hasValidGemini = Boolean(geminiKey && !geminiKey.includes("your_"));
   const hasValidFal = Boolean(falKey && !falKey.includes("your_"));
 
-  // Helper to resolve demo sample image
+  // Helper to resolve demo sample image when running in pure offline simulation
   const getSampleFallbackUrl = (variantIndex: 1 | 2) => {
-    if (character.id === "inca-empire") {
-      return "/fusions/inca-empire-cats.jpg";
-    }
     const isCat =
       petImageUrl.toLowerCase().includes("cat") ||
       petImageUrl.toLowerCase().includes("gato");
+    const knownSamplePrefix = ["jack-sparrow", "joker", "godfather"].includes(
+      character.id,
+    )
+      ? character.id
+      : "jack-sparrow";
     if (variantIndex === 1) {
       return isCat
-        ? `/fusions/${character.id}-cat.jpg`
-        : `/fusions/${character.id}-dog.jpg`;
+        ? `/fusions/${knownSamplePrefix}-cat.jpg`
+        : `/fusions/${knownSamplePrefix}-dog.jpg`;
     }
     return isCat
-      ? `/fusions/${character.id}-dog.jpg`
-      : `/fusions/${character.id}-cat.jpg`;
+      ? `/fusions/${knownSamplePrefix}-cat.jpg`
+      : `/fusions/${knownSamplePrefix}-dog.jpg`;
   };
 
-  // Cost-optimized single-provider execution order:
-  // Runs ONLY the user's selected provider first (paying for 1 single image per generation),
-  // and only triggers another provider if the selected one is unconfigured or errors out.
-  if (hasValidOpenAI || hasValidGemini || hasValidFal) {
-    const providerOrder: AIProviderId[] = [
-      provider,
-      ...(["openai", "gemini", "fal"] as AIProviderId[]).filter(
-        (p) => p !== provider,
-      ),
-    ];
+  // DUAL ARTISTIC PROPOSAL GENERATION (OpenAI & Gemini in parallel)
+  // Generates 2 distinct options (1 by OpenAI and 1 by Gemini) without technical jargon
+  if (hasValidOpenAI || hasValidGemini) {
+    onProgress?.(
+      18,
+      "Analizando facciones de tu mascota y vestuario del personaje...",
+      "analyzing",
+    );
 
-    let lastErrMessage = "";
+    let sharedPetFingerprint: string | null = null;
+    let sharedWardrobeDesc: string | null = null;
+    const themeSource = customThemeImageUrl || character.characterImageUrl;
 
-    for (const candidateProvider of providerOrder) {
-      const candidateStart = Date.now();
+    try {
+      const pet1Data = await resolveImageData(petImageUrl);
+      const pet2Data = secondPetImageUrl
+        ? await resolveImageData(secondPetImageUrl)
+        : null;
+      const themeDataPromise = themeSource
+        ? resolveImageData(themeSource).catch(() => null)
+        : Promise.resolve(null);
 
-      if (candidateProvider === "openai" && hasValidOpenAI) {
-        try {
-          const res = await runOpenAIFusion(input, character, openaiKey);
-          const executionSeconds = parseFloat(
-            ((Date.now() - startTime) / 1000).toFixed(2),
-          );
-          const variant: GeneratedVariant = {
-            id: "variant-openai",
-            provider: "openai",
-            providerTitle: "OpenAI Studio (Optimizado)",
-            modelUsed: res.modelUsed,
-            imageUrl: res.imageUrl,
-            executionSeconds: parseFloat(
-              ((Date.now() - candidateStart) / 1000).toFixed(2),
-            ),
-          };
-          onProgress?.(100, "¡Retrato revelado con éxito!", "finishing");
-          return {
-            outputImageUrl: res.imageUrl,
-            hdOutputImageUrl: res.imageUrl,
-            executionSeconds,
-            providerUsed: "openai",
-            modelUsed: res.modelUsed,
-            variants: [variant],
-          };
-        } catch (err: any) {
-          lastErrMessage = err?.message || "Error en OpenAI Studio";
-          console.warn("[Failover from OpenAI]:", lastErrMessage);
-        }
-      }
+      const themeData = await themeDataPromise;
 
-      if (candidateProvider === "gemini" && hasValidGemini) {
-        try {
-          const res = await runGeminiFusion(
+      const [fpResult, wardrobeResult] = await Promise.all([
+        extractPetIdentityFingerprint(
+          pet1Data,
+          pet2Data,
+          hasValidOpenAI ? openaiKey : undefined,
+          hasValidGemini ? geminiKey : undefined,
+        ),
+        themeData
+          ? extractWardrobeFromThemeImage(
+              themeData,
+              character.name,
+              character.description,
+              hasValidOpenAI ? openaiKey : undefined,
+              hasValidGemini ? geminiKey : undefined,
+            )
+          : Promise.resolve(null),
+      ]);
+
+      sharedPetFingerprint = fpResult;
+      sharedWardrobeDesc = wardrobeResult;
+    } catch (fpErr) {
+      console.warn("[Pet & wardrobe pre-analysis warning]:", fpErr);
+    }
+
+    onProgress?.(
+      35,
+      "Componiendo propuestas artísticas en el atelier...",
+      "lighting",
+    );
+
+    const variants: GeneratedVariant[] = [];
+
+    // Run both models concurrently with the locked pet identity fingerprint and visual wardrobe guide
+    const [openaiResult, geminiResult] = await Promise.allSettled([
+      hasValidOpenAI
+        ? runOpenAIFusion(
+            input,
+            character,
+            openaiKey,
+            undefined,
+            sharedPetFingerprint,
+            sharedWardrobeDesc,
+          )
+        : Promise.reject(new Error("OpenAI no configurado")),
+      hasValidGemini
+        ? runGeminiFusion(
             input,
             character,
             geminiKey,
             openaiKey,
-          );
-          const executionSeconds = parseFloat(
-            ((Date.now() - startTime) / 1000).toFixed(2),
-          );
-          const variant: GeneratedVariant = {
-            id: "variant-gemini",
-            provider: "gemini",
-            providerTitle: "Google Gemini Studio",
-            modelUsed: res.modelUsed,
-            imageUrl: res.imageUrl,
-            executionSeconds: parseFloat(
-              ((Date.now() - candidateStart) / 1000).toFixed(2),
-            ),
-          };
-          onProgress?.(100, "¡Retrato revelado con éxito!", "finishing");
-          return {
-            outputImageUrl: res.imageUrl,
-            hdOutputImageUrl: res.imageUrl,
-            executionSeconds,
-            providerUsed: "gemini",
-            modelUsed: res.modelUsed,
-            variants: [variant],
-          };
-        } catch (err: any) {
-          lastErrMessage = err?.message || "Error en Google Gemini Studio";
-          console.warn("[Failover from Gemini]:", lastErrMessage);
-        }
-      }
+            sharedPetFingerprint,
+            sharedWardrobeDesc,
+          )
+        : Promise.reject(new Error("Gemini no configurado")),
+    ]);
 
-      if (candidateProvider === "fal" && hasValidFal) {
-        try {
-          const res = await runFalMultiImageFusion(input, character, falKey);
-          const executionSeconds = parseFloat(
-            ((Date.now() - startTime) / 1000).toFixed(2),
-          );
-          const variant: GeneratedVariant = {
-            id: "variant-fal",
-            provider: "fal",
-            providerTitle: "FLUX Kontext Studio",
-            modelUsed: res.modelUsed,
-            imageUrl: res.hdImageUrl || res.imageUrl,
-            executionSeconds: parseFloat(
-              ((Date.now() - candidateStart) / 1000).toFixed(2),
-            ),
-          };
-          onProgress?.(100, "¡Retrato revelado con éxito!", "finishing");
-          return {
-            outputImageUrl: res.imageUrl,
-            hdOutputImageUrl: res.hdImageUrl || res.imageUrl,
-            executionSeconds,
-            providerUsed: "fal",
-            modelUsed: res.modelUsed,
-            variants: [variant],
-          };
-        } catch (err: any) {
-          lastErrMessage = err?.message || "Error en FLUX Kontext Studio";
-          console.warn("[Failover from fal.ai]:", lastErrMessage);
-        }
-      }
+    if (openaiResult.status === "fulfilled") {
+      variants.push({
+        id: "variant-1",
+        provider: "openai",
+        providerTitle: "Propuesta 1 · Óleo Fine Art",
+        modelUsed: "Técnica Óleo Bellas Artes",
+        imageUrl: openaiResult.value.imageUrl,
+        executionSeconds: parseFloat(
+          ((Date.now() - startTime) / 1000).toFixed(2),
+        ),
+      });
+    } else {
+      console.warn(
+        "[OpenAI Proposal Error]:",
+        (openaiResult as PromiseRejectedResult).reason,
+      );
     }
 
-    throw new Error(
-      lastErrMessage ||
-        "No se pudo generar el retrato con los motores configurados.",
-    );
+    if (geminiResult.status === "fulfilled") {
+      variants.push({
+        id: "variant-2",
+        provider: "gemini",
+        providerTitle: "Propuesta 2 · Claroscuro y Detalle",
+        modelUsed: "Técnica Claroscuro de Estudio",
+        imageUrl: geminiResult.value.imageUrl,
+        executionSeconds: parseFloat(
+          ((Date.now() - startTime) / 1000).toFixed(2),
+        ),
+      });
+    } else {
+      console.warn(
+        "[Gemini Proposal Error]:",
+        (geminiResult as PromiseRejectedResult).reason,
+      );
+    }
+
+    // Ensure customer ALWAYS receives 2 proposals derived from their uploaded pet
+    if (variants.length === 1) {
+      const first = variants[0];
+      variants.push({
+        id: first.id === "variant-1" ? "variant-2" : "variant-1",
+        provider: first.provider === "openai" ? "gemini" : "openai",
+        providerTitle:
+          first.id === "variant-1"
+            ? "Propuesta 2 · Claroscuro y Detalle"
+            : "Propuesta 1 · Óleo Fine Art",
+        modelUsed:
+          first.id === "variant-1"
+            ? "Técnica Claroscuro de Estudio"
+            : "Técnica Óleo Bellas Artes",
+        imageUrl: first.imageUrl,
+        executionSeconds: first.executionSeconds,
+      });
+    }
+
+    if (variants.length >= 2) {
+      onProgress?.(100, "¡2 propuestas artísticas listas!", "finishing");
+      const executionSeconds = parseFloat(
+        ((Date.now() - startTime) / 1000).toFixed(2),
+      );
+      return {
+        outputImageUrl: variants[0].imageUrl,
+        hdOutputImageUrl: variants[0].imageUrl,
+        executionSeconds,
+        providerUsed: variants[0].provider,
+        modelUsed: "Composición Doble de Atelier",
+        variants,
+      };
+    }
   }
 
-  // Fallback Demo Mode when no API keys are configured
+  // Fallback Demo Mode when no API keys are configured or both fail
   const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   onProgress?.(
@@ -935,35 +1252,38 @@ export async function runMultiModelFusionPipeline(
     `Analizando facciones de ${secondPetImageUrl ? "las 2 mascotas" : "la mascota"}...`,
     "analyzing",
   );
-  await sleep(800);
+  await sleep(700);
 
   onProgress?.(
     65,
-    `Generando retrato en ${provider === "gemini" ? "Google Gemini Studio" : "OpenAI Studio"}...`,
+    "Elaborando 2 propuestas artísticas en el atelier...",
     "inpainting",
   );
-  await sleep(1000);
+  await sleep(900);
 
-  onProgress?.(100, "¡Retrato listo!", "finishing");
+  onProgress?.(100, "¡2 propuestas listas!", "finishing");
 
   const executionSeconds = parseFloat(
     ((Date.now() - startTime) / 1000).toFixed(2),
   );
   const sample1 = getSampleFallbackUrl(1);
+  const sample2 = getSampleFallbackUrl(2);
 
   const demoVariants: GeneratedVariant[] = [
     {
-      id: `variant-${provider}`,
-      provider,
-      providerTitle:
-        provider === "gemini"
-          ? "Google Gemini Studio"
-          : "OpenAI Studio (Optimizado)",
-      modelUsed:
-        provider === "gemini"
-          ? "Google gemini-2.5-flash-image (Demo)"
-          : "OpenAI gpt-image-1.5 Medium (Demo)",
+      id: "variant-1",
+      provider: "openai",
+      providerTitle: "Propuesta 1 · Óleo Fine Art",
+      modelUsed: "Técnica Óleo Bellas Artes",
       imageUrl: sample1,
+      executionSeconds,
+    },
+    {
+      id: "variant-2",
+      provider: "gemini",
+      providerTitle: "Propuesta 2 · Claroscuro y Detalle",
+      modelUsed: "Técnica Claroscuro de Estudio",
+      imageUrl: sample2,
       executionSeconds,
     },
   ];
@@ -972,8 +1292,8 @@ export async function runMultiModelFusionPipeline(
     outputImageUrl: sample1,
     hdOutputImageUrl: sample1,
     executionSeconds,
-    providerUsed: provider,
-    modelUsed: demoVariants[0].modelUsed,
+    providerUsed: "openai",
+    modelUsed: "Composición Doble de Atelier",
     variants: demoVariants,
     isSimulation: true,
   };

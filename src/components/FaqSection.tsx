@@ -47,11 +47,11 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="w-full py-16 bg-[#FAF6F0] text-[#1C1B1A]">
+    <section className="w-full py-16 bg-cream-100 text-secondary">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Encabezado de la sección */}
         <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1C1B1A]">
+          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-secondary">
             Preguntas Frecuentes
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-600">
@@ -67,18 +67,18 @@ export default function FaqSection() {
             return (
               <div 
                 key={faq.id}
-                className="border border-[#D4A343]/30 rounded-xl bg-white/60 backdrop-blur-sm overflow-hidden transition-all duration-200"
+                className="border border-primary/30 rounded-xl bg-white/80 backdrop-blur-sm overflow-hidden transition-all duration-200"
               >
                 {/* Botón Pregunta */}
                 <button
                   onClick={() => toggleFaq(faq.id)}
-                  className="w-full text-left px-6 py-5 flex justify-between items-center gap-4 hover:bg-black/5 transition-colors"
+                  className="w-full text-left px-6 py-5 flex justify-between items-center gap-4 hover:bg-secondary/5 transition-colors"
                 >
-                  <span className="font-semibold text-base sm:text-lg text-[#1C1B1A]">
+                  <span className="font-semibold text-base sm:text-lg text-secondary">
                     {faq.question}
                   </span>
                   <ChevronDown 
-                    className={`w-5 h-5 text-[#D4A343] transition-transform duration-300 shrink-0 ${
+                    className={`w-5 h-5 text-primary transition-transform duration-300 shrink-0 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />

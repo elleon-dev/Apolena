@@ -9,6 +9,7 @@ export interface PrintPreset {
   baseHeightPx: number;
   recommendedUse: string;
   pricePen: number;
+  isAvailable?: boolean;
 }
 
 export interface FrameOption {

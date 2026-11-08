@@ -1,55 +1,79 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-[#1C1B1A] text-[#FAF6F0] border-t border-[#D4A343]/40 pt-12 pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-10">
-        {/* Estructura Principal del Footer */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          {/* Identidad de Marca y Descripción */}
-          <div className="space-y-3 max-w-lg">
-            <span className="font-serif text-3xl sm:text-4xl font-extrabold tracking-wide text-white block">
-              Apolena
-            </span>
-            <p className="text-sm sm:text-base text-[#D6D3D1] leading-relaxed">
-              Atelier digital especializado en transformar retratos de mascotas
-              en piezas artísticas de alta calidad listas para impresión y
-              enmarcado.
+    <footer className="w-full bg-white text-secondary border-t border-primary/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        {/* Fila Principal: Logotipo + Slogan breve | Enlaces */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-7 border-b border-secondary/10">
+          {/* Logotipo Oficial + Slogan muy breve */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+            <Link
+              href="/"
+              className="relative w-36 h-11 sm:w-44 sm:h-13 shrink-0 transition-transform duration-300 hover:scale-[1.02]"
+            >
+              <Image
+                src="/logo.png"
+                alt="Apolena — Retratos Personalizados de Mascotas"
+                fill
+                sizes="(min-width: 640px) 176px, 144px"
+                className="object-contain object-left"
+              />
+            </Link>
+
+            <span className="hidden sm:block h-6 w-px bg-secondary/15" />
+
+            <p className="text-xs sm:text-sm font-medium text-secondary/75">
+              Tu mascota, convertida en obra de arte.
             </p>
           </div>
 
-          {/* Términos & Soporte (Tipografía más grande y clara) */}
-          <div className="flex flex-wrap gap-6 text-xs sm:text-sm font-semibold text-[#F5F5F4]">
-            <a
+          {/* Navegación y Enlaces Legales */}
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm font-semibold text-secondary/80">
+            <Link
+              href="/products/cuadros-personalizados"
+              className="hover:text-primary transition-colors"
+            >
+              Crear Cuadro
+            </Link>
+            <Link
+              href="/track"
+              className="hover:text-primary transition-colors"
+            >
+              Seguimiento
+            </Link>
+            <Link
               href="#"
-              className="hover:text-[#D4A343] transition-colors underline-offset-4 hover:underline"
+              className="hover:text-primary transition-colors"
             >
               Políticas de Privacidad
-            </a>
-            <a
+            </Link>
+            <Link
               href="#"
-              className="hover:text-[#D4A343] transition-colors underline-offset-4 hover:underline"
+              className="hover:text-primary transition-colors"
             >
               Términos del Servicio
-            </a>
-            <a
-              href="#"
-              className="hover:text-[#D4A343] transition-colors underline-offset-4 hover:underline"
+            </Link>
+            <Link
+              href="/#contacto"
+              className="hover:text-primary transition-colors"
             >
               Contacto & Ayuda
-            </a>
-          </div>
+            </Link>
+          </nav>
         </div>
 
-        {/* Separador e Información Inferior */}
-        <div className="border-t border-[#A8A29E]/30 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-[#A8A29E]">
+        {/* Barra Inferior Minimalista */}
+        <div className="pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-secondary/60">
           <p>© {currentYear} Apolena. Todos los derechos reservados.</p>
-          <p className="font-bold text-[#D4A343] tracking-wide">
-            Retratos Personalizados de Mascotas
+          <p className="font-semibold text-primary tracking-wide">
+            Retratos Personalizados de Mascotas · Hecho en Perú
           </p>
         </div>
       </div>

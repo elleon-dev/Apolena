@@ -2,18 +2,41 @@ import { cookies } from "next/headers";
 
 export const SESSION_COOKIE_NAME = "apolena_session";
 
-export type UserRole = "user" | "admin";
+export const SUPER_ADMIN_EMAIL = "nmoriano26@gmail.com";
+
+export type UserRole = "user" | "admin" | "super_admin";
 
 export interface SessionUser {
   id: string;
   email: string;
   name: string;
   phone?: string | null;
+  avatar_url?: string | null;
   role: UserRole;
 }
 
 interface TokenPayload extends SessionUser {
   exp: number;
+}
+
+/**
+ * Regla de Negocio Inalterable:
+ * El correo nmoriano26@gmail.com SIEMPRE tiene el rol "super_admin".
+ */
+export function resolveUserRole(
+  email?: string | null,
+  role?: string | null,
+): UserRole {
+  if (email && email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
+    return "super_admin";
+  }
+  if (role === "super_admin") return "super_admin";
+  if (role === "admin") return "admin";
+  return "user";
+}
+
+export function isAdminRole(role?: string | null): boolean {
+  return role === "admin" || role === "super_admin";
 }
 
 function getAuthSecret(): string {
@@ -68,7 +91,8 @@ export async function hashPassword(
   salt?: string,
 ): Promise<string> {
   const activeSalt =
-    salt || toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
+    salt ||
+    toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
   const encoder = new TextEncoder();
   const data = encoder.encode(`${activeSalt}:${password}:${getAuthSecret()}`);
   const digest = await crypto.subtle.digest("SHA-256", data);
@@ -95,6 +119,7 @@ export async function signSessionToken(
 ): Promise<string> {
   const payload: TokenPayload = {
     ...user,
+    role: resolveUserRole(user.email, user.role),
     exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
   const encoder = new TextEncoder();
@@ -141,7 +166,8 @@ export async function verifySessionToken(
       email: payload.email,
       name: payload.name,
       phone: payload.phone,
-      role: payload.role === "admin" ? "admin" : "user",
+      avatar_url: payload.avatar_url || null,
+      role: resolveUserRole(payload.email, payload.role),
     };
   } catch {
     return null;
@@ -151,10 +177,27 @@ export async function verifySessionToken(
 /**
  * Server helper to retrieve current authenticated user from cookies
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export async function getSessionUser(
+  request?: Request,
+): Promise<SessionUser | null> {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    let token: string | undefined;
+
+    if (request) {
+      const cookieHeader = request.headers.get("cookie");
+      if (cookieHeader) {
+        const match = cookieHeader.match(
+          new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`),
+        );
+        if (match) token = match[1];
+      }
+    }
+
+    if (!token) {
+      const cookieStore = cookies();
+      token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    }
+
     return await verifySessionToken(token);
   } catch {
     return null;

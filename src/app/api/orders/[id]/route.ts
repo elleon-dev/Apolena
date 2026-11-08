@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { findOrderById } from "@/lib/db-service";
 
 export async function GET(
@@ -20,7 +20,7 @@ export async function GET(
   }
 
   // Aislamiento de datos RBAC: Un rol "user" solo puede consultar sus propias órdenes
-  if (user.role !== "admin" && order.buyer_id !== user.id) {
+  if (!isAdminRole(user.role) && order.buyer_id !== user.id) {
     return NextResponse.json(
       { error: "No tienes permiso para ver esta orden." },
       { status: 403 },

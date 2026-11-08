@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdminRole } from "@/lib/auth";
 import {
   getPlatformSettings,
   updatePlatformSettings,
   updateProductCustomizationConfig,
 } from "@/lib/db-service";
 
-export async function GET() {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
+export async function GET(request: Request) {
+  const user = await getSessionUser(request);
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
   }
   const settings = await getPlatformSettings();
@@ -17,9 +17,15 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const user = await getSessionUser();
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
+    const user = await getSessionUser(request);
+    if (!user || !isAdminRole(user.role)) {
+      return NextResponse.json(
+        {
+          error:
+            "Acceso denegado. Se requieren permisos de Administrador o Super Admin.",
+        },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
@@ -30,6 +36,16 @@ export async function PUT(request: Request) {
         body.productUpdate,
       );
       return NextResponse.json({ product: updatedProduct });
+    }
+
+    if (user.role !== "super_admin") {
+      return NextResponse.json(
+        {
+          error:
+            "Acceso denegado. Solo el Super Admin puede modificar la configuración global de Apolena.",
+        },
+        { status: 403 },
+      );
     }
 
     const settings = await updatePlatformSettings(body.settings, user.id);

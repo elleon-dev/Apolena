@@ -33,9 +33,11 @@ Una vez que el usuario genera y selecciona el retrato de su mascota:
 
 Por el momento, todos los pagos operan bajo modalidad manual verificable / contraentrega usando exclusivamente:
 
-- `yape`: Pago vía Yape (QR / Número configurado en `platform_settings`).
-- `plin`: Pago vía Plin (QR / Número configurado en `platform_settings`).
-- `bank_transfer`: Transferencia bancaria (BCP, Interbank, BBVA, CCI configurados en `platform_settings`).
+- `yape`: Pago vía Yape (Número de celular y titular configurados en `platform_settings`).
+- `plin`: Pago vía Plin (Número de celular y titular configurados en `platform_settings`).
+- `bank_transfer`: Transferencia bancaria (Banco, Número de Cuenta, Código de Cuenta Interbancario `cci` y Nombre del Titular `holder_name` configurados por separado en `platform_settings`).
+
+En el checkout (`/checkout`), cada dato se muestra en bloques interactivos individuales con botones de copiado rápido al portapapeles para evitar errores de digitación del comprador.
 
 ---
 

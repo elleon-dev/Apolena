@@ -24,11 +24,11 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ### 🔐 Dominio 1: Autenticación, Perfiles y Control de Acceso (RBAC)
 
 1. **`apolena-business-auth-rbac`:**
-   - Autenticación persistida con Prisma (`profiles`).
-   - Dos roles oficiales: `user` (comprador/cliente) y `admin` (administrador de Apolena).
+   - Autenticación persistida con Prisma (`profiles`) + Google OAuth.
+   - Tres roles oficiales: `super_admin` (`nmoriano26@gmail.com` siempre `super_admin` con acceso total), `admin` (gestiona órdenes y usuarios con rol `user` y `admin`) y `user` (comprador/cliente).
    - Rutas privadas protegidas por Middleware y validación server-side:
-     - `/dashboard/*`: Panel privado para todos los usuarios autenticados (`user` y `admin`) donde consultan sus retratos, órdenes y seguimiento.
-     - `/admin/*`: Panel privado **exclusivo** para `role === "admin"`. Invisible e inaccesible para usuarios con rol `user`.
+     - `/orders`: Vista común para todo tipo de usuarios autenticados (`user`, `admin`, `super_admin`) donde visualizan su orden y su estado con steps (`1. Fabricación` → `2. En Camino` → `3. Entregado` → `Exitoso`).
+     - `/dashboard` (y `/admin`): Dashboard privado **exclusivo** para `super_admin` y `admin` donde gestionan órdenes, usuarios y configuración de Apolena. Invisible e inaccesible para usuarios con rol `user`.
 
 ---
 
@@ -36,7 +36,7 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 
 2. **`apolena-business-catalog-customization`:**
    - Tablas centrales: `products`, `product_images`, `generation_jobs`.
-   - Producto inicial: **Cuadros Personalizados para Mascotas** (`slug: "personalized-wall-art"`).
+   - Producto inicial: **Cuadros Personalizados para Mascotas** (`slug: "cuadros-personalizados"`, ruta `/products/cuadros-personalizados`).
    - Flujo del producto:
      1. Usuario sube foto(s) de su mascota.
      2. Selecciona personaje/temática (o sube referencia propia) y genera la fusión con IA.

@@ -98,7 +98,7 @@ export default function ProductsCatalogPage() {
                 </div>
 
                 <Link
-                  href="/products/personalized-wall-Art"
+                  href="/products/cuadros-personalizados"
                   className="w-full py-4 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
                 >
                   <span>Personalizar Cuadro con Foto de mi Mascota</span>

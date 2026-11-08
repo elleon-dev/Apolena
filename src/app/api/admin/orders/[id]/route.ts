@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { updateOrderAdminLifecycle, PaymentMethod } from "@/lib/db-service";
 
 export async function PATCH(
@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const user = await getSessionUser();
-    if (!user || user.role !== "admin") {
+    if (!user || !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Acceso denegado. Exclusivo para administradores." },
         { status: 403 },

@@ -4,6 +4,8 @@ import {
   hashPassword,
   signSessionToken,
   SESSION_COOKIE_NAME,
+  resolveUserRole,
+  isAdminRole,
 } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -40,12 +42,14 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await hashPassword(password);
+    // Regla Inalterable RBAC: nmoriano26@gmail.com siempre recibe "super_admin"; los demás "user"
+    const assignedRole = resolveUserRole(email, "user");
     const profile = await createProfile({
       email,
       passwordHash,
       name,
       phone,
-      role: "user", // Por seguridad RBAC, todo registro público nace con rol "user"
+      role: assignedRole,
     });
 
     const sessionUser = {
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
     const token = await signSessionToken(sessionUser);
     const response = NextResponse.json({
       user: sessionUser,
-      redirectTo: "/dashboard",
+      redirectTo: isAdminRole(profile.role) ? "/dashboard" : "/orders",
     });
 
     response.cookies.set(SESSION_COOKIE_NAME, token, {

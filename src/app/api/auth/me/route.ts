@@ -14,6 +14,7 @@ export async function GET() {
       ...session,
       name: profile?.name || session.name,
       phone: profile?.phone || session.phone,
+      avatar_url: profile?.avatar_url || session.avatar_url || null,
       address: profile?.address || null,
       district: profile?.district || null,
       department: profile?.department || null,

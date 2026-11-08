@@ -11,6 +11,7 @@ export interface FamousCharacter {
   tagColor: string;
   prompt: string;
   negativePrompt: string;
+  isAvailable?: boolean;
 }
 
 export const FAMOUS_CHARACTERS: FamousCharacter[] = [
@@ -27,7 +28,7 @@ export const FAMOUS_CHARACTERS: FamousCharacter[] = [
     accentColor: "bg-terracotta-500",
     tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
     prompt:
-      "Ultra-realistic cinematic photograph of the uploaded pet(s) dressed as Inca Empire royalty at Machu Picchu during golden hour sunset. Preserve 100% of each pet’s exact facial identity, fur color, tabby stripes or tuxedo patches, nose markings, and eye color from the uploaded pet photo(s). Dress them in ornate handwoven Andean royal textiles (crimson red and deep turquoise ponchos/mantles with intricate geometric Inca tokapu embroidery), wearing golden Inti Sun God headpieces/diadems with dangling gold and turquoise ear ornaments, and multi-strand gold bead necklaces with a central golden Chakana cross pendant inlaid with turquoise. Stone Inca terrace in foreground with cantuta flowers in a gold vase, majestic Huayna Picchu mountain peak and misty Andes in the warm sunset background, shallow depth of field, 85mm f/1.8 lens, photorealistic fur and gold textures, 8k masterpiece.",
+      "Ultra-realistic cinematic photograph of the uploaded pet(s) dressed as Inca Empire royalty at Machu Picchu during golden hour sunset. Preserve 100% of each pet’s exact species, breed, facial identity, fur color, coat markings, snout/muzzle structure, ear shape, nose color, and eye color from the uploaded pet photo(s). Dress the uploaded pet in ornate handwoven Andean royal textiles (crimson red and deep turquoise unku ponchos/mantles with intricate geometric Inca tokapu embroidery), wearing a golden Inti Sun God headpiece/diadem with dangling gold and turquoise ear ornaments, and multi-strand gold bead necklaces with a central golden Chakana cross pendant inlaid with turquoise. Stone Inca terrace in foreground with cantuta flowers in a gold vase, majestic Huayna Picchu mountain peak and misty Andes in the warm sunset background, shallow depth of field, 85mm f/1.8 lens, photorealistic fur and gold textures, 8k masterpiece.",
     negativePrompt:
       "human face, human hands, cartoon, 3d render, illustration, anime, blurry, plastic, deformed eyes, bad anatomy, low resolution",
   },

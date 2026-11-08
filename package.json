@@ -8,9 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "npx tsx prisma/seed.ts",
-    "db:setup": "prisma generate && prisma db push && npx tsx prisma/seed.ts",
+    "db:push": "sh -c 'set -a && [ -f .env.local ] && . ./.env.local; set +a && prisma db push'",
+    "db:seed": "sh -c 'set -a && [ -f .env.local ] && . ./.env.local; set +a && npx --yes tsx prisma/seed.ts'",
+    "db:setup": "npm run db:generate && npm run db:push && npm run db:seed",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write ."
   },

@@ -33,7 +33,7 @@ const DEFAULT_DRAFT: CheckoutDraft = {
   product_id: "00000000-0000-4000-8000-000000000101",
   pet_photo_url: "/samples/cat-sample.jpg",
   generated_art_url: "/samples/cat-suit.jpg",
-  unit_price: 215,
+  unit_price: 180,
   customizations: {
     theme_id: "inca-emperor",
     theme_name: "Sapa Inca del Tahuantinsuyo",
@@ -41,11 +41,11 @@ const DEFAULT_DRAFT: CheckoutDraft = {
     size_label: "Grande (L) · 40 × 50 cm",
     cm_dimensions: "40 × 50 cm",
     dpi: 300,
-    finish_mode: "museum-matte",
-    finish_label: "Con Paspartú de Galería",
-    frame_id: "frame-oak",
-    frame_name: "Marco de Madera Roble Natural",
-    frame_price_pen: 35,
+    finish_mode: "full-bleed",
+    finish_label: "Lienzo Completo (Full Screen)",
+    frame_id: "canvas-bastidor",
+    frame_name: "Lienzo en Bastidor de Madera (Full Screen)",
+    frame_price_pen: 0,
     pet_count: 1,
     notes: null,
   },
@@ -313,10 +313,10 @@ export default function CheckoutPage() {
                 <span>Rastrear Orden en Vivo</span>
               </Link>
               <Link
-                href="/dashboard"
+                href="/orders"
                 className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
               >
-                <span>Ver en Mi Panel de Usuario</span>
+                <span>Ver Mis Órdenes y Steps</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -632,69 +632,220 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Instrucciones dinámicas desde platform_settings */}
-                <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2 text-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-3 text-xs">
                   {paymentMethod === "yape" && (
-                    <>
+                    <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Yapea S/ {advance50.toFixed(2)} al número oficial de
-                        Apolena:
+                        Yapea <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
                       </p>
-                      <p className="font-mono text-base font-bold text-terracotta-600">
-                        {paymentSettings?.yape?.phone || "987 654 321"}
-                      </p>
-                      <p className="text-stone-500">
-                        Titular:{" "}
-                        {paymentSettings?.yape?.holder_name ||
-                          "APOLENA STUDIO SAC"}
-                      </p>
-                    </>
+                      <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
+                        <div>
+                          <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                            Número Yape
+                          </span>
+                          <span className="font-mono text-base font-bold text-terracotta-600">
+                            {paymentSettings?.yape?.phone || "987 654 321"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              paymentSettings?.yape?.phone || "987 654 321",
+                            )
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 transition-colors"
+                        >
+                          {copiedText ===
+                          (paymentSettings?.yape?.phone || "987 654 321") ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-sage-600" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-stone-500" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-stone-600 px-1">
+                        <span>Titular de la Cuenta:</span>
+                        <strong className="text-stone-900 font-semibold">
+                          {paymentSettings?.yape?.holder_name ||
+                            paymentSettings?.bank_transfer?.holder_name ||
+                            "APOLENA STUDIO SAC"}
+                        </strong>
+                      </div>
+                    </div>
                   )}
 
                   {paymentMethod === "plin" && (
-                    <>
+                    <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Envía por Plin S/ {advance50.toFixed(2)} al número
-                        oficial de Apolena:
+                        Envía por Plin <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
                       </p>
-                      <p className="font-mono text-base font-bold text-terracotta-600">
-                        {paymentSettings?.plin?.phone || "987 654 321"}
-                      </p>
-                      <p className="text-stone-500">
-                        Titular:{" "}
-                        {paymentSettings?.plin?.holder_name ||
-                          "APOLENA STUDIO SAC"}
-                      </p>
-                    </>
+                      <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
+                        <div>
+                          <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                            Número Plin
+                          </span>
+                          <span className="font-mono text-base font-bold text-terracotta-600">
+                            {paymentSettings?.plin?.phone || "987 654 321"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              paymentSettings?.plin?.phone || "987 654 321",
+                            )
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 transition-colors"
+                        >
+                          {copiedText ===
+                          (paymentSettings?.plin?.phone || "987 654 321") ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-sage-600" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-stone-500" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-stone-600 px-1">
+                        <span>Titular de la Cuenta:</span>
+                        <strong className="text-stone-900 font-semibold">
+                          {paymentSettings?.plin?.holder_name ||
+                            paymentSettings?.bank_transfer?.holder_name ||
+                            "APOLENA STUDIO SAC"}
+                        </strong>
+                      </div>
+                    </div>
                   )}
 
                   {paymentMethod === "bank_transfer" && (
-                    <>
+                    <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Transfiere S/ {advance50.toFixed(2)} a nuestra cuenta{" "}
-                        {paymentSettings?.bank_transfer?.bank_name ||
-                          "BCP Soles"}
-                        :
+                        Transfiere <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> a nuestra cuenta {paymentSettings?.bank_transfer?.bank_name || "BCP Soles"}:
                       </p>
-                      <p className="font-mono text-xs text-stone-800">
-                        Cuenta:{" "}
-                        <strong>
-                          {paymentSettings?.bank_transfer?.account_number ||
-                            "191-98451234-0-42"}
-                        </strong>
-                      </p>
-                      <p className="font-mono text-xs text-stone-800">
-                        CCI:{" "}
-                        <strong>
-                          {paymentSettings?.bank_transfer?.cci ||
-                            "002-191009845123404251"}
-                        </strong>
-                      </p>
-                      <p className="text-stone-500">
-                        Titular:{" "}
-                        {paymentSettings?.bank_transfer?.holder_name ||
-                          "APOLENA STUDIO SAC"}
-                      </p>
-                    </>
+
+                      {/* Cuenta Bancaria */}
+                      <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-cream-200 shadow-xs">
+                        <div className="min-w-0 pr-2">
+                          <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                            Número de Cuenta ({paymentSettings?.bank_transfer?.bank_name || "BCP Soles"})
+                          </span>
+                          <span className="font-mono text-xs sm:text-sm font-bold text-stone-900 truncate block">
+                            {paymentSettings?.bank_transfer?.account_number ||
+                              "191-98451234-0-42"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              paymentSettings?.bank_transfer?.account_number ||
+                                "191-98451234-0-42",
+                            )
+                          }
+                          className="px-2.5 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 flex-shrink-0 transition-colors"
+                        >
+                          {copiedText ===
+                          (paymentSettings?.bank_transfer?.account_number ||
+                            "191-98451234-0-42") ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-sage-600" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-stone-500" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Cuenta Interbancaria (CCI) */}
+                      <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-cream-200 shadow-xs">
+                        <div className="min-w-0 pr-2">
+                          <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                            Cuenta Interbancaria (CCI)
+                          </span>
+                          <span className="font-mono text-xs sm:text-sm font-bold text-stone-900 truncate block">
+                            {paymentSettings?.bank_transfer?.cci ||
+                              "002-191009845123404251"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              paymentSettings?.bank_transfer?.cci ||
+                                "002-191009845123404251",
+                            )
+                          }
+                          className="px-2.5 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 flex-shrink-0 transition-colors"
+                        >
+                          {copiedText ===
+                          (paymentSettings?.bank_transfer?.cci ||
+                            "002-191009845123404251") ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-sage-600" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-stone-500" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Titular de la Cuenta */}
+                      <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-cream-200 shadow-xs">
+                        <div className="min-w-0 pr-2">
+                          <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                            Nombre del Titular
+                          </span>
+                          <span className="font-semibold text-xs sm:text-sm text-stone-900 truncate block">
+                            {paymentSettings?.bank_transfer?.holder_name ||
+                              "APOLENA STUDIO SAC"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              paymentSettings?.bank_transfer?.holder_name ||
+                                "APOLENA STUDIO SAC",
+                            )
+                          }
+                          className="px-2.5 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 flex-shrink-0 transition-colors"
+                        >
+                          {copiedText ===
+                          (paymentSettings?.bank_transfer?.holder_name ||
+                            "APOLENA STUDIO SAC") ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-sage-600" />
+                              <span>Copiado</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-stone-500" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -759,10 +910,7 @@ export default function CheckoutPage() {
                       Medida: <strong>{draft.customizations.size_label}</strong>
                     </p>
                     <p className="text-stone-600">
-                      Marco: <strong>{draft.customizations.frame_name}</strong>
-                    </p>
-                    <p className="text-stone-500">
-                      Acabado: {draft.customizations.finish_label}
+                      Presentación: <strong>Lienzo en Bastidor (Full Screen)</strong>
                     </p>
                   </div>
                 </div>
@@ -770,7 +918,7 @@ export default function CheckoutPage() {
                 {/* Financial Breakdown */}
                 <div className="space-y-2.5 text-xs pt-2 border-t border-cream-200">
                   <div className="flex justify-between text-stone-600">
-                    <span>Subtotal Cuadro + Marco</span>
+                    <span>Subtotal Cuadro</span>
                     <span className="font-medium text-stone-900">
                       S/ {subtotal.toFixed(2)}
                     </span>

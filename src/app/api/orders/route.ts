@@ -18,7 +18,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   }
-  const orders = await getOrdersByBuyer(user.id);
+  const orders = await getOrdersByBuyer(user.id, user.email);
   return NextResponse.json({ orders });
 }
 

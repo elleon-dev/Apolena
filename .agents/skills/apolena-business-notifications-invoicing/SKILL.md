@@ -50,6 +50,6 @@ Toda notificación por correo electrónico se registra primero en la tabla `emai
 
 - Ningún dato operativo cambiante debe estar hardcodeado en el frontend o backend.
 - Claves estándar en `platform_settings`:
-  - `PAYMENT_METHODS_CONFIG`: Números de celular titulares y códigos QR de **Yape** y **Plin**, cuentas bancarias y CCI para **Transferencia Bancaria**, y porcentaje de adelanto (`advance_percentage: 0.50`).
+  - `PAYMENT_METHODS_CONFIG`: Números de celular titulares de **Yape** y **Plin**, configuración bancaria con campos desagregados (**Banco / Moneda**, **Número de Cuenta**, **Código de Cuenta Interbancario `cci`** y **Nombre Completo del Titular `holder_name`**), y porcentaje de adelanto (`advance_percentage: 0.50`). Estos datos alimentan dinámicamente las tarjetas de pago con copiado en `/checkout`, las transacciones en `payment_transactions` y el email `order_created_buyer`.
   - `SHIPPING_RATES_CONFIG`: Tarifas de delivery por Lima Metropolitana / Provincias y tiempo estimado de fabricación.
   - `ADMIN_NOTIFICATION_EMAILS`: Lista de correos de los administradores que reciben alertas de nuevas órdenes.

@@ -4,6 +4,8 @@ import {
   verifyPassword,
   signSessionToken,
   SESSION_COOKIE_NAME,
+  isAdminRole,
+  resolveUserRole,
 } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -35,18 +37,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const resolvedRole = resolveUserRole(profile.email, profile.role);
     const sessionUser = {
       id: profile.id,
       email: profile.email,
       name: profile.name || profile.email.split("@")[0],
       phone: profile.phone,
-      role: profile.role,
+      role: resolvedRole,
     };
 
     const token = await signSessionToken(sessionUser);
     const response = NextResponse.json({
       user: sessionUser,
-      redirectTo: profile.role === "admin" ? "/admin" : "/dashboard",
+      redirectTo: isAdminRole(resolvedRole) ? "/dashboard" : "/orders",
     });
 
     response.cookies.set(SESSION_COOKIE_NAME, token, {

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/lib/auth";
+import { hashPassword, SUPER_ADMIN_EMAIL } from "../src/lib/auth";
 import {
   DEFAULT_PLATFORM_SETTINGS,
   DEFAULT_WALL_ART_PRODUCT,
@@ -10,10 +10,28 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Iniciando seed de Apolena en PostgreSQL con Prisma...");
 
+  const superAdminPasswordHash = await hashPassword("admin123", "apolenasuper");
   const adminPasswordHash = await hashPassword("admin123", "apolenaadmin");
   const userPasswordHash = await hashPassword("cliente123", "apolenauser");
 
-  // 1. Perfiles: Admin y Cliente Demo
+  // 1. Perfiles: Super Admin (nmoriano26@gmail.com), Admin y Cliente Demo
+  await prisma.profile.upsert({
+    where: { email: SUPER_ADMIN_EMAIL },
+    update: { role: "super_admin" },
+    create: {
+      id: "00000000-0000-4000-8000-000000000000",
+      email: SUPER_ADMIN_EMAIL,
+      password_hash: superAdminPasswordHash,
+      name: "Noel Moriano (Super Admin)",
+      phone: "987654321",
+      role: "super_admin",
+      address: "Lima, Perú",
+      department: "Lima",
+      province: "Lima",
+      district: "Miraflores",
+    },
+  });
+
   await prisma.profile.upsert({
     where: { email: "admin@apolena.pe" },
     update: { role: "admin" },
@@ -50,13 +68,13 @@ async function main() {
 
   // 2. Producto extensible inicial: Cuadro Artístico Personalizado para Mascota
   await prisma.product.upsert({
-    where: { slug: DEFAULT_WALL_ART_PRODUCT.slug },
+    where: { id: DEFAULT_WALL_ART_PRODUCT.id },
     update: {
       title: DEFAULT_WALL_ART_PRODUCT.title,
+      slug: DEFAULT_WALL_ART_PRODUCT.slug,
       description: DEFAULT_WALL_ART_PRODUCT.description,
       base_price: DEFAULT_WALL_ART_PRODUCT.base_price,
-      customization_config:
-        DEFAULT_WALL_ART_PRODUCT.customization_config as any,
+      customization_config: DEFAULT_WALL_ART_PRODUCT.customization_config as any,
       specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
     },
     create: {
@@ -69,8 +87,7 @@ async function main() {
       status: "active",
       stock: 999,
       specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
-      customization_config:
-        DEFAULT_WALL_ART_PRODUCT.customization_config as any,
+      customization_config: DEFAULT_WALL_ART_PRODUCT.customization_config as any,
       images: {
         create: DEFAULT_WALL_ART_PRODUCT.images.map((img) => ({
           url: img.url,
@@ -94,7 +111,7 @@ async function main() {
     });
   }
 
-  console.log("✅ Seed de Apolena completado exitosamente.");
+  console.log("✅ Seed de Apolena completado exitosamente (Super Admin nmoriano26@gmail.com activo).");
 }
 
 main()

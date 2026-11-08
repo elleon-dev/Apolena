@@ -18,6 +18,7 @@ import {
   FrameOption,
   exportPrintReadyImage,
 } from "@/lib/print-export";
+import type { ProductFinishOption, ProductRecord } from "@/lib/db-service";
 import {
   Upload,
   ArrowRight,
@@ -42,6 +43,7 @@ import {
   Cat,
   PawPrint,
   Camera,
+  Sparkles,
   CheckCircle2,
   MoveHorizontal,
   Layers,
@@ -60,6 +62,35 @@ export default function personalizedWallArt() {
   const [petImage, setPetImage] = useState<string | null>(null);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
 
+  // Dynamic Catalog from Supabase (products.customization_config)
+  const [wallArtProductId, setWallArtProductId] = useState<string>(
+    "00000000-0000-4000-8000-000000000101",
+  );
+  const [catalogCharacters, setCatalogCharacters] =
+    useState<FamousCharacter[]>(FAMOUS_CHARACTERS);
+  const [catalogSizes, setCatalogSizes] =
+    useState<PrintPreset[]>(PRINT_PRESETS);
+  const [catalogFrames, setCatalogFrames] =
+    useState<FrameOption[]>(FRAME_OPTIONS);
+  const [catalogFinishes, setCatalogFinishes] = useState<ProductFinishOption[]>(
+    [
+      {
+        id: "full-bleed",
+        name: "Lienzo completo",
+        description: "Arte impreso hasta el borde",
+        priceModifierPen: 0,
+        isAvailable: true,
+      },
+      {
+        id: "museum-matte",
+        name: "Con paspartú",
+        description: "Margen blanco de museo",
+        priceModifierPen: 0,
+        isAvailable: true,
+      },
+    ],
+  );
+
   // Theme selection (Catalog or Custom uploaded reference image)
   const [selectedCharacter, setSelectedCharacter] = useState<FamousCharacter>(
     FAMOUS_CHARACTERS[0],
@@ -68,14 +99,9 @@ export default function personalizedWallArt() {
   const [useCustomTheme, setUseCustomTheme] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
 
-  // Multi-Model Provider selection
+  // Multi-Model Provider selection (credenciales gestionadas exclusivamente en el servidor .env)
   const [selectedProvider, setSelectedProvider] =
     useState<AIProviderId>("openai");
-  const [apiKeys, setApiKeys] = useState<ApiKeysOverride>({
-    openaiKey: "",
-    geminiKey: "",
-    falKey: "",
-  });
   const [envStatus, setEnvStatus] = useState<{
     openai: boolean;
     gemini: boolean;
@@ -85,7 +111,6 @@ export default function personalizedWallArt() {
     gemini: false,
     fal: false,
   });
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Generation / Loading state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -96,9 +121,9 @@ export default function personalizedWallArt() {
     GeneratedVariant[]
   >([]);
   const [selectedVariantId, setSelectedVariantId] =
-    useState<string>("variant-openai");
+    useState<string>("variant-1");
   const [modelUsedLabel, setModelUsedLabel] = useState<string>(
-    "OpenAI Studio & Gemini Studio",
+    "Propuesta 1 · Óleo Fine Art",
   );
   const [executionSeconds, setExecutionSeconds] = useState(12.4);
   const [fusionError, setFusionError] = useState<string | null>(null);
@@ -126,14 +151,10 @@ export default function personalizedWallArt() {
   const fileInput2Ref = useRef<HTMLInputElement>(null);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load saved API keys from localStorage & check server .env status
+  // Load saved provider preference & check server .env status
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("apolena_api_keys");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setApiKeys(parsed);
-      }
+      localStorage.removeItem("apolena_api_keys");
       const savedProvider = localStorage.getItem(
         "apolena_provider",
       ) as AIProviderId | null;
@@ -153,14 +174,68 @@ export default function personalizedWallArt() {
         }
       })
       .catch(() => {});
-  }, []);
 
-  const saveApiKeysToStorage = (updated: ApiKeysOverride) => {
-    setApiKeys(updated);
-    try {
-      localStorage.setItem("apolena_api_keys", JSON.stringify(updated));
-    } catch (e) {}
-  };
+    // Load dynamic characters, frames, sizes, and finishes for cuadros-personalizados
+    fetch("/api/products", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        const productsList: ProductRecord[] = data?.products || [];
+        const wallArt =
+          productsList.find((p) => p.slug === "cuadros-personalizados") ||
+          productsList[0];
+        if (!wallArt) return;
+
+        setWallArtProductId(wallArt.id);
+        const cfg = wallArt.customization_config;
+
+        if (Array.isArray(cfg?.characters)) {
+          const activeChars = cfg.characters.filter(
+            (c) => c.isAvailable !== false,
+          );
+          if (activeChars.length > 0) {
+            setCatalogCharacters(activeChars);
+            setSelectedCharacter((prev) => {
+              const found = activeChars.find((c) => c.id === prev.id);
+              return found || activeChars[0];
+            });
+          }
+        }
+
+        if (Array.isArray(cfg?.sizes)) {
+          const activeSizes = cfg.sizes.filter((s) => s.isAvailable !== false);
+          if (activeSizes.length > 0) {
+            setCatalogSizes(activeSizes);
+            setSelectedPrintPreset((prev) => {
+              const found = activeSizes.find((s) => s.id === prev.id);
+              return found || activeSizes[1] || activeSizes[0];
+            });
+          }
+        }
+
+        if (Array.isArray(cfg?.frames)) {
+          const activeFrames = cfg.frames.filter(
+            (f) => f.isAvailable !== false,
+          );
+          if (activeFrames.length > 0) {
+            setCatalogFrames(activeFrames);
+            setSelectedFrame((prev) => {
+              const found = activeFrames.find((f) => f.id === prev.id);
+              return found || activeFrames[0];
+            });
+          }
+        }
+
+        if (Array.isArray(cfg?.finishes)) {
+          const activeFinishes = cfg.finishes.filter(
+            (fin) => fin.isAvailable !== false,
+          );
+          if (activeFinishes.length > 0) {
+            setCatalogFinishes(activeFinishes);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSelectProvider = (provider: AIProviderId) => {
     setSelectedProvider(provider);
@@ -171,12 +246,9 @@ export default function personalizedWallArt() {
   };
 
   const isProviderConfigured = (provider: AIProviderId): boolean => {
-    if (provider === "openai")
-      return Boolean(apiKeys.openaiKey?.trim() || envStatus.openai);
-    if (provider === "gemini")
-      return Boolean(apiKeys.geminiKey?.trim() || envStatus.gemini);
-    if (provider === "fal")
-      return Boolean(apiKeys.falKey?.trim() || envStatus.fal);
+    if (provider === "openai") return Boolean(envStatus.openai);
+    if (provider === "gemini") return Boolean(envStatus.gemini);
+    if (provider === "fal") return Boolean(envStatus.fal);
     return false;
   };
 
@@ -267,7 +339,6 @@ export default function personalizedWallArt() {
           customThemeImageUrl: useCustomTheme ? customThemeImage : null,
           customPrompt: customPrompt.trim() || null,
           provider: selectedProvider,
-          apiKeys,
           petName: secondPetImage ? "Dúo de Mascotas" : "Mascota",
           species: isCat ? "cat" : "dog",
         }),
@@ -417,14 +488,13 @@ export default function personalizedWallArt() {
       ? "Referencia Personalizada"
       : selectedCharacter.name;
 
-  const currentUnitPrice =
-    selectedPrintPreset.pricePen + selectedFrame.priceModifierPen;
+  const currentUnitPrice = selectedPrintPreset.pricePen;
   const currentAdvance50 = Number((currentUnitPrice * 0.5).toFixed(2));
 
   const handleProceedToCheckout = () => {
     const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
     const draft = {
-      product_id: "00000000-0000-4000-8000-000000000101",
+      product_id: wallArtProductId,
       pet_photo_url: petImage,
       generated_art_url: finalArtUrl,
       unit_price: currentUnitPrice,
@@ -435,14 +505,11 @@ export default function personalizedWallArt() {
         size_label: `${selectedPrintPreset.tier} · ${selectedPrintPreset.cmDimensions}`,
         cm_dimensions: selectedPrintPreset.cmDimensions,
         dpi: selectedPrintPreset.dpi,
-        finish_mode: printFinishMode,
-        finish_label:
-          printFinishMode === "museum-matte"
-            ? "Con Paspartú de Galería"
-            : "Lienzo Completo",
-        frame_id: selectedFrame.id,
-        frame_name: selectedFrame.name,
-        frame_price_pen: selectedFrame.priceModifierPen,
+        finish_mode: "full-bleed",
+        finish_label: "Lienzo Completo (Full Screen)",
+        frame_id: "canvas-bastidor",
+        frame_name: "Lienzo en Bastidor de Madera (Full Screen)",
+        frame_price_pen: 0,
         pet_count: secondPetImage ? 2 : 1,
         notes: customPrompt.trim() || null,
       },
@@ -460,203 +527,8 @@ export default function personalizedWallArt() {
         currentStep={step}
         onReset={handleReset}
         selectedProvider={selectedProvider}
-        onOpenSettings={() => setIsSettingsOpen(true)}
         hasActiveKey={isProviderConfigured(selectedProvider)}
       />
-
-      {/* ========================================================================= */}
-      {/* MODAL DE CONFIGURACIÓN DE CREDENCIALES (LIGHT MINIMALIST DIALOG) */}
-      {/* ========================================================================= */}
-      {isSettingsOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/30 backdrop-blur-xs p-4 animate-in fade-in duration-200"
-          onClick={() => setIsSettingsOpen(false)}
-        >
-          <div
-            className="bg-white border border-cream-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between border-b border-cream-200 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cream-100 border border-cream-200 flex items-center justify-center text-stone-700">
-                  <KeyRound className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-serif text-xl font-semibold text-stone-900">
-                    Credenciales del Estudio
-                  </h3>
-                  <p className="text-xs text-stone-500">
-                    Se guardan localmente y en el archivo{" "}
-                    <code className="text-stone-800 font-medium">
-                      .env.local
-                    </code>
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsSettingsOpen(false)}
-                className="p-2 rounded-full hover:bg-cream-100 text-stone-400 hover:text-stone-700 transition-colors"
-                aria-label="Cerrar configuración"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              {/* OpenAI Key */}
-              <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-stone-900 flex items-center gap-2">
-                    <span>OpenAI Studio (gpt-image-1 / GPT-4o)</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-sage-50 text-sage-700 border border-sage-100 font-medium">
-                      Recomendado
-                    </span>
-                  </span>
-                  {envStatus.openai && (
-                    <span className="text-[11px] text-sage-600 font-medium flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Activa en servidor
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  value={apiKeys.openaiKey || ""}
-                  onChange={(e) =>
-                    saveApiKeysToStorage({
-                      ...apiKeys,
-                      openaiKey: e.target.value,
-                    })
-                  }
-                  placeholder={
-                    envStatus.openai
-                      ? "Configurada en .env.local (pega otra para reemplazar)"
-                      : "sk-proj-..."
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-200 text-stone-900 placeholder:text-stone-400 focus:border-terracotta-500 focus:outline-none font-mono text-xs"
-                />
-                <div className="flex items-center justify-between text-[11px] text-stone-500">
-                  <span>
-                    Fusión de 1 o 2 mascotas con preservación de rasgos
-                  </span>
-                  <a
-                    href="https://platform.openai.com/api-keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-terracotta-600 hover:underline inline-flex items-center gap-1 font-medium"
-                  >
-                    Obtener clave <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Google Gemini Key */}
-              <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-stone-900">
-                    Google Gemini Studio (gemini-2.5-flash-image)
-                  </span>
-                  {envStatus.gemini && (
-                    <span className="text-[11px] text-sage-600 font-medium flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Activa en servidor
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  value={apiKeys.geminiKey || ""}
-                  onChange={(e) =>
-                    saveApiKeysToStorage({
-                      ...apiKeys,
-                      geminiKey: e.target.value,
-                    })
-                  }
-                  placeholder={
-                    envStatus.gemini ? "Configurada en .env.local" : "AIzaSy..."
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-200 text-stone-900 placeholder:text-stone-400 focus:border-terracotta-500 focus:outline-none font-mono text-xs"
-                />
-                <div className="flex items-center justify-between text-[11px] text-stone-500">
-                  <span>
-                    Motor multimodal con nivel gratuito en Google AI Studio
-                  </span>
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-terracotta-600 hover:underline inline-flex items-center gap-1 font-medium"
-                  >
-                    Obtener clave <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              {/* fal.ai Key */}
-              <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-stone-900">
-                    FLUX Kontext Studio (fal.ai — Opcional)
-                  </span>
-                  {envStatus.fal && (
-                    <span className="text-[11px] text-sage-600 font-medium flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Activa en servidor
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="password"
-                  value={apiKeys.falKey || ""}
-                  onChange={(e) =>
-                    saveApiKeysToStorage({ ...apiKeys, falKey: e.target.value })
-                  }
-                  placeholder={
-                    envStatus.fal ? "Configurada en .env.local" : "fal_sk_..."
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-200 text-stone-900 placeholder:text-stone-400 focus:border-terracotta-500 focus:outline-none font-mono text-xs"
-                />
-                <div className="flex items-center justify-between text-[11px] text-stone-500">
-                  <span>Opcional si ya utilizas OpenAI o Google Gemini</span>
-                  <a
-                    href="https://fal.ai/dashboard/keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-terracotta-600 hover:underline inline-flex items-center gap-1 font-medium"
-                  >
-                    Panel fal.ai <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setIsSettingsOpen(false)}
-                className="px-4 py-2.5 rounded-full border border-cream-200 text-stone-600 hover:bg-cream-100 text-xs font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch("/api/providers", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(apiKeys),
-                    });
-                    const data = await res.json();
-                    if (data?.envConfigured) {
-                      setEnvStatus(data.envConfigured);
-                    }
-                  } catch (e) {}
-                  setIsSettingsOpen(false);
-                }}
-                className="px-6 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs shadow-soft transition-colors"
-              >
-                Guardar Configuración
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-8 py-10 sm:py-14 w-full">
@@ -700,11 +572,7 @@ export default function personalizedWallArt() {
             <div className="bg-white border border-cream-200 rounded-3xl p-8 shadow-soft space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 text-stone-700 text-xs font-medium">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-terracotta-500" />
-                <span>
-                  Motor de estudio activo ·{" "}
-                  {AI_PROVIDERS.find((p) => p.id === selectedProvider)?.name ||
-                    "OpenAI Studio"}
-                </span>
+                <span>Atelier Apolena · Elaborando 2 propuestas artísticas</span>
               </div>
               <h2 className="font-serif text-2xl font-semibold text-stone-900">
                 Revelando tu Retrato Personalizado
@@ -903,9 +771,9 @@ export default function personalizedWallArt() {
                 </p>
               </div>
 
-              {/* 4 Curated Collection Cards */}
+              {/* Dynamic Curated Collection Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {FAMOUS_CHARACTERS.map((char) => {
+                {catalogCharacters.map((char) => {
                   const isSelected =
                     !useCustomTheme && selectedCharacter.id === char.id;
 
@@ -1066,85 +934,7 @@ export default function personalizedWallArt() {
               </div>
             </div>
 
-            {/* Studio Engine Selector (Single-Model Cost-Optimized Execution) */}
-            <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-800 flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-terracotta-500" />
-                  <span>
-                    Motor de IA del Estudio (1 retrato optimizado por
-                    generación)
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="text-xs text-terracotta-600 hover:underline font-medium"
-                >
-                  Configurar API Keys
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {AI_PROVIDERS.map((prov) => {
-                  const isActive = selectedProvider === prov.id;
-                  const configured = isProviderConfigured(prov.id);
-                  return (
-                    <div
-                      key={prov.id}
-                      onClick={() => handleSelectProvider(prov.id)}
-                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                        isActive
-                          ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20"
-                          : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-xs font-semibold text-stone-900">
-                          {prov.name}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-cream-200 text-stone-600 font-medium">
-                          {prov.badge}
-                        </span>
-                      </div>
-                      <p className="text-[11px] font-mono text-stone-500 mt-1">
-                        {prov.modelName}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-2 text-[11px]">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            configured ? "bg-sage-600" : "bg-stone-300"
-                          }`}
-                        />
-                        <span className="text-stone-500">
-                          {configured
-                            ? "Clave activa"
-                            : "Usa respaldo automático"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Error Notification if API call failed */}
-            {fusionError && (
-              <div className="p-4 rounded-2xl bg-terracotta-50 border border-terracotta-100 text-terracotta-700 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-2xl mx-auto">
-                <div className="flex items-center gap-2.5">
-                  <AlertCircle className="w-5 h-5 text-terracotta-600 flex-shrink-0" />
-                  <span>{fusionError}</span>
-                </div>
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="px-4 py-1.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium whitespace-nowrap self-end sm:self-auto"
-                >
-                  Revisar credenciales
-                </button>
-              </div>
-            )}
-
-            {/* Launch Single Optimized Portrait Generation CTA */}
+            {/* Launch Dual Artistic Portrait Generation CTA */}
             <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
               <button
                 onClick={handleStartFusion}
@@ -1154,18 +944,15 @@ export default function personalizedWallArt() {
                 <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-xs text-stone-500">
-                Se generará{" "}
+                Prepararemos{" "}
                 <strong className="text-stone-800 font-medium">
-                  1 retrato optimizado
+                  2 propuestas artísticas exclusivas
                 </strong>{" "}
-                con{" "}
-                <strong className="text-stone-800 font-medium">
-                  {AI_PROVIDERS.find((p) => p.id === selectedProvider)?.name}
-                </strong>{" "}
-                en estilo{" "}
+                de tu mascota en estilo{" "}
                 <strong className="text-stone-800 font-medium">
                   {activeThemeName}
-                </strong>
+                </strong>{" "}
+                para que elijas tu favorita.
               </p>
             </div>
           </div>
@@ -1180,9 +967,9 @@ export default function personalizedWallArt() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-cream-200">
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
                   <span>
-                    Retrato finalizado en {executionSeconds}s · {modelUsedLabel}
+                    2 propuestas artísticas listas para tu elección
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
@@ -1272,71 +1059,100 @@ export default function personalizedWallArt() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left 8 Columns: Dual Option Selector + Artwork Viewer */}
               <div className="lg:col-span-8 space-y-5">
-                {/* GENERATED MODEL OPTIONS SELECTOR (shown when multiple variants exist) */}
+                {/* DUAL PROPOSAL ARTWORK SELECTOR */}
                 {generatedVariants.length > 1 && (
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-xs font-semibold text-stone-800">
-                        Elige entre las 2 versiones generadas (1 de cada
-                        modelo):
-                      </span>
-                      <span className="text-[11px] text-stone-500">
-                        Haz clic en una opción para inspeccionarla o descargarla
+                  <div className="bg-white border border-cream-200 rounded-3xl p-5 shadow-soft space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div>
+                        <h3 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-terracotta-500" />
+                          <span>Elige tu propuesta artística favorita</span>
+                        </h3>
+                        <p className="text-xs text-stone-500">
+                          Hemos preparado 2 propuestas de retrato para tu mascota. Selecciona la que más te guste para tu cuadro:
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-cream-100 text-stone-700 self-start sm:self-auto">
+                        1 de 2 seleccionada
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {generatedVariants.map((variant) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                      {generatedVariants.map((variant, idx) => {
                         const isActiveVariant =
-                          selectedVariantId === variant.id;
+                          selectedVariantId === variant.id ||
+                          (!selectedVariantId && idx === 0);
+                        const proposalTitle =
+                          variant.providerTitle ||
+                          (idx === 0
+                            ? "Propuesta 1 · Óleo Fine Art"
+                            : "Propuesta 2 · Claroscuro y Detalle");
+                        const proposalDesc =
+                          idx === 0
+                            ? "Pinceladas ricas en textura y calidez clásica"
+                            : "Contrastes profundos, realce de brillo y mirada";
 
                         return (
                           <div
-                            key={variant.id}
+                            key={variant.id || `prop-${idx}`}
                             onClick={() => {
                               setSelectedVariantId(variant.id);
                               setFusedResultUrl(variant.imageUrl);
-                              setModelUsedLabel(variant.modelUsed);
+                              setModelUsedLabel(proposalTitle);
                             }}
-                            className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3.5 ${
+                            className={`relative p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-4 ${
                               isActiveVariant
-                                ? "bg-white border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
-                                : "bg-white/70 border-cream-200 hover:bg-white hover:border-stone-300 shadow-soft"
+                                ? "bg-terracotta-50/40 border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
+                                : "bg-white border-cream-200 hover:border-stone-300 hover:bg-cream-50/40 shadow-soft"
                             }`}
                           >
-                            <div className="w-20 h-20 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
                               <img
                                 src={variant.imageUrl}
-                                alt={variant.providerTitle}
+                                alt={proposalTitle}
                                 className="w-full h-full object-cover"
                               />
+                              {isActiveVariant && (
+                                <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
+                                  <span className="w-6 h-6 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow">
+                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  </span>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <span className="text-xs font-semibold text-stone-900 truncate">
-                                  {variant.providerTitle}
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-bold text-stone-900 truncate">
+                                  {proposalTitle}
                                 </span>
                                 {isActiveVariant && (
-                                  <span className="w-5 h-5 rounded-full bg-terracotta-500 text-white flex items-center justify-center flex-shrink-0">
-                                    <Check className="w-3 h-3 stroke-[2.5]" />
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-terracotta-600 bg-white px-2 py-0.5 rounded-full border border-terracotta-200">
+                                    Elegida
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] font-mono text-stone-500 truncate mt-0.5">
-                                {variant.modelUsed}
+                              <p className="text-[11px] text-stone-500 mt-1 leading-snug line-clamp-2">
+                                {proposalDesc}
                               </p>
-                              <span
-                                className={`inline-block mt-2 text-[11px] font-medium ${
-                                  isActiveVariant
-                                    ? "text-terracotta-600"
-                                    : "text-stone-500"
-                                }`}
-                              >
-                                {isActiveVariant
-                                  ? "Mostrando en el visor"
-                                  : "Ver esta opción"}
-                              </span>
+                              <div className="mt-2.5 flex items-center gap-1.5">
+                                <span
+                                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${
+                                    isActiveVariant
+                                      ? "bg-terracotta-500 text-white shadow-xs"
+                                      : "bg-cream-100 text-stone-700 hover:bg-cream-200"
+                                  }`}
+                                >
+                                  {isActiveVariant ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Obra elegida</span>
+                                    </span>
+                                  ) : (
+                                    "Seleccionar esta"
+                                  )}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1420,32 +1236,21 @@ export default function personalizedWallArt() {
                   }}
                   className="relative rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 min-h-[480px] flex items-center justify-center p-6 sm:p-10 select-none shadow-soft"
                 >
-                  {/* MODE 1: FULL PORTRAIT IN GALLERY MATTE + LIVE FRAME PREVIEW */}
+                  {/* MODE 1: FULL PORTRAIT - BASTIDOR DE MADERA FULL SCREEN (SIN MARCO) */}
                   {viewMode === "fusion" && (
                     <div
-                      className={`relative bg-white rounded-2xl shadow-card transition-all ${
-                        printFinishMode === "museum-matte"
-                          ? "p-6 sm:p-10"
-                          : "p-2.5 sm:p-3.5"
-                      }`}
-                      style={
-                        selectedFrame.id === "canvas-bastidor"
-                          ? { border: "2px solid #E8E2D9" }
-                          : {
-                              borderWidth: "14px",
-                              borderStyle: "solid",
-                              borderColor: selectedFrame.colorHex,
-                              boxShadow:
-                                "0 20px 40px -15px rgba(28, 25, 23, 0.35), inset 0 0 12px rgba(0,0,0,0.18)",
-                            }
-                      }
+                      className="relative rounded-lg overflow-hidden transition-all bg-stone-900 border border-stone-800/20"
+                      style={{
+                        boxShadow:
+                          "0 25px 50px -12px rgba(28, 25, 23, 0.45), 4px 8px 24px -2px rgba(0, 0, 0, 0.28)",
+                      }}
                     >
                       <img
                         src={
                           fusedResultUrl || selectedCharacter.fusionSampleUrl
                         }
                         alt="Retrato finalizado"
-                        className="max-h-[560px] w-auto object-contain rounded-xl"
+                        className="max-h-[560px] w-auto object-contain block rounded-sm"
                       />
 
                       {/* Deep Zoom Magnifier Loupe */}
@@ -1553,9 +1358,9 @@ export default function personalizedWallArt() {
                     </p>
                   </div>
 
-                  {/* Size List: XL -> L -> M -> Square -> S */}
+                  {/* Dynamic Size List (300 DPI) */}
                   <div className="space-y-2.5">
-                    {PRINT_PRESETS.map((preset) => {
+                    {catalogSizes.map((preset) => {
                       const isSelected = selectedPrintPreset.id === preset.id;
 
                       return (
@@ -1607,77 +1412,28 @@ export default function personalizedWallArt() {
                     })}
                   </div>
 
-                  {/* Extensible Frame Customization Selector (Escalable) */}
-                  <div className="pt-3 border-t border-cream-200 space-y-2.5">
+                  {/* Formato de Presentación: Bastidor de Madera Full Screen (Sin Marco) */}
+                  <div className="pt-3 border-t border-cream-200 space-y-2">
                     <span className="text-xs font-semibold text-stone-800 block">
-                      Marco / Acabado de Galería (Extensible):
+                      Formato y Presentación:
                     </span>
-                    <div className="space-y-2">
-                      {FRAME_OPTIONS.map((frame) => {
-                        const isFrameSelected = selectedFrame.id === frame.id;
-                        return (
-                          <div
-                            key={frame.id}
-                            onClick={() => setSelectedFrame(frame)}
-                            className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
-                              isFrameSelected
-                                ? "border-terracotta-500 bg-terracotta-50/40"
-                                : "border-cream-200 bg-cream-50/50 hover:border-stone-300"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span
-                                className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0"
-                                style={{ backgroundColor: frame.colorHex }}
-                              />
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-stone-900 truncate">
-                                  {frame.name}
-                                </p>
-                                <p className="text-[10px] text-stone-500 truncate">
-                                  {frame.description}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-xs font-semibold text-stone-800 whitespace-nowrap">
-                              {frame.priceModifierPen === 0
-                                ? "Incluido"
-                                : `+ S/ ${frame.priceModifierPen}`}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Print Finish Mode: Full Bleed vs Museum Matte */}
-                  <div className="pt-2 border-t border-cream-200 space-y-2">
-                    <span className="text-xs font-semibold text-stone-800 block">
-                      Acabado del borde para enmarcar:
-                    </span>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setPrintFinishMode("full-bleed")}
-                        className={`py-2 px-3 rounded-xl border font-medium transition-all ${
-                          printFinishMode === "full-bleed"
-                            ? "bg-stone-900 text-white border-stone-900"
-                            : "bg-cream-50 text-stone-600 border-cream-200 hover:text-stone-900"
-                        }`}
-                      >
-                        Lienzo completo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPrintFinishMode("museum-matte")}
-                        className={`py-2 px-3 rounded-xl border font-medium transition-all ${
-                          printFinishMode === "museum-matte"
-                            ? "bg-stone-900 text-white border-stone-900"
-                            : "bg-cream-50 text-stone-600 border-cream-200 hover:text-stone-900"
-                        }`}
-                      >
-                        Con paspartú
-                      </button>
+                    <div className="p-3 rounded-2xl border border-terracotta-200 bg-terracotta-50/40 flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-stone-900 text-terracotta-400 flex items-center justify-center flex-shrink-0">
+                          <Frame className="w-4 h-4 text-terracotta-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-stone-900">
+                            Lienzo en Bastidor de Madera
+                          </p>
+                          <p className="text-[10px] text-stone-600 truncate">
+                            Full Screen (sin marco) · Listo para colgar
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-semibold text-terracotta-700 bg-white px-2 py-0.5 rounded-full border border-terracotta-200 whitespace-nowrap">
+                        Incluido
+                      </span>
                     </div>
                   </div>
 

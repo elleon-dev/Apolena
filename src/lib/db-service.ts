@@ -1,8 +1,14 @@
 import fs from "fs";
 import path from "path";
 import { prisma, isDatabaseConfigured } from "@/lib/prisma";
-import { hashPassword } from "@/lib/auth";
+import {
+  hashPassword,
+  resolveUserRole,
+  SUPER_ADMIN_EMAIL,
+  UserRole,
+} from "@/lib/auth";
 import { PRINT_PRESETS, FRAME_OPTIONS } from "@/lib/print-export";
+import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import { dispatchEmailWithResend } from "@/lib/email-service";
 
 export type OrderStatus =
@@ -22,7 +28,7 @@ export interface ProfileRecord {
   name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  role: "user" | "admin";
+  role: UserRole;
   address: string | null;
   department: string | null;
   province: string | null;
@@ -32,15 +38,19 @@ export interface ProfileRecord {
   updated_at: string;
 }
 
+export interface ProductFinishOption {
+  id: "full-bleed" | "museum-matte";
+  name: string;
+  description: string;
+  priceModifierPen: number;
+  isAvailable?: boolean;
+}
+
 export interface ProductCustomizationConfig {
+  characters?: FamousCharacter[];
   sizes: typeof PRINT_PRESETS;
   frames: typeof FRAME_OPTIONS;
-  finishes: Array<{
-    id: "full-bleed" | "museum-matte";
-    name: string;
-    description: string;
-    priceModifierPen: number;
-  }>;
+  finishes: ProductFinishOption[];
 }
 
 export interface ProductRecord {
@@ -281,7 +291,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
 export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
   id: "00000000-0000-4000-8000-000000000101",
   title: "Cuadro Artístico Personalizado para Mascota",
-  slug: "personalized-wall-art",
+  slug: "cuadros-personalizados",
   description:
     "Retrato de alta definición a 300 DPI fusionando a tu mascota con personajes históricos, realeza o temáticas personalizadas, impreso sobre lienzo de algodón de museo.",
   category: "wall_art",
@@ -295,7 +305,14 @@ export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
     customizable_frame: true,
   },
   customization_config: {
-    sizes: PRINT_PRESETS,
+    characters: FAMOUS_CHARACTERS.map((c) => ({
+      ...c,
+      isAvailable: c.isAvailable ?? true,
+    })),
+    sizes: PRINT_PRESETS.map((s) => ({
+      ...s,
+      isAvailable: s.isAvailable ?? true,
+    })),
     frames: FRAME_OPTIONS,
     finishes: [
       {
@@ -303,12 +320,14 @@ export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
         name: "Lienzo Completo (Full Bleed)",
         description: "La obra cubre de borde a borde todo el cuadro",
         priceModifierPen: 0,
+        isAvailable: true,
       },
       {
         id: "museum-matte",
         name: "Con Paspartú de Galería (Museum Matte)",
         description: "Margen blanco museo alrededor de la obra principal",
         priceModifierPen: 0,
+        isAvailable: true,
       },
     ],
   },
@@ -333,9 +352,27 @@ export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
 };
 
 async function createInitialLocalState(): Promise<LocalDbState> {
+  const superAdminPasswordHash = await hashPassword("admin123", "apolenasuper");
   const adminPasswordHash = await hashPassword("admin123", "apolenaadmin");
   const userPasswordHash = await hashPassword("cliente123", "apolenauser");
   const now = new Date().toISOString();
+
+  const superAdminProfile: ProfileRecord = {
+    id: "00000000-0000-4000-8000-000000000000",
+    email: SUPER_ADMIN_EMAIL,
+    password_hash: superAdminPasswordHash,
+    name: "Noel Moriano (Super Admin)",
+    phone: "987654321",
+    avatar_url: null,
+    role: "super_admin",
+    address: "Lima, Perú",
+    department: "Lima",
+    province: "Lima",
+    district: "Miraflores",
+    is_active: true,
+    created_at: now,
+    updated_at: now,
+  };
 
   const adminProfile: ProfileRecord = {
     id: "00000000-0000-4000-8000-000000000001",
@@ -490,7 +527,7 @@ async function createInitialLocalState(): Promise<LocalDbState> {
   };
 
   return {
-    profiles: [adminProfile, demoUserProfile],
+    profiles: [superAdminProfile, adminProfile, demoUserProfile],
     products: [DEFAULT_WALL_ART_PRODUCT],
     orders: [sampleOrder],
     platform_settings: DEFAULT_PLATFORM_SETTINGS,
@@ -548,9 +585,16 @@ export async function findProfileByEmail(
         where: { email: cleanEmail },
       });
       if (profile) {
+        const resolvedRole = resolveUserRole(profile.email, profile.role);
+        if (profile.role !== resolvedRole) {
+          await prisma.profile.update({
+            where: { id: profile.id },
+            data: { role: resolvedRole },
+          });
+        }
         return {
           ...profile,
-          role: profile.role === "admin" ? "admin" : "user",
+          role: resolvedRole,
           created_at: profile.created_at.toISOString(),
           updated_at: profile.updated_at.toISOString(),
         };
@@ -560,7 +604,12 @@ export async function findProfileByEmail(
     }
   }
   const db = await readLocalDb();
-  return db.profiles.find((p) => p.email.toLowerCase() === cleanEmail) || null;
+  const local =
+    db.profiles.find((p) => p.email.toLowerCase() === cleanEmail) || null;
+  if (local) {
+    local.role = resolveUserRole(local.email, local.role);
+  }
+  return local;
 }
 
 export async function findProfileById(
@@ -570,9 +619,10 @@ export async function findProfileById(
     try {
       const profile = await prisma.profile.findUnique({ where: { id } });
       if (profile) {
+        const resolvedRole = resolveUserRole(profile.email, profile.role);
         return {
           ...profile,
-          role: profile.role === "admin" ? "admin" : "user",
+          role: resolvedRole,
           created_at: profile.created_at.toISOString(),
           updated_at: profile.updated_at.toISOString(),
         };
@@ -582,7 +632,11 @@ export async function findProfileById(
     }
   }
   const db = await readLocalDb();
-  return db.profiles.find((p) => p.id === id) || null;
+  const local = db.profiles.find((p) => p.id === id) || null;
+  if (local) {
+    local.role = resolveUserRole(local.email, local.role);
+  }
+  return local;
 }
 
 export async function createProfile(input: {
@@ -590,10 +644,10 @@ export async function createProfile(input: {
   passwordHash: string;
   name: string;
   phone?: string;
-  role?: "user" | "admin";
+  role?: UserRole;
 }): Promise<ProfileRecord> {
   const cleanEmail = input.email.trim().toLowerCase();
-  const role = input.role === "admin" ? "admin" : "user";
+  const role = resolveUserRole(cleanEmail, input.role);
 
   if (isDatabaseConfigured()) {
     try {
@@ -608,7 +662,7 @@ export async function createProfile(input: {
       });
       return {
         ...created,
-        role: created.role === "admin" ? "admin" : "user",
+        role: resolveUserRole(created.email, created.role),
         created_at: created.created_at.toISOString(),
         updated_at: created.updated_at.toISOString(),
       };
@@ -640,9 +694,249 @@ export async function createProfile(input: {
   return newProfile;
 }
 
+export async function upsertOAuthProfile(input: {
+  email: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+}): Promise<ProfileRecord> {
+  const cleanEmail = input.email.trim().toLowerCase();
+  const displayName =
+    input.name?.trim() || cleanEmail.split("@")[0] || "Usuario Apolena";
+  const avatarUrl = input.avatarUrl?.trim() || null;
+
+  if (isDatabaseConfigured()) {
+    try {
+      const existing = await prisma.profile.findUnique({
+        where: { email: cleanEmail },
+      });
+
+      if (existing) {
+        const resolvedRole = resolveUserRole(cleanEmail, existing.role);
+        const updated = await prisma.profile.update({
+          where: { id: existing.id },
+          data: {
+            role: resolvedRole,
+            avatar_url: avatarUrl || existing.avatar_url,
+            name: existing.name || displayName,
+          },
+        });
+        return {
+          ...updated,
+          role: resolvedRole,
+          created_at: updated.created_at.toISOString(),
+          updated_at: updated.updated_at.toISOString(),
+        };
+      }
+
+      const role = resolveUserRole(cleanEmail);
+      const created = await prisma.profile.create({
+        data: {
+          email: cleanEmail,
+          name: displayName,
+          avatar_url: avatarUrl,
+          role,
+        },
+      });
+      return {
+        ...created,
+        role: resolveUserRole(created.email, created.role),
+        created_at: created.created_at.toISOString(),
+        updated_at: created.updated_at.toISOString(),
+      };
+    } catch (e) {
+      console.warn("Prisma upsertOAuthProfile fallback:", e);
+    }
+  }
+
+  const db = await readLocalDb();
+  const existingLocal = db.profiles.find(
+    (p) => p.email.toLowerCase() === cleanEmail,
+  );
+  if (existingLocal) {
+    existingLocal.role = resolveUserRole(cleanEmail, existingLocal.role);
+    existingLocal.avatar_url = avatarUrl || existingLocal.avatar_url;
+    existingLocal.name = existingLocal.name || displayName;
+    existingLocal.updated_at = new Date().toISOString();
+    writeLocalDb(db);
+    return existingLocal;
+  }
+
+  const now = new Date().toISOString();
+  const newProfile: ProfileRecord = {
+    id: crypto.randomUUID(),
+    email: cleanEmail,
+    password_hash: null,
+    name: displayName,
+    phone: null,
+    avatar_url: avatarUrl,
+    role: resolveUserRole(cleanEmail),
+    address: null,
+    department: null,
+    province: null,
+    district: null,
+    is_active: true,
+    created_at: now,
+    updated_at: now,
+  };
+  db.profiles.push(newProfile);
+  writeLocalDb(db);
+  return newProfile;
+}
+
+export async function getAllProfiles(): Promise<ProfileRecord[]> {
+  if (isDatabaseConfigured()) {
+    try {
+      const rows = await prisma.profile.findMany({
+        orderBy: { created_at: "desc" },
+      });
+      return rows.map((p) => ({
+        ...p,
+        role: resolveUserRole(p.email, p.role),
+        created_at: p.created_at.toISOString(),
+        updated_at: p.updated_at.toISOString(),
+      }));
+    } catch (e) {
+      console.warn("Prisma getAllProfiles fallback:", e);
+    }
+  }
+  const db = await readLocalDb();
+  return db.profiles.map((p) => ({
+    ...p,
+    role: resolveUserRole(p.email, p.role),
+  }));
+}
+
+export async function updateProfileByAdmin(input: {
+  actorRole: UserRole;
+  targetProfileId: string;
+  role?: UserRole;
+  is_active?: boolean;
+  name?: string;
+  phone?: string;
+}): Promise<ProfileRecord> {
+  const existing = await findProfileById(input.targetProfileId);
+  if (!existing) {
+    throw new Error("El usuario seleccionado no existe.");
+  }
+
+  const targetEffectiveRole = resolveUserRole(existing.email, existing.role);
+
+  // Regla RBAC: Un "admin" solo puede gestionar usuarios con rol "user" o "admin"
+  if (input.actorRole === "admin") {
+    if (targetEffectiveRole === "super_admin") {
+      throw new Error(
+        "Permiso denegado: Un administrador no puede modificar a un Super Admin.",
+      );
+    }
+    if (input.role === "super_admin") {
+      throw new Error(
+        "Permiso denegado: Solo un Super Admin puede asignar el rol super_admin.",
+      );
+    }
+  }
+
+  // Regla Inalterable: nmoriano26@gmail.com SIEMPRE es super_admin y activo
+  const isRootSuperAdmin =
+    existing.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+  const nextRole: UserRole = isRootSuperAdmin
+    ? "super_admin"
+    : resolveUserRole(existing.email, input.role ?? existing.role);
+  const nextActive = isRootSuperAdmin
+    ? true
+    : typeof input.is_active === "boolean"
+      ? input.is_active
+      : existing.is_active;
+
+  if (isDatabaseConfigured()) {
+    try {
+      const updated = await prisma.profile.update({
+        where: { id: existing.id },
+        data: {
+          role: nextRole,
+          is_active: nextActive,
+          name: input.name !== undefined ? input.name.trim() : existing.name,
+          phone:
+            input.phone !== undefined
+              ? input.phone.trim() || null
+              : existing.phone,
+        },
+      });
+      return {
+        ...updated,
+        role: resolveUserRole(updated.email, updated.role),
+        created_at: updated.created_at.toISOString(),
+        updated_at: updated.updated_at.toISOString(),
+      };
+    } catch (e) {
+      console.warn("Prisma updateProfileByAdmin fallback:", e);
+    }
+  }
+
+  const db = await readLocalDb();
+  const idx = db.profiles.findIndex((p) => p.id === existing.id);
+  if (idx !== -1) {
+    db.profiles[idx] = {
+      ...db.profiles[idx],
+      role: nextRole,
+      is_active: nextActive,
+      name: input.name !== undefined ? input.name.trim() : db.profiles[idx].name,
+      phone:
+        input.phone !== undefined
+          ? input.phone.trim() || null
+          : db.profiles[idx].phone,
+      updated_at: new Date().toISOString(),
+    };
+    writeLocalDb(db);
+    return db.profiles[idx];
+  }
+
+  return existing;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // PRODUCTS & SETTINGS REPOSITORY
 // ═══════════════════════════════════════════════════════════════════════
+
+function normalizeWallArtCustomizationConfig(
+  raw: any,
+): ProductCustomizationConfig {
+  const defaults = DEFAULT_WALL_ART_PRODUCT.customization_config;
+  if (!raw || typeof raw !== "object") {
+    return defaults;
+  }
+  return {
+    characters:
+      Array.isArray(raw.characters) && raw.characters.length > 0
+        ? raw.characters.map((c: FamousCharacter) => ({
+            ...c,
+            isAvailable: c.isAvailable ?? true,
+          }))
+        : defaults.characters,
+    sizes:
+      Array.isArray(raw.sizes) && raw.sizes.length > 0
+        ? raw.sizes.map((s: any) => ({
+            ...s,
+            isAvailable: s.isAvailable ?? true,
+          }))
+        : defaults.sizes,
+    frames:
+      Array.isArray(raw.frames) && raw.frames.length > 0
+        ? raw.frames
+        : defaults.frames,
+    finishes:
+      Array.isArray(raw.finishes) && raw.finishes.length > 0
+        ? raw.finishes
+        : defaults.finishes,
+  };
+}
+
+function isWallArtProductSlug(slug?: string | null): boolean {
+  if (!slug) return false;
+  const clean = slug.trim().toLowerCase();
+  return (
+    clean === "cuadros-personalizados" || clean === "personalized-wall-art"
+  );
+}
 
 export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
   if (isDatabaseConfigured()) {
@@ -663,9 +957,10 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
           status: r.status as "active" | "inactive" | "archived",
           stock: r.stock,
           specifications: (r.specifications as Record<string, any>) || {},
-          customization_config:
-            (r.customization_config as unknown as ProductCustomizationConfig) ||
-            DEFAULT_WALL_ART_PRODUCT.customization_config,
+          customization_config: isWallArtProductSlug(r.slug)
+            ? normalizeWallArtCustomizationConfig(r.customization_config)
+            : (r.customization_config as unknown as ProductCustomizationConfig) ||
+              DEFAULT_WALL_ART_PRODUCT.customization_config,
           images: r.images.map((img) => ({
             id: img.id,
             product_id: img.product_id,
@@ -682,9 +977,31 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
     }
   }
   const db = await readLocalDb();
-  return onlyActive
+  const list = onlyActive
     ? db.products.filter((p) => p.status === "active")
     : db.products;
+  return list.map((p) => ({
+    ...p,
+    customization_config: isWallArtProductSlug(p.slug)
+      ? normalizeWallArtCustomizationConfig(p.customization_config)
+      : p.customization_config,
+  }));
+}
+
+export async function getWallArtCharacterById(
+  characterId: string,
+): Promise<FamousCharacter> {
+  try {
+    const products = await getProducts(false);
+    const wallArt =
+      products.find((p) => isWallArtProductSlug(p.slug)) || products[0];
+    const chars = wallArt?.customization_config?.characters || [];
+    const found = chars.find((c) => c.id === characterId);
+    if (found) return found;
+  } catch {}
+  return (
+    FAMOUS_CHARACTERS.find((c) => c.id === characterId) || FAMOUS_CHARACTERS[0]
+  );
 }
 
 export async function updateProductCustomizationConfig(
@@ -736,24 +1053,98 @@ export async function updateProductCustomizationConfig(
 }
 
 export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
+  const deepMergeSettings = (source?: any): PlatformSettingsMap => {
+    const raw = source || {};
+    const rawPay = raw.PAYMENT_METHODS_CONFIG || {};
+    const rawShip = raw.SHIPPING_RATES_CONFIG || {};
+    const rawAdmin = raw.ADMIN_NOTIFICATION_EMAILS || {};
+
+    return {
+      PAYMENT_METHODS_CONFIG: {
+        advance_percentage:
+          typeof rawPay.advance_percentage === "number"
+            ? rawPay.advance_percentage
+            : DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.advance_percentage,
+        yape: {
+          enabled: rawPay.yape?.enabled ?? DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.enabled,
+          phone: rawPay.yape?.phone || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.phone,
+          holder_name:
+            rawPay.yape?.holder_name ||
+            rawPay.bank_transfer?.holder_name ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.holder_name,
+          qr_url: rawPay.yape?.qr_url || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.qr_url,
+        },
+        plin: {
+          enabled: rawPay.plin?.enabled ?? DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.enabled,
+          phone: rawPay.plin?.phone || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.phone,
+          holder_name:
+            rawPay.plin?.holder_name ||
+            rawPay.bank_transfer?.holder_name ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.holder_name,
+          qr_url: rawPay.plin?.qr_url || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.qr_url,
+        },
+        bank_transfer: {
+          enabled:
+            rawPay.bank_transfer?.enabled ??
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.enabled,
+          bank_name:
+            rawPay.bank_transfer?.bank_name ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.bank_name,
+          account_number:
+            rawPay.bank_transfer?.account_number ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.account_number,
+          cci:
+            rawPay.bank_transfer?.cci ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.cci,
+          holder_name:
+            rawPay.bank_transfer?.holder_name ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.holder_name,
+          ruc:
+            rawPay.bank_transfer?.ruc ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.ruc,
+        },
+      },
+      SHIPPING_RATES_CONFIG: {
+        lima_metropolitana_pen:
+          typeof rawShip.lima_metropolitana_pen === "number"
+            ? rawShip.lima_metropolitana_pen
+            : DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.lima_metropolitana_pen,
+        provincias_pen:
+          typeof rawShip.provincias_pen === "number"
+            ? rawShip.provincias_pen
+            : DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.provincias_pen,
+        estimated_manufacturing_days:
+          rawShip.estimated_manufacturing_days ||
+          DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.estimated_manufacturing_days,
+      },
+      ADMIN_NOTIFICATION_EMAILS: {
+        emails:
+          Array.isArray(rawAdmin.emails) && rawAdmin.emails.length > 0
+            ? rawAdmin.emails
+            : DEFAULT_PLATFORM_SETTINGS.ADMIN_NOTIFICATION_EMAILS.emails,
+        whatsapp_support:
+          rawAdmin.whatsapp_support ||
+          DEFAULT_PLATFORM_SETTINGS.ADMIN_NOTIFICATION_EMAILS.whatsapp_support,
+      },
+    };
+  };
+
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.platformSetting.findMany();
       if (rows.length > 0) {
-        const merged = { ...DEFAULT_PLATFORM_SETTINGS };
+        const rawMap: Record<string, any> = {};
         for (const row of rows) {
-          if (row.key in merged) {
-            (merged as any)[row.key] = row.value;
-          }
+          rawMap[row.key] = row.value;
         }
-        return merged;
+        return deepMergeSettings(rawMap);
       }
     } catch (e) {
       console.warn("Prisma getPlatformSettings fallback:", e);
     }
   }
   const db = await readLocalDb();
-  return db.platform_settings || DEFAULT_PLATFORM_SETTINGS;
+  return deepMergeSettings(db.platform_settings);
 }
 
 export async function updatePlatformSettings(
@@ -938,6 +1329,256 @@ function mapPrismaOrderToRecord(o: any): OrderRecord {
   };
 }
 
+/**
+ * Garantiza que exista un buyer_id válido en la tabla profiles de PostgreSQL
+ * antes de insertar o sincronizar una orden (evita violación de FK orders_buyer_id_fkey).
+ */
+async function ensureValidBuyerIdInDatabase(
+  candidateBuyerId: string,
+  shippingInfo?: {
+    email?: string | null;
+    name?: string | null;
+    phone?: string | null;
+  } | null,
+): Promise<string> {
+  if (!isDatabaseConfigured()) return candidateBuyerId;
+  try {
+    const byId = await prisma.profile.findUnique({
+      where: { id: candidateBuyerId },
+    });
+    if (byId) return byId.id;
+
+    const cleanEmail = shippingInfo?.email?.trim().toLowerCase();
+    if (cleanEmail) {
+      const byEmail = await prisma.profile.findUnique({
+        where: { email: cleanEmail },
+      });
+      if (byEmail) return byEmail.id;
+
+      const created = await prisma.profile.create({
+        data: {
+          id: candidateBuyerId,
+          email: cleanEmail,
+          name: shippingInfo?.name?.trim() || "Cliente Apolena",
+          phone: shippingInfo?.phone?.trim() || null,
+          role: resolveUserRole(cleanEmail, "user"),
+        },
+      });
+      return created.id;
+    }
+
+    const fallbackProfile = await prisma.profile.findFirst({
+      orderBy: { created_at: "asc" },
+    });
+    if (fallbackProfile) return fallbackProfile.id;
+  } catch (e) {
+    console.warn("ensureValidBuyerIdInDatabase warning:", e);
+  }
+  return candidateBuyerId;
+}
+
+/**
+ * Garantiza que exista un product_id válido en la tabla products de PostgreSQL
+ * antes de insertar order_items (evita violación de FK order_items_product_id_fkey).
+ */
+async function ensureValidProductIdInDatabase(
+  candidateProductId?: string | null,
+): Promise<string> {
+  const targetId = candidateProductId || DEFAULT_WALL_ART_PRODUCT.id;
+  if (!isDatabaseConfigured()) return targetId;
+  try {
+    const byId = await prisma.product.findUnique({
+      where: { id: targetId },
+    });
+    if (byId) return byId.id;
+
+    const firstProd = await prisma.product.findFirst({
+      orderBy: { created_at: "asc" },
+    });
+    if (firstProd) return firstProd.id;
+
+    const seeded = await prisma.product.create({
+      data: {
+        id: DEFAULT_WALL_ART_PRODUCT.id,
+        title: DEFAULT_WALL_ART_PRODUCT.title,
+        slug: DEFAULT_WALL_ART_PRODUCT.slug,
+        description: DEFAULT_WALL_ART_PRODUCT.description,
+        category: DEFAULT_WALL_ART_PRODUCT.category,
+        base_price: DEFAULT_WALL_ART_PRODUCT.base_price,
+        status: DEFAULT_WALL_ART_PRODUCT.status,
+        stock: DEFAULT_WALL_ART_PRODUCT.stock,
+        specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
+        customization_config:
+          DEFAULT_WALL_ART_PRODUCT.customization_config as any,
+      },
+    });
+    return seeded.id;
+  } catch (e) {
+    console.warn("ensureValidProductIdInDatabase warning:", e);
+  }
+  return targetId;
+}
+
+/**
+ * Sincroniza una orden completa (cabecera + shipping + invoice + packages + items + payment_transactions)
+ * hacia PostgreSQL (Supabase) si aún no existe en la base de datos.
+ */
+async function syncOrderRecordToDatabase(order: OrderRecord): Promise<void> {
+  if (!isDatabaseConfigured()) return;
+  try {
+    const existing = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: order.id },
+          { order_code: order.order_code },
+          { tracking_id: order.tracking_id },
+        ],
+      },
+    });
+    if (existing) return;
+
+    const validBuyerId = await ensureValidBuyerIdInDatabase(
+      order.buyer_id,
+      order.shipping,
+    );
+    const validProductId = await ensureValidProductIdInDatabase(
+      order.packages?.[0]?.items?.[0]?.product_id,
+    );
+
+    await prisma.$transaction(async (tx) => {
+      await tx.order.create({
+        data: {
+          id: order.id,
+          order_code: order.order_code,
+          tracking_id: order.tracking_id,
+          buyer_id: validBuyerId,
+          status: order.status,
+          payment_status: order.payment_status,
+          payment_method: order.payment_method,
+          subtotal: order.subtotal,
+          shipping_cost: order.shipping_cost,
+          tax_amount: order.tax_amount,
+          total_amount: order.total_amount,
+          advance_amount: order.advance_amount,
+          remaining_amount: order.remaining_amount,
+          notes: order.notes,
+          manufacturing_started_at: order.manufacturing_started_at
+            ? new Date(order.manufacturing_started_at)
+            : new Date(order.created_at),
+          shipped_at: order.shipped_at ? new Date(order.shipped_at) : null,
+          delivered_at: order.delivered_at
+            ? new Date(order.delivered_at)
+            : null,
+          completed_at: order.completed_at
+            ? new Date(order.completed_at)
+            : null,
+          created_at: new Date(order.created_at),
+          updated_at: new Date(order.updated_at || order.created_at),
+          shipping: order.shipping
+            ? {
+                create: {
+                  id: order.shipping.id,
+                  name: order.shipping.name,
+                  phone: order.shipping.phone,
+                  email: order.shipping.email,
+                  address: order.shipping.address,
+                  department: order.shipping.department,
+                  province: order.shipping.province,
+                  district: order.shipping.district,
+                  reference: order.shipping.reference,
+                  document_type: order.shipping.document_type || "DNI",
+                  document_number: order.shipping.document_number,
+                },
+              }
+            : undefined,
+          invoice: order.invoice
+            ? {
+                create: {
+                  id: order.invoice.id,
+                  type: order.invoice.type,
+                  doc_type: order.invoice.doc_type || "DNI",
+                  number: order.invoice.number,
+                  legal_name: order.invoice.legal_name,
+                  tax_address: order.invoice.tax_address,
+                  sunat_status: order.invoice.sunat_status || "pending",
+                  sunat_pdf_url: order.invoice.sunat_pdf_url,
+                },
+              }
+            : undefined,
+          packages: {
+            create: (order.packages || []).map((pkg) => ({
+              id: pkg.id,
+              package_number: pkg.package_number || 1,
+              total_packages: pkg.total_packages || 1,
+              status: pkg.status || order.status,
+              courier: pkg.courier || "Apolena Express Delivery",
+              tracking_number: pkg.tracking_number || order.tracking_id,
+              tracking_url: pkg.tracking_url || `/track/${order.tracking_id}`,
+              carrier_phone: pkg.carrier_phone,
+              estimated_delivery: pkg.estimated_delivery
+                ? new Date(pkg.estimated_delivery)
+                : null,
+              destination_address: pkg.destination_address,
+              subtotal: pkg.subtotal,
+              items: {
+                create: (pkg.items || []).map((it) => ({
+                  id: it.id,
+                  product_id: validProductId,
+                  generation_job_id: null,
+                  quantity: it.quantity || 1,
+                  unit_price: it.unit_price,
+                  subtotal: it.subtotal,
+                  status: it.status || order.status,
+                  pet_photo_url: it.pet_photo_url,
+                  generated_art_url: it.generated_art_url,
+                  customizations: (it.customizations || {}) as any,
+                })),
+              },
+            })),
+          },
+          paymentTransactions: {
+            create: (order.paymentTransactions || []).map((pt) => ({
+              id: pt.id,
+              payment_stage: pt.payment_stage,
+              payment_method: pt.payment_method,
+              status: pt.status,
+              amount: pt.amount,
+              currency: pt.currency || "PEN",
+              operation_number: pt.operation_number,
+              proof_image_url: pt.proof_image_url,
+              payer_name: pt.payer_name,
+              payer_phone: pt.payer_phone,
+              notes: pt.notes,
+              verified_by: pt.verified_by,
+              verified_at: pt.verified_at ? new Date(pt.verified_at) : null,
+              created_at: pt.created_at
+                ? new Date(pt.created_at)
+                : new Date(order.created_at),
+            })),
+          },
+        },
+      });
+    });
+  } catch (e) {
+    console.warn(`Failed to sync local order ${order.order_code} to DB:`, e);
+  }
+}
+
+/**
+ * Sincroniza todas las órdenes locales pendientes hacia PostgreSQL y actualiza el espejo local.
+ */
+export async function syncLocalOrdersToDatabase(): Promise<void> {
+  if (!isDatabaseConfigured()) return;
+  try {
+    const db = await readLocalDb();
+    for (const localOrder of db.orders || []) {
+      await syncOrderRecordToDatabase(localOrder);
+    }
+  } catch (e) {
+    console.warn("syncLocalOrdersToDatabase warning:", e);
+  }
+}
+
 export async function createOrderWithSplitPayment(input: {
   buyer_id: string;
   product_id?: string;
@@ -972,6 +1613,7 @@ export async function createOrderWithSplitPayment(input: {
     tax_address?: string;
   };
 }): Promise<OrderRecord> {
+  await syncLocalOrdersToDatabase();
   const db = await readLocalDb();
   const settings = await getPlatformSettings();
   const quantity = Math.max(1, input.quantity || 1);
@@ -983,7 +1625,27 @@ export async function createOrderWithSplitPayment(input: {
   const advanceAmount = Number((totalAmount * 0.5).toFixed(2));
   const remainingAmount = Number((totalAmount - advanceAmount).toFixed(2));
 
-  const orderCode = generateOrderCode(db.orders.length + 1);
+  let dbOrderCount = db.orders.length;
+  if (isDatabaseConfigured()) {
+    try {
+      const countInDb = await prisma.order.count();
+      dbOrderCount = Math.max(dbOrderCount, countInDb);
+    } catch {}
+  }
+
+  let sequence = dbOrderCount + 1;
+  let orderCode = generateOrderCode(sequence);
+  if (isDatabaseConfigured()) {
+    try {
+      while (
+        await prisma.order.findUnique({ where: { order_code: orderCode } })
+      ) {
+        sequence += 1;
+        orderCode = generateOrderCode(sequence);
+      }
+    } catch {}
+  }
+
   const trackingId = generateTrackingId();
   const now = new Date().toISOString();
   const estimatedDelivery = new Date(
@@ -992,13 +1654,40 @@ export async function createOrderWithSplitPayment(input: {
 
   const orderId = crypto.randomUUID();
   const packageId = crypto.randomUUID();
-  const productId = input.product_id || DEFAULT_WALL_ART_PRODUCT.id;
+  const validBuyerId = await ensureValidBuyerIdInDatabase(
+    input.buyer_id,
+    input.shipping,
+  );
+  const validProductId = await ensureValidProductIdInDatabase(input.product_id);
+
+  let validGenerationJobId: string | null = null;
+  if (input.generation_job_id && isDatabaseConfigured()) {
+    try {
+      const existingJob = await prisma.generationJob.findUnique({
+        where: { id: input.generation_job_id },
+      });
+      if (existingJob) validGenerationJobId = existingJob.id;
+    } catch {}
+  }
+
+  const bankCfg = settings.PAYMENT_METHODS_CONFIG.bank_transfer;
+  const yapeCfg = settings.PAYMENT_METHODS_CONFIG.yape;
+  const plinCfg = settings.PAYMENT_METHODS_CONFIG.plin;
+
+  let advancePaymentNotes = "Pago inicial del 50% al confirmar pedido";
+  if (input.payment_method === "bank_transfer") {
+    advancePaymentNotes = `Adelanto 50% vía Transferencia (${bankCfg.bank_name || "BCP Soles"} · Cta: ${bankCfg.account_number} · CCI: ${bankCfg.cci} · Titular: ${bankCfg.holder_name})`;
+  } else if (input.payment_method === "yape") {
+    advancePaymentNotes = `Adelanto 50% vía Yape (Tel: ${yapeCfg.phone} · Titular: ${yapeCfg.holder_name || bankCfg.holder_name})`;
+  } else if (input.payment_method === "plin") {
+    advancePaymentNotes = `Adelanto 50% vía Plin (Tel: ${plinCfg.phone} · Titular: ${plinCfg.holder_name || bankCfg.holder_name})`;
+  }
 
   const newOrder: OrderRecord = {
     id: orderId,
     order_code: orderCode,
     tracking_id: trackingId,
-    buyer_id: input.buyer_id,
+    buyer_id: validBuyerId,
     status: "manufacturing",
     payment_status: "partial_pending",
     payment_method: input.payment_method,
@@ -1061,8 +1750,8 @@ export async function createOrderWithSplitPayment(input: {
           {
             id: crypto.randomUUID(),
             package_id: packageId,
-            product_id: productId,
-            generation_job_id: input.generation_job_id || null,
+            product_id: validProductId,
+            generation_job_id: validGenerationJobId,
             quantity,
             unit_price: input.unit_price,
             subtotal,
@@ -1087,7 +1776,7 @@ export async function createOrderWithSplitPayment(input: {
         proof_image_url: input.proof_image_url || null,
         payer_name: input.shipping.name.trim(),
         payer_phone: input.shipping.phone.trim(),
-        notes: "Pago inicial del 50% al confirmar pedido",
+        notes: advancePaymentNotes,
         verified_by: null,
         verified_at: null,
         created_at: now,
@@ -1104,7 +1793,7 @@ export async function createOrderWithSplitPayment(input: {
             id: newOrder.id,
             order_code: newOrder.order_code,
             tracking_id: newOrder.tracking_id,
-            buyer_id: newOrder.buyer_id,
+            buyer_id: validBuyerId,
             status: newOrder.status,
             payment_status: newOrder.payment_status,
             payment_method: newOrder.payment_method,
@@ -1115,9 +1804,11 @@ export async function createOrderWithSplitPayment(input: {
             advance_amount: newOrder.advance_amount,
             remaining_amount: newOrder.remaining_amount,
             notes: newOrder.notes,
+            manufacturing_started_at: new Date(now),
             shipping: newOrder.shipping
               ? {
                   create: {
+                    id: newOrder.shipping.id,
                     name: newOrder.shipping.name,
                     phone: newOrder.shipping.phone,
                     email: newOrder.shipping.email,
@@ -1134,6 +1825,7 @@ export async function createOrderWithSplitPayment(input: {
             invoice: newOrder.invoice
               ? {
                   create: {
+                    id: newOrder.invoice.id,
                     type: newOrder.invoice.type,
                     doc_type: newOrder.invoice.doc_type,
                     number: newOrder.invoice.number,
@@ -1152,12 +1844,17 @@ export async function createOrderWithSplitPayment(input: {
                 courier: "Apolena Express Delivery",
                 tracking_number: trackingId,
                 tracking_url: `/track/${trackingId}`,
-                destination_address: `${input.shipping.address}, ${input.shipping.district}`,
+                carrier_phone:
+                  settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support ||
+                  "987 654 321",
+                estimated_delivery: new Date(estimatedDelivery),
+                destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
                 subtotal,
                 items: {
                   create: {
-                    product_id: productId,
-                    generation_job_id: input.generation_job_id || null,
+                    id: newOrder.packages[0].items[0].id,
+                    product_id: validProductId,
+                    generation_job_id: validGenerationJobId,
                     quantity,
                     unit_price: input.unit_price,
                     subtotal,
@@ -1171,6 +1868,7 @@ export async function createOrderWithSplitPayment(input: {
             },
             paymentTransactions: {
               create: {
+                id: newOrder.paymentTransactions[0].id,
                 payment_stage: "advance_50",
                 payment_method: input.payment_method,
                 status: "pending_verification",
@@ -1180,14 +1878,14 @@ export async function createOrderWithSplitPayment(input: {
                 proof_image_url: input.proof_image_url || null,
                 payer_name: input.shipping.name.trim(),
                 payer_phone: input.shipping.phone.trim(),
-                notes: "Pago inicial del 50% al confirmar pedido",
+                notes: advancePaymentNotes,
               },
             },
           },
         });
       });
     } catch (e) {
-      console.warn("Prisma createOrderWithSplitPayment fallback:", e);
+      console.error("Prisma createOrderWithSplitPayment error:", e);
     }
   }
 
@@ -1208,6 +1906,10 @@ export async function createOrderWithSplitPayment(input: {
       advance_amount: advanceAmount,
       remaining_amount: remainingAmount,
       payment_method: input.payment_method,
+      bank_name: bankCfg.bank_name,
+      account_number: bankCfg.account_number,
+      cci: bankCfg.cci,
+      holder_name: bankCfg.holder_name,
       customizations: input.customizations,
       tracking_url: `/track/${trackingId}`,
     },
@@ -1241,32 +1943,50 @@ export async function createOrderWithSplitPayment(input: {
 
 export async function getOrdersByBuyer(
   buyerId: string,
+  buyerEmail?: string | null,
 ): Promise<OrderRecord[]> {
+  await syncLocalOrdersToDatabase();
+  const cleanEmail = buyerEmail?.trim().toLowerCase() || null;
+
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.order.findMany({
-        where: { buyer_id: buyerId },
+        where: cleanEmail
+          ? {
+              OR: [
+                { buyer_id: buyerId },
+                {
+                  shipping: {
+                    email: { equals: cleanEmail, mode: "insensitive" },
+                  },
+                },
+              ],
+            }
+          : { buyer_id: buyerId },
         include: {
           shipping: true,
           invoice: true,
           packages: { include: { items: true } },
-          paymentTransactions: true,
+          paymentTransactions: { orderBy: { created_at: "asc" } },
           reviews: true,
         },
         orderBy: { created_at: "desc" },
       });
-      if (rows.length > 0) {
-        return rows.map(mapPrismaOrderToRecord);
-      }
+      return rows.map(mapPrismaOrderToRecord);
     } catch (e) {
       console.warn("Prisma getOrdersByBuyer fallback:", e);
     }
   }
   const db = await readLocalDb();
-  return db.orders.filter((o) => o.buyer_id === buyerId);
+  return db.orders.filter(
+    (o) =>
+      o.buyer_id === buyerId ||
+      (cleanEmail && o.shipping?.email?.toLowerCase() === cleanEmail),
+  );
 }
 
 export async function getAllOrdersForAdmin(): Promise<OrderRecord[]> {
+  await syncLocalOrdersToDatabase();
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.order.findMany({
@@ -1274,14 +1994,12 @@ export async function getAllOrdersForAdmin(): Promise<OrderRecord[]> {
           shipping: true,
           invoice: true,
           packages: { include: { items: true } },
-          paymentTransactions: true,
+          paymentTransactions: { orderBy: { created_at: "asc" } },
           reviews: true,
         },
         orderBy: { created_at: "desc" },
       });
-      if (rows.length > 0) {
-        return rows.map(mapPrismaOrderToRecord);
-      }
+      return rows.map(mapPrismaOrderToRecord);
     } catch (e) {
       console.warn("Prisma getAllOrdersForAdmin fallback:", e);
     }
@@ -1293,6 +2011,7 @@ export async function getAllOrdersForAdmin(): Promise<OrderRecord[]> {
 export async function findOrderById(
   orderId: string,
 ): Promise<OrderRecord | null> {
+  await syncLocalOrdersToDatabase();
   if (isDatabaseConfigured()) {
     try {
       const row = await prisma.order.findUnique({
@@ -1301,7 +2020,7 @@ export async function findOrderById(
           shipping: true,
           invoice: true,
           packages: { include: { items: true } },
-          paymentTransactions: true,
+          paymentTransactions: { orderBy: { created_at: "asc" } },
           reviews: true,
         },
       });
@@ -1317,6 +2036,7 @@ export async function findOrderById(
 export async function findOrderByTrackingId(
   trackingId: string,
 ): Promise<OrderRecord | null> {
+  await syncLocalOrdersToDatabase();
   const clean = trackingId.trim().toUpperCase();
   if (isDatabaseConfigured()) {
     try {
@@ -1331,7 +2051,7 @@ export async function findOrderByTrackingId(
           shipping: true,
           invoice: true,
           packages: { include: { items: true } },
-          paymentTransactions: true,
+          paymentTransactions: { orderBy: { created_at: "asc" } },
           reviews: true,
         },
       });
@@ -1353,6 +2073,7 @@ export async function findOrderByTrackingId(
 /**
  * Actualiza el estado de la orden (3 pasos: manufacturing -> in_transit -> delivered)
  * y/o verifica pagos (adelanto 50% o cobro del 50% restante contraentrega que culmina la orden en "completed" / Exitoso)
+ * Sincronizado transaccionalmente con PostgreSQL (orders, order_packages, order_items, payment_transactions).
  */
 export async function updateOrderAdminLifecycle(input: {
   orderId: string;
@@ -1370,12 +2091,12 @@ export async function updateOrderAdminLifecycle(input: {
   finalOperationNumber?: string;
   notes?: string;
 }): Promise<OrderRecord | null> {
-  const db = await readLocalDb();
-  const idx = db.orders.findIndex((o) => o.id === input.orderId);
-  if (idx === -1) return null;
+  const existingOrder = await findOrderById(input.orderId);
+  if (!existingOrder) return null;
 
-  const order = db.orders[idx];
+  const order: OrderRecord = JSON.parse(JSON.stringify(existingOrder));
   const now = new Date().toISOString();
+  const nowDate = new Date(now);
 
   if (input.action === "verify_advance_50") {
     order.payment_status = "partial_paid";
@@ -1469,31 +2190,122 @@ export async function updateOrderAdminLifecycle(input: {
   }
 
   order.updated_at = now;
-  db.orders[idx] = order;
-  writeLocalDb(db);
 
+  // 1. Persistir transaccionalmente en PostgreSQL (orders + order_packages + order_items + payment_transactions)
   if (isDatabaseConfigured()) {
     try {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          status: order.status,
-          payment_status: order.payment_status,
-          shipped_at: order.shipped_at ? new Date(order.shipped_at) : null,
-          delivered_at: order.delivered_at
-            ? new Date(order.delivered_at)
-            : null,
-          completed_at: order.completed_at
-            ? new Date(order.completed_at)
-            : null,
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.order.update({
+          where: { id: order.id },
+          data: {
+            status: order.status,
+            payment_status: order.payment_status,
+            manufacturing_started_at: order.manufacturing_started_at
+              ? new Date(order.manufacturing_started_at)
+              : null,
+            shipped_at: order.shipped_at ? new Date(order.shipped_at) : null,
+            delivered_at: order.delivered_at
+              ? new Date(order.delivered_at)
+              : null,
+            completed_at: order.completed_at
+              ? new Date(order.completed_at)
+              : null,
+          },
+        });
+
+        await tx.orderPackage.updateMany({
+          where: { order_id: order.id },
+          data: {
+            status: order.status,
+            ...(input.courier ? { courier: input.courier } : {}),
+            ...(input.carrierPhone
+              ? { carrier_phone: input.carrierPhone }
+              : {}),
+          },
+        });
+
+        const packageIds = order.packages.map((p) => p.id);
+        if (packageIds.length > 0) {
+          await tx.orderItem.updateMany({
+            where: { package_id: { in: packageIds } },
+            data: { status: order.status },
+          });
+        }
+
+        if (
+          input.action === "verify_advance_50" ||
+          input.action === "complete_final_50_payment"
+        ) {
+          await tx.paymentTransaction.updateMany({
+            where: {
+              order_id: order.id,
+              payment_stage: "advance_50",
+            },
+            data: {
+              status: "verified",
+              verified_by: input.adminId,
+              verified_at: nowDate,
+            },
+          });
+        }
+
+        if (input.action === "complete_final_50_payment") {
+          const finalTxInDb = await tx.paymentTransaction.findFirst({
+            where: {
+              order_id: order.id,
+              payment_stage: "final_50",
+            },
+          });
+          const finalTxMemory = order.paymentTransactions.find(
+            (t) => t.payment_stage === "final_50",
+          );
+
+          if (!finalTxInDb && finalTxMemory) {
+            await tx.paymentTransaction.create({
+              data: {
+                id: finalTxMemory.id,
+                order_id: order.id,
+                payment_stage: "final_50",
+                payment_method: finalTxMemory.payment_method,
+                status: "verified",
+                amount: finalTxMemory.amount,
+                currency: "PEN",
+                operation_number: finalTxMemory.operation_number,
+                payer_name: finalTxMemory.payer_name,
+                payer_phone: finalTxMemory.payer_phone,
+                notes: finalTxMemory.notes,
+                verified_by: input.adminId,
+                verified_at: nowDate,
+              },
+            });
+          } else if (finalTxInDb) {
+            await tx.paymentTransaction.update({
+              where: { id: finalTxInDb.id },
+              data: {
+                status: "verified",
+                verified_by: input.adminId,
+                verified_at: nowDate,
+              },
+            });
+          }
+        }
       });
     } catch (e) {
-      console.warn("Prisma updateOrderAdminLifecycle fallback:", e);
+      console.error("Prisma updateOrderAdminLifecycle error:", e);
     }
   }
 
-  // Encolar email de notificación de cambio de estado al comprador
+  // 2. Mantener sincronizado el espejo local .apolena-dev-db.json
+  const db = await readLocalDb();
+  const localIdx = db.orders.findIndex((o) => o.id === order.id);
+  if (localIdx !== -1) {
+    db.orders[localIdx] = order;
+  } else {
+    db.orders.unshift(order);
+  }
+  writeLocalDb(db);
+
+  // 3. Encolar email de notificación de cambio de estado al comprador
   if (order.shipping?.email) {
     const stepLabels: Record<OrderStatus, string> = {
       manufacturing: "En Fabricación (Paso 1 de 3)",
@@ -1525,39 +2337,37 @@ export async function createOrderReview(input: {
   rating: number;
   comment: string;
 }): Promise<OrderRecord | null> {
-  const db = await readLocalDb();
-  const idx = db.orders.findIndex(
-    (o) => o.id === input.order_id && o.buyer_id === input.buyer_id,
-  );
-  if (idx === -1) return null;
+  const existingOrder = await findOrderById(input.order_id);
+  if (!existingOrder) return null;
 
-  const order = db.orders[idx];
-  const productId =
-    order.packages[0]?.items[0]?.product_id || DEFAULT_WALL_ART_PRODUCT.id;
+  const order: OrderRecord = JSON.parse(JSON.stringify(existingOrder));
+  const validProductId = await ensureValidProductIdInDatabase(
+    order.packages?.[0]?.items?.[0]?.product_id,
+  );
+  const validBuyerId = await ensureValidBuyerIdInDatabase(
+    input.buyer_id,
+    order.shipping,
+  );
 
   const review = {
     id: crypto.randomUUID(),
-    product_id: productId,
-    buyer_id: input.buyer_id,
+    product_id: validProductId,
+    buyer_id: validBuyerId,
     order_id: order.id,
     rating: Math.min(5, Math.max(1, Number(input.rating) || 5)),
     comment: input.comment.trim(),
-    photo_url: order.packages[0]?.items[0]?.generated_art_url || null,
+    photo_url: order.packages?.[0]?.items?.[0]?.generated_art_url || null,
     created_at: new Date().toISOString(),
   };
-
-  order.reviews = [review];
-  db.orders[idx] = order;
-  writeLocalDb(db);
 
   if (isDatabaseConfigured()) {
     try {
       await prisma.review.upsert({
         where: {
           buyer_id_order_id_product_id: {
-            buyer_id: input.buyer_id,
+            buyer_id: validBuyerId,
             order_id: order.id,
-            product_id: productId,
+            product_id: validProductId,
           },
         },
         update: {
@@ -1566,8 +2376,8 @@ export async function createOrderReview(input: {
         },
         create: {
           id: review.id,
-          product_id: productId,
-          buyer_id: input.buyer_id,
+          product_id: validProductId,
+          buyer_id: validBuyerId,
           order_id: order.id,
           rating: review.rating,
           comment: review.comment,
@@ -1579,5 +2389,13 @@ export async function createOrderReview(input: {
     }
   }
 
-  return order;
+  order.reviews = [review];
+  const db = await readLocalDb();
+  const idx = db.orders.findIndex((o) => o.id === order.id);
+  if (idx !== -1) {
+    db.orders[idx] = order;
+    writeLocalDb(db);
+  }
+
+  return (await findOrderById(order.id)) || order;
 }

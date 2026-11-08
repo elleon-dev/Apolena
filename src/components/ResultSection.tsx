@@ -85,20 +85,20 @@ export function ResultSection({
   return (
     <section
       id="retrato-final"
-      className="py-12 sm:py-16 bg-[#FAF6F0] border-t border-[#E5C378]/30"
+      className="py-12 sm:py-16 bg-cream-100 border-t border-primary/20"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-8">
         {/* Encabezado */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#E5C378]/40">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-primary/25">
           <div>
-            <span className="inline-block text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#D4A343] bg-[#F3EBE0] px-3 py-1 rounded-full border border-[#E5C378]/40 mb-2">
+            <span className="inline-block text-[10px] sm:text-xs font-bold tracking-widest uppercase text-primary bg-primary-50 px-3 py-1 rounded-full border border-primary/30 mb-2">
               Paso 3: Retrato Final
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-extrabold text-[#1C1B1A]">
+            <h2 className="font-serif text-2xl sm:text-4xl font-extrabold text-secondary">
               {petName} —{" "}
-              <span className="text-[#D4A343]">{characterTitle}</span>
+              <span className="text-primary">{characterTitle}</span>
             </h2>
-            <p className="text-xs sm:text-sm text-[#6B655F] mt-1">
+            <p className="text-xs sm:text-sm text-secondary/70 mt-1">
               Visualiza el resultado procesado por IA y selecciona el formato
               para encargar tu cuadro.
             </p>
@@ -107,7 +107,7 @@ export function ResultSection({
           {onNewPortrait && (
             <button
               onClick={onNewPortrait}
-              className="px-5 py-2.5 rounded-full bg-[#F3EBE0] hover:bg-white text-[#1C1B1A] text-xs font-bold border border-[#E5C378]/50 transition-all text-center"
+              className="px-5 py-2.5 rounded-full bg-white hover:bg-cream-50 text-secondary text-xs font-bold border border-primary/40 transition-all text-center"
             >
               Crear Otro Retrato
             </button>
@@ -119,13 +119,13 @@ export function ResultSection({
           {/* Visor de Arte (8 Columnas) */}
           <div className="lg:col-span-8 space-y-4">
             {/* Selector de Vistas */}
-            <div className="flex items-center gap-2 p-1.5 rounded-full bg-[#F3EBE0] border border-[#E5C378]/40 w-fit">
+            <div className="flex items-center gap-2 p-1.5 rounded-full bg-white border border-primary/30 w-fit">
               <button
                 onClick={() => setViewMode("artwork")}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                   viewMode === "artwork"
-                    ? "bg-white text-[#D4A343] shadow-xs"
-                    : "text-[#1C1B1A] hover:text-[#D4A343]"
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-secondary hover:text-primary"
                 }`}
               >
                 Arte Digital 4K
@@ -135,8 +135,8 @@ export function ResultSection({
                 onClick={() => setViewMode("compare")}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                   viewMode === "compare"
-                    ? "bg-white text-[#D4A343] shadow-xs"
-                    : "text-[#1C1B1A] hover:text-[#D4A343]"
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-secondary hover:text-primary"
                 }`}
               >
                 Antes / Después
@@ -144,23 +144,17 @@ export function ResultSection({
             </div>
 
             {/* Contenedor del Lienzo A4 */}
-            <div className="relative rounded-3xl bg-[#F3EBE0] border border-[#E5C378]/50 p-4 sm:p-6 flex items-center justify-center overflow-hidden shadow-xs">
-              {/* BACKEND INTEGRATION NOTE: 
-                  Estado 1: Renderizado cuando isLoading=true (petición a la API en progreso).
-              */}
+            <div className="relative rounded-3xl bg-white border border-primary/30 p-4 sm:p-6 flex items-center justify-center overflow-hidden shadow-xs">
               {isLoading ? (
                 <div className="text-center space-y-3 py-24">
-                  <div className="w-10 h-10 rounded-full border-3 border-[#D4A343] border-t-transparent animate-spin mx-auto"></div>
-                  <p className="text-xs font-bold text-[#D4A343] tracking-wide uppercase">
+                  <div className="w-10 h-10 rounded-full border-3 border-primary border-t-transparent animate-spin mx-auto"></div>
+                  <p className="text-xs font-bold text-primary tracking-wide uppercase">
                     Generando retrato con IA...
                   </p>
                 </div>
               ) : outputImageUrl ? (
-                /* BACKEND INTEGRATION NOTE: 
-                   Estado 2: Renderizado cuando outputImageUrl contiene la respuesta de la API de IA.
-                */
                 viewMode === "artwork" ? (
-                  <div className="relative w-full max-w-[420px] aspect-[3/4] rounded-2xl overflow-hidden shadow-lg border border-[#E5C378]/40 bg-white">
+                  <div className="relative w-full max-w-[420px] aspect-[3/4] rounded-2xl overflow-hidden shadow-lg border border-primary/30 bg-white">
                     <img
                       src={outputImageUrl}
                       alt={petName}
@@ -169,7 +163,7 @@ export function ResultSection({
                   </div>
                 ) : (
                   <div
-                    className="relative w-full max-w-[420px] aspect-[3/4] rounded-2xl overflow-hidden border border-[#D4A343] shadow-lg cursor-ew-resize select-none"
+                    className="relative w-full max-w-[420px] aspect-[3/4] rounded-2xl overflow-hidden border border-primary shadow-lg cursor-ew-resize select-none"
                     onMouseDown={() => setIsSliding(true)}
                     onMouseUp={() => setIsSliding(false)}
                     onMouseLeave={() => setIsSliding(false)}
@@ -197,12 +191,12 @@ export function ResultSection({
                           Sin Foto Original
                         </div>
                       )}
-                      <span className="absolute top-3 left-3 bg-[#1C1B1A]/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">
+                      <span className="absolute top-3 left-3 bg-secondary/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">
                         Foto Original
                       </span>
                     </div>
 
-                    <span className="absolute top-3 right-3 bg-[#D4A343] text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-xs">
+                    <span className="absolute top-3 right-3 bg-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-xs">
                       Retrato Apolena
                     </span>
 
@@ -210,29 +204,26 @@ export function ResultSection({
                       className="absolute top-0 bottom-0 w-1 bg-white shadow-md pointer-events-none"
                       style={{ left: `${sliderPos}%` }}
                     >
-                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white text-[#1C1B1A] font-bold text-xs flex items-center justify-center shadow-md">
+                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white text-secondary font-bold text-xs flex items-center justify-center shadow-md">
                         |
                       </div>
                     </div>
                   </div>
                 )
               ) : (
-                /* BACKEND INTEGRATION NOTE: 
-                   Estado 3: Lienzo A4 vacio en espera de la respuesta de la API.
-                */
-                <div className="w-full max-w-[420px] aspect-[3/4] bg-white/50 border border-[#E5C378]/30 rounded-2xl shadow-inner"></div>
+                <div className="w-full max-w-[420px] aspect-[3/4] bg-cream-50 border border-primary/20 rounded-2xl shadow-inner"></div>
               )}
             </div>
           </div>
 
           {/* Panel Lateral: Selección de Medida y Pedido (4 Columnas) */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="p-5 rounded-3xl bg-[#F3EBE0] border border-[#E5C378]/50 space-y-5">
+            <div className="p-5 rounded-3xl bg-white border border-primary/30 space-y-5 shadow-sm">
               <div>
-                <span className="text-[10px] font-bold text-[#D4A343] uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
                   Paso Final
                 </span>
-                <h3 className="font-serif text-lg font-bold text-[#1C1B1A]">
+                <h3 className="font-serif text-lg font-bold text-secondary">
                   Selecciona la Medida del Cuadro
                 </h3>
               </div>
@@ -250,17 +241,17 @@ export function ResultSection({
                       onClick={() => setSelectedPrintSize(key)}
                       className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-white border-[#D4A343] shadow-xs"
-                          : "bg-white/50 border-[#E5C378]/30 hover:bg-white"
+                          ? "bg-primary-50 border-primary shadow-xs"
+                          : "bg-cream-50 border-secondary/10 hover:bg-white"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-xs font-bold text-[#1C1B1A]">
+                      <div className="flex items-center justify-between text-xs font-bold text-secondary">
                         <span>{size.name}</span>
-                        <span className="text-[#D4A343] text-[11px]">
+                        <span className="text-primary text-[11px]">
                           {size.dpi}
                         </span>
                       </div>
-                      <p className="text-[10px] text-[#6B655F] mt-1">
+                      <p className="text-[10px] text-secondary/65 mt-1">
                         {size.use}
                       </p>
                     </div>
@@ -272,15 +263,14 @@ export function ResultSection({
               <button
                 type="button"
                 onClick={handleOrderClick}
-                style={{ backgroundColor: "#D4A343", color: "#FFFFFF" }}
-                className="w-full py-3.5 text-xs sm:text-sm font-extrabold rounded-full shadow-md active:scale-95 transition-transform text-center"
+                className="w-full py-3.5 bg-primary hover:bg-primary-600 text-white text-xs sm:text-sm font-extrabold rounded-full shadow-md active:scale-95 transition-all text-center"
               >
                 Personalizar y Finalizar Pedido
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#F3EBE0]/60 border border-[#E5C378]/40 text-center">
-              <p className="text-[11px] font-semibold text-[#6B655F]">
+            <div className="p-4 rounded-2xl bg-secondary-50 border border-secondary-100 text-center">
+              <p className="text-[11px] font-semibold text-secondary">
                 Incluye impresión a 300 DPI y marco de madera listo para colgar.
               </p>
             </div>

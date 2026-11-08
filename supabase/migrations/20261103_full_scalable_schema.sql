@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   name TEXT,
   phone TEXT,
   avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'super_admin')),
   address TEXT,
   department TEXT,
   province TEXT,

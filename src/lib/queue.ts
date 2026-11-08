@@ -1,5 +1,6 @@
 import { AIProviderId, ApiKeysOverride, GenerationJob } from "./types";
-import { getCharacterById, FAMOUS_CHARACTERS } from "@/data/characters";
+import { FAMOUS_CHARACTERS } from "@/data/characters";
+import { getWallArtCharacterById } from "./db-service";
 import { runMultiModelFusionPipeline } from "./ai-providers";
 import { saveJob, localJobs } from "./supabase";
 
@@ -26,7 +27,8 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     return;
   }
 
-  const character = getCharacterById(job.templateId) || FAMOUS_CHARACTERS[0];
+  const character =
+    (await getWallArtCharacterById(job.templateId)) || FAMOUS_CHARACTERS[0];
   const apiKeys = jobApiKeysMap.get(jobId);
 
   try {
@@ -35,7 +37,7 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       ...job,
       status: "processing",
       progress: 10,
-      currentStep: `Iniciando fusión con ${character.name} (${job.provider.toUpperCase()})...`,
+      currentStep: `Iniciando composición artística con ${character.name}...`,
     });
 
     // 2. Execute multi-model pipeline with callbacks

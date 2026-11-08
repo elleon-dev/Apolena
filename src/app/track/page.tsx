@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
-import { PackageSearch, Search, ArrowRight } from "lucide-react";
+import Footer from "@/components/Footer";
+import { PackageSearch, Search, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default function TrackLookupPage() {
   const router = useRouter();
-  const [trackingId, setTrackingId] = useState("APO-2026-849201");
+  const [trackingId, setTrackingId] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,21 +18,23 @@ export default function TrackLookupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream-50 text-stone-900">
+    <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#1C1B1A]">
       <Header />
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="max-w-xl w-full bg-white border border-cream-200 rounded-3xl p-8 sm:p-10 shadow-soft space-y-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-terracotta-50 border border-terracotta-100 text-terracotta-600 flex items-center justify-center mx-auto">
+      <main className="flex-1 flex items-center justify-center px-4 py-16">
+        <div className="max-w-xl w-full bg-white border border-[#E8E2D9] rounded-3xl p-8 sm:p-10 shadow-soft space-y-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
             <PackageSearch className="w-7 h-7" />
           </div>
           <div className="space-y-2">
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900">
-              Rastrea tu Pedido en Apolena
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold tracking-widest uppercase">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>SEGUIMIENTO EN TIEMPO REAL</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-extrabold text-secondary">
+              Rastrea tu Pedido
             </h1>
-            <p className="text-xs sm:text-sm text-stone-600">
-              Ingresa tu <strong>Tracking ID</strong> para consultar en tiempo
-              real en cuál de los 3 pasos se encuentra tu cuadro personalizado
-              (Fabricación, En Camino o Entregado).
+            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto">
+              Ingresa tu <strong>Tracking ID único</strong> (ej. <code>APO-2026-849201</code>) para consultar la etapa de fabricación y delivery de tu cuadro.
             </p>
           </div>
 
@@ -44,31 +47,32 @@ export default function TrackLookupPage() {
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
                 placeholder="Ej. APO-2026-849201"
-                className="w-full pl-11 pr-4 py-4 rounded-2xl bg-cream-50 border border-cream-200 text-sm font-mono text-stone-900 focus:border-terracotta-500 focus:bg-white focus:outline-none"
+                className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FAF6F0] border border-[#E8E2D9] text-sm font-mono text-stone-900 focus:border-primary focus:bg-white focus:outline-none uppercase"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-4 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
+              className="w-full py-4 px-6 rounded-full bg-primary hover:bg-primary-600 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
             >
-              <span>Consultar Estado de mi Orden</span>
+              <span>Consultar Estado de mi Pedido</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
           <p className="text-[11px] text-stone-500">
-            Código de muestra precargado:{" "}
+            Código de muestra para probar:{" "}
             <button
               type="button"
               onClick={() => setTrackingId("APO-2026-849201")}
-              className="font-mono text-terracotta-600 underline"
+              className="font-mono text-primary font-bold underline hover:text-primary-700"
             >
               APO-2026-849201
             </button>
           </p>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

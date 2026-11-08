@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { Star } from 'lucide-react';
 
 interface Testimonial {
   id: number;
@@ -56,11 +57,11 @@ const TESTIMONIALS: Testimonial[] = [
 
 export default function TestimonialsSection() {
   return (
-    <section className="w-full py-16 bg-[#FAF6F0] text-[#1C1B1A]">
+    <section className="w-full py-16 bg-cream-100 text-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1C1B1A]">
+          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-secondary">
             Lo que dicen nuestros clientes
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-600">
@@ -72,9 +73,9 @@ export default function TestimonialsSection() {
           {TESTIMONIALS.map((item) => (
             <div
               key={item.id}
-              className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-[#D4A343]/20 p-5 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
+              className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-primary/20 p-5 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
             >
-              <div className="w-full aspect-[9/16] rounded-xl overflow-hidden bg-black mb-4 relative shadow-inner">
+              <div className="w-full aspect-[9/16] rounded-xl overflow-hidden bg-secondary-900 mb-4 relative shadow-inner">
                 <iframe
                   src={`https://www.tiktok.com/player/v1/${item.videoId}?autoplay=0&music_info=0&description=0&rel=0`}
                   className="w-full h-full border-0"
@@ -86,16 +87,18 @@ export default function TestimonialsSection() {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-[#1C1B1A] text-base sm:text-lg">
+                  <h3 className="font-bold text-secondary text-base sm:text-lg">
                     {item.clientName}
                   </h3>
-                  <span className="text-xs font-semibold bg-[#D4A343]/10 text-[#D4A343] px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-semibold bg-primary/10 text-primary-700 px-2.5 py-1 rounded-full">
                     {item.petName}
                   </span>
                 </div>
 
-                <div className="flex text-amber-400 text-sm mb-2">
-                  {"★".repeat(item.rating)}
+                <div className="flex text-primary gap-0.5 mb-2">
+                  {Array.from({ length: item.rating }).map((_, rIdx) => (
+                    <Star key={rIdx} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
                 </div>
 
                 <p className="text-sm text-gray-600 leading-relaxed italic">

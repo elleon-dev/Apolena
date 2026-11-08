@@ -11,8 +11,8 @@ export default function Logo({ variant = "full", className = "" }: LogoProps) {
       <Image
         src="/logo.png"
         alt="Apolena Logo"
-        width={variant === "full" ? 140 : 40}
-        height={variant === "full" ? 140 : 40}
+        width={variant === "full" ? 180 : 56}
+        height={variant === "full" ? 60 : 56}
         className="object-contain animate-fade-in"
         priority
       />
