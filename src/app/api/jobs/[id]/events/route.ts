@@ -39,8 +39,14 @@ export async function GET(
           job.status === "failed"
         ) {
           lastProgress = job.progress;
+          const safeClientJob = {
+            ...job,
+            hdOutputImageUrl: job.outputImageUrl,
+          };
           controller.enqueue(
-            encoder.encode(`event: message\ndata: ${JSON.stringify(job)}\n\n`),
+            encoder.encode(
+              `event: message\ndata: ${JSON.stringify(safeClientJob)}\n\n`,
+            ),
           );
         }
 

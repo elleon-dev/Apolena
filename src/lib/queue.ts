@@ -3,6 +3,7 @@ import { FAMOUS_CHARACTERS } from "@/data/characters";
 import { getWallArtCharacterById } from "./db-service";
 import { runMultiModelFusionPipeline } from "./ai-providers";
 import { saveJob, localJobs } from "./supabase";
+import { protectAndStoreJobVariants } from "./server-watermark";
 
 export interface EnqueueJobParams {
   jobId: string;
@@ -68,16 +69,22 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       },
     });
 
-    // 3. Completed
+    // 3. Burn server-side Apolena watermark onto client previews and lock clean HD masters in server vault
+    const protectedArt = await protectAndStoreJobVariants(
+      jobId,
+      result.variants,
+    );
+
+    // 4. Completed (client receives only watermarked previews; hdOutputImageUrl is stored in DB/vault for workshop & post-payment unlock)
     const currentJob = localJobs.get(jobId) || job;
     await saveJob({
       ...currentJob,
       status: "completed",
       progress: 100,
       currentStep: "¡Retrato revelado con éxito!",
-      outputImageUrl: result.outputImageUrl,
-      hdOutputImageUrl: result.hdOutputImageUrl,
-      variants: result.variants,
+      outputImageUrl: protectedArt.watermarkedOutputUrl,
+      hdOutputImageUrl: protectedArt.masterOutputUrl,
+      variants: protectedArt.watermarkedVariants,
       modelUsed: result.modelUsed,
       executionSeconds: result.executionSeconds,
     });

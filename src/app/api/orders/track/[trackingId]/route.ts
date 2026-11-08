@@ -16,5 +16,26 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ order });
+  const isCompletedAndPaid =
+    order.status === "completed" && order.payment_status === "paid_full";
+
+  const safeOrder = isCompletedAndPaid
+    ? order
+    : {
+        ...order,
+        packages: (order.packages || []).map((pkg) => ({
+          ...pkg,
+          items: (pkg.items || []).map((it) => ({
+            ...it,
+            customizations: it.customizations
+              ? {
+                  ...it.customizations,
+                  master_art_url: null,
+                }
+              : it.customizations,
+          })),
+        })),
+      };
+
+  return NextResponse.json({ order: safeOrder });
 }

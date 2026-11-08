@@ -89,6 +89,8 @@ export interface OrderItemCustomizations {
   frame_price_pen: number;
   pet_count: number;
   notes?: string | null;
+  selected_variant_id?: string | null;
+  master_art_url?: string | null;
 }
 
 export interface OrderRecord {

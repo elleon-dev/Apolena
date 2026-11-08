@@ -282,12 +282,14 @@ Adapt the following thematic attire, accessories, lighting mood, and background 
 ${themeGuideText}`;
 
   const identityRules = `
-MANDATORY PET VISIBILITY & PROTAGONIST RULES:
+MANDATORY PET VISIBILITY, PROTAGONIST & UNCROPPED CANVAS FRAMING RULES:
 1. THE USER'S PET IS THE STAR: The generated portrait MUST unmistakably look like the user's specific uploaded pet. Preserve 100% of its exact species (DOG vs CAT), breed, facial bone structure, snout/muzzle length, nose color, eye color, fur colors, facial markings, and authentic expression from the input pet photo.
-2. UNOBSTRUCTED PET FACE & EARS: Never let crowns, hats, helmets, wigs, collars, or costumes hide, replace, or distort the pet's face, eyes, muzzle, or distinctive ears. Any headwear from the theme guide must sit lightly and naturally on top of the head as an accessory so the pet's natural ears, forehead fur, and head silhouette remain 100% visible.
-3. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural canine/feline head-to-shoulder and neck proportions. Never make the head bobble-headed, cartoon, 3D-rendered, or plastic.
-4. ORGANIC WARDROBE FIT: Tailor the character's garments, collar, and accessories around the pet's natural neck and shoulders with real fur micro-textures overlapping the collar edge.
-5. PHOTOGRAPHY SPECS: Shot on 35mm full-frame camera, 85mm f/1.8 prime lens, museum-grade fine art lighting, sharp eye catchlights. No watermarks, no text.`;
+2. COMPLETE UNCROPPED HEAD, FACE & EARS (CRITICAL FOR STRETCHED CANVAS): This artwork is for a stretched wall-art canvas where edges wrap around a wooden stretcher frame. NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet reference photo is tightly cropped at the top or sides, you MUST reconstruct and render the COMPLETE head, full skull crown, both complete ears, and upper torso/chest in a balanced medium-wide portrait shot (waist-up / chest-up framing).
+3. MANDATORY 20% HEADROOM & SIDE BREATHING ROOM: Leave at least 20% to 25% of open background space above the highest point of the pet's head, ears, or headwear, and 15% breathing room on the left and right edges so the entire head and costume are 100% inside the frame with generous gallery margins.
+4. UNOBSTRUCTED PET FACE & EARS: Never let crowns, hats, helmets, wigs, collars, or costumes hide, replace, or distort the pet's face, eyes, muzzle, or distinctive ears. Any headwear from the theme guide must sit lightly and naturally on top of the head as an accessory so the pet's natural ears, forehead fur, and head silhouette remain 100% visible.
+5. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural canine/feline head-to-shoulder and neck proportions. Never make the head bobble-headed, zoomed-in, cartoon, 3D-rendered, or plastic.
+6. ORGANIC WARDROBE FIT: Tailor the character's garments, collar, and accessories around the pet's natural neck, shoulders, and chest with real fur micro-textures overlapping the collar edge.
+7. PHOTOGRAPHY SPECS: Medium-wide half-body portrait (35mm full-frame camera, 50mm gallery portrait lens, camera positioned slightly stepped back so the full head, ears, and chest are framed with ample headroom), museum-grade fine art lighting, sharp eye catchlights. No watermarks, no text.`;
 
   const extraUserPrompt = customPrompt?.trim()
     ? `\nADDITIONAL STUDIO DIRECTION: ${customPrompt.trim()}`
@@ -472,7 +474,7 @@ async function runOpenAIFusion(
       const formData = new FormData();
       formData.append("model", editModel);
       formData.append("prompt", fusionPrompt);
-      formData.append("size", hasSecondPet ? "1536x1024" : "1024x1024");
+      formData.append("size", hasSecondPet ? "1536x1024" : "1024x1536");
       // Cost-optimized quality tier: 'medium' reduces cost by ~75% ($0.034 vs $0.133) while preserving photorealism
       formData.append("quality", "medium");
 
@@ -580,7 +582,8 @@ Write a single, detailed English image generation prompt (max 140 words) for a p
 You MUST explicitly describe:
 1. Pet #1's exact animal species (DOG vs CAT), exact breed, snout/muzzle shape, ear shape and position, fur colors, coat texture/markings, eye color, nose color, and facial expression.${pet2Data ? "\n2. Pet #2's exact animal species (DOG vs CAT), exact breed, snout/muzzle shape, ear shape, fur colors, markings, eye color, nose color, and expression." : ""}
 3. Every detail of the royal/character garments, crowns/headpieces, necklaces, fabric patterns, and background scenery from the wardrobe specification above, naturally fitted onto ${hasSecondPet ? "these exact pets" : "this exact pet"} without covering or obscuring their ears or faces.
-${customPrompt ? `4. Also incorporate: ${customPrompt}` : ""}
+4. FRAMING & HEADROOM (MANDATORY): Medium-wide chest-up portrait shot with at least 20% to 25% of open background headroom above the top of the head/ears/crown and generous space on the sides so the COMPLETE head, forehead, ears, and upper torso are 100% visible inside the frame without any cropping.
+${customPrompt ? `5. Also incorporate: ${customPrompt}` : ""}
 Output ONLY the raw prompt text, nothing else.`,
     },
     {
@@ -640,7 +643,7 @@ Output ONLY the raw prompt text, nothing else.`,
       model: "gpt-image-1.5",
       prompt: detailedPrompt,
       n: 1,
-      size: hasSecondPet ? "1536x1024" : "1024x1024",
+      size: hasSecondPet ? "1536x1024" : "1024x1536",
       quality: "medium",
     }),
   });
@@ -816,9 +819,10 @@ async function runGeminiFusion(
     `${character.name} (${character.characterTitle || character.universe}): ${character.description}`;
 
   const visionPrompt = `You are a master pet portrait director. Inspect the attached pet photo(s) carefully.
-Write a concise English photographic direction note (max 90 words) specifying:
+Write a concise English photographic direction note (max 95 words) specifying:
 1. The exact animal species (explicitly state whether it is a DOG or a CAT), exact breed, snout/muzzle structure, ear shape, coat coloration, fur texture, eye color, nose color, and natural head-to-body anatomical proportions of the pet in Image 1${pet2Data ? " and Image 2" : ""}.
 2. How this exact ${hasSecondPet ? "pair of pets is" : "pet is"} dressed in the following wardrobe and scene with dramatic chiaroscuro lighting and natural fur overlapping the collar: "${wardrobeSpec}".
+3. Crucial framing rule: Medium-wide chest-up portrait shot with generous 25% headroom above the top of the head/ears/hat so the entire head, skull crown, and both ears are 100% complete and uncropped for a stretched wall canvas.
 Output ONLY the direction note, nothing else.`;
 
   const visionParts = [...petParts, { text: visionPrompt }];
@@ -859,7 +863,7 @@ Output ONLY the direction note, nothing else.`;
     const openAiResult = await runOpenAIFusion(
       {
         ...input,
-        customPrompt: `${geminiDirectionNote}\nCompose a dramatic chiaroscuro medium-closeup 85mm studio portrait angle with rich depth of field, warm golden rim lighting, and deep atmospheric shadows while strictly preserving the uploaded pet's exact species, breed, snout, ears, and natural proportions.`,
+        customPrompt: `${geminiDirectionNote}\nCompose a dramatic chiaroscuro medium-wide chest-up 50mm studio portrait angle with at least 20-25% open headroom above the pet's head and ears, rich depth of field, warm golden rim lighting, and deep atmospheric shadows while strictly preserving the uploaded pet's exact species, breed, snout, complete uncropped head, complete ears, and natural proportions.`,
       },
       character,
       openaiKeyFallback,

@@ -15,8 +15,14 @@ export async function GET(
     );
   }
 
+  // Never expose the clean unwatermarked hdOutputImageUrl to the public studio polling endpoint
+  const safeClientJob = {
+    ...job,
+    hdOutputImageUrl: job.outputImageUrl,
+  };
+
   return NextResponse.json({
     success: true,
-    job,
+    job: safeClientJob,
   });
 }

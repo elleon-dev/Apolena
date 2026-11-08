@@ -16,6 +16,8 @@ import {
   MessageCircle,
   PackageCheck,
   CheckCircle2,
+  Download,
+  Lock,
 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
 
@@ -240,6 +242,28 @@ export default function TrackingDetailPage({
                     <p className="text-stone-500">
                       Listo para colgar · Algodón 100% de bellas artes
                     </p>
+                    <div className="pt-1.5">
+                      {order.status === "completed" &&
+                      order.payment_status === "paid_full" ? (
+                        <a
+                          href={
+                            item.customizations?.master_art_url ||
+                            item.generated_art_url ||
+                            "/samples/cat-suit.jpg"
+                          }
+                          download={`Apolena-Recuerdo-Digital-HD-${order.order_code}.png`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-all"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Descargar Recuerdo Digital HD</span>
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 font-medium">
+                          <Lock className="w-3 h-3 text-primary" />
+                          <span>Recuerdo Digital HD se desbloquea al entregar</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

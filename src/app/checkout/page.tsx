@@ -23,6 +23,8 @@ import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
 
 interface CheckoutDraft {
   product_id: string;
+  generation_job_id?: string | null;
+  selected_variant_id?: string | null;
   pet_photo_url: string | null;
   generated_art_url: string;
   unit_price: number;
@@ -157,6 +159,11 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product_id: draft.product_id,
+          generation_job_id: draft.generation_job_id || null,
+          selected_variant_id:
+            draft.selected_variant_id ||
+            draft.customizations?.selected_variant_id ||
+            "variant-1",
           pet_photo_url: draft.pet_photo_url,
           generated_art_url: draft.generated_art_url,
           quantity: 1,

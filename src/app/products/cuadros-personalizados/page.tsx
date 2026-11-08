@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
+import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import {
   AIProviderId,
@@ -16,7 +17,7 @@ import {
   PrintFinishMode,
   FRAME_OPTIONS,
   FrameOption,
-  exportPrintReadyImage,
+  exportWatermarkedPreviewImage,
 } from "@/lib/print-export";
 import type { ProductFinishOption, ProductRecord } from "@/lib/db-service";
 import {
@@ -122,6 +123,9 @@ export default function personalizedWallArt() {
   >([]);
   const [selectedVariantId, setSelectedVariantId] =
     useState<string>("variant-1");
+  const [activeGenerationJobId, setActiveGenerationJobId] = useState<
+    string | null
+  >(null);
   const [modelUsedLabel, setModelUsedLabel] = useState<string>(
     "Propuesta 1 · Óleo Fine Art",
   );
@@ -352,6 +356,7 @@ export default function personalizedWallArt() {
       }
 
       const jobId = data.jobId;
+      setActiveGenerationJobId(jobId);
 
       const handleJobCompletion = (job: any) => {
         if (Array.isArray(job.variants) && job.variants.length > 0) {
@@ -436,35 +441,24 @@ export default function personalizedWallArt() {
     }
   };
 
-  const handleDownload = async (presetOverride?: PrintPreset) => {
-    const targetPreset = presetOverride || selectedPrintPreset;
+  const handleDownload = async (_presetOverride?: PrintPreset) => {
     const sourceUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
     if (!sourceUrl) return;
 
     setIsExportingPrint(true);
     try {
-      const exported = await exportPrintReadyImage(
+      const exported = await exportWatermarkedPreviewImage(
         sourceUrl,
-        targetPreset,
-        printFinishMode,
+        activeThemeName,
       );
-      const cleanSize = targetPreset.label
-        .replace(/\s+/g, "")
-        .replace("×", "x");
       const link = document.createElement("a");
       link.href = exported.dataUrl;
-      link.download = `Apolena-Cuadro-${cleanSize}-${targetPreset.dpi}DPI-${exported.widthPx}x${exported.heightPx}px.png`;
+      link.download = `Apolena-Muestra-Protegida-${selectedCharacter.id}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      // Direct fallback download if canvas export fails
-      const link = document.createElement("a");
-      link.href = sourceUrl;
-      link.download = `Apolena-Retrato-${selectedCharacter.id}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      console.warn("No se pudo exportar la muestra con marca de agua:", err);
     } finally {
       setIsExportingPrint(false);
     }
@@ -495,6 +489,8 @@ export default function personalizedWallArt() {
     const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
     const draft = {
       product_id: wallArtProductId,
+      generation_job_id: activeGenerationJobId,
+      selected_variant_id: selectedVariantId || "variant-1",
       pet_photo_url: petImage,
       generated_art_url: finalArtUrl,
       unit_price: currentUnitPrice,
@@ -511,6 +507,7 @@ export default function personalizedWallArt() {
         frame_name: "Lienzo en Bastidor de Madera (Full Screen)",
         frame_price_pen: 0,
         pet_count: secondPetImage ? 2 : 1,
+        selected_variant_id: selectedVariantId || "variant-1",
         notes: customPrompt.trim() || null,
       },
     };
@@ -989,10 +986,11 @@ export default function personalizedWallArt() {
 
                 <button
                   onClick={() => handleDownload(selectedPrintPreset)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium shadow-soft transition-all"
+                  disabled={isExportingPrint}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium shadow-soft transition-all disabled:opacity-60"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Descargar Retrato HD</span>
+                  <span>Descargar Muestra con Marca de Agua</span>
                 </button>
               </div>
             </div>
@@ -1106,12 +1104,26 @@ export default function personalizedWallArt() {
                                 : "bg-white border-cream-200 hover:border-stone-300 hover:bg-cream-50/40 shadow-soft"
                             }`}
                           >
-                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+                             <div
+                              onContextMenu={(e) => e.preventDefault()}
+                              className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden border border-cream-200 bg-stone-900 flex-shrink-0 select-none"
+                            >
                               <img
                                 src={variant.imageUrl}
                                 alt={proposalTitle}
-                                className="w-full h-full object-cover"
+                                draggable={false}
+                                onContextMenu={(e) => e.preventDefault()}
+                                className="w-full h-full object-contain object-top pointer-events-none select-none"
                               />
+                              {/* Mini Watermark Overlay on Proposal Thumbnail */}
+                              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-35">
+                                <img
+                                  src="/logo.png"
+                                  alt=""
+                                  draggable={false}
+                                  className="w-14 object-contain -rotate-12 drop-shadow"
+                                />
+                              </div>
                               {isActiveVariant && (
                                 <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
                                   <span className="w-6 h-6 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow">
@@ -1210,9 +1222,11 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
-                {/* Gallery Matte Viewport */}
+                {/* Gallery Matte Viewport (Protected against right-click, drag & direct save) */}
                 <div
                   ref={imageContainerRef}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
                   onMouseMove={(e) => {
                     if (!imageContainerRef.current) return;
                     const rect =
@@ -1234,36 +1248,85 @@ export default function personalizedWallArt() {
                     setLensPos({ x, y });
                     if (isDraggingSlider) setSliderPos(x);
                   }}
-                  className="relative rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 min-h-[480px] flex items-center justify-center p-6 sm:p-10 select-none shadow-soft"
+                  className="relative rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 min-h-[480px] flex flex-col items-center justify-center p-6 sm:p-10 select-none shadow-soft"
                 >
                   {/* MODE 1: FULL PORTRAIT - BASTIDOR DE MADERA FULL SCREEN (SIN MARCO) */}
                   {viewMode === "fusion" && (
                     <div
-                      className="relative rounded-lg overflow-hidden transition-all bg-stone-900 border border-stone-800/20"
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="relative rounded-lg overflow-hidden transition-all bg-stone-900 border border-stone-800/20 select-none"
                       style={{
                         boxShadow:
                           "0 25px 50px -12px rgba(28, 25, 23, 0.45), 4px 8px 24px -2px rgba(0, 0, 0, 0.28)",
+                        WebkitTouchCallout: "none",
                       }}
                     >
-                      <img
+                      <ProtectedArtworkCanvas
                         src={
                           fusedResultUrl || selectedCharacter.fusionSampleUrl
                         }
                         alt="Retrato finalizado"
-                        className="max-h-[560px] w-auto object-contain block rounded-sm"
+                        maxHeightPx={560}
+                        className="rounded-sm"
                       />
 
-                      {/* Deep Zoom Magnifier Loupe */}
+                      {/* CAPA PROTECTORA INTERACTIVA CON LOGOTIPO DE APOLENA (ANTI-DESCARGA Y ANTI-CAPTURA LIMPIA) */}
+                      <div
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="absolute inset-0 z-10 pointer-events-auto select-none overflow-hidden flex flex-col justify-between"
+                      >
+                        {/* Malla diagonal repetitiva de seguridad con el logotipo oficial Apolena */}
+                        <div className="absolute inset-0 -rotate-24 scale-125 flex flex-wrap items-center justify-center gap-x-12 gap-y-10 opacity-25 pointer-events-none">
+                          {Array.from({ length: 15 }).map((_, wIdx) => (
+                            <div
+                              key={wIdx}
+                              className="flex flex-col items-center justify-center gap-1"
+                            >
+                              <img
+                                src="/logo.png"
+                                alt=""
+                                draggable={false}
+                                className="w-24 sm:w-28 object-contain drop-shadow-md"
+                              />
+                              <span className="text-[9px] font-bold tracking-widest uppercase text-white bg-stone-950/50 px-2 py-0.5 rounded">
+                                MUESTRA PROTEGIDA
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Sello inferior oficial Apolena */}
+                        <div className="mt-auto relative z-20 bg-gradient-to-t from-stone-950/90 via-stone-950/60 to-transparent pt-8 pb-3 px-4 flex items-center justify-between gap-3 pointer-events-none">
+                          <div className="px-3 py-1 rounded-full bg-cream-100/95 shadow-sm flex items-center">
+                            <img
+                              src="/logo.png"
+                              alt="Apolena"
+                              draggable={false}
+                              className="h-5 w-auto object-contain"
+                            />
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-terracotta-400">
+                              Vista Previa Protegida
+                            </p>
+                            <p className="text-[9px] text-stone-300">
+                              El lienzo físico se imprime sin marcas a 300 DPI
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Deep Zoom Magnifier Loupe (also watermarked) */}
                       {isZoomActive && (
                         <div
-                          className="absolute w-44 h-44 rounded-full border-4 border-white pointer-events-none shadow-card overflow-hidden hidden sm:block"
+                          className="absolute z-30 w-44 h-44 rounded-full border-4 border-white pointer-events-none shadow-card overflow-hidden hidden sm:block"
                           style={{
                             left: `calc(${lensPos.x}% - 88px)`,
                             top: `calc(${lensPos.y}% - 88px)`,
                           }}
                         >
                           <div
-                            className="w-full h-full"
+                            className="w-full h-full relative"
                             style={{
                               backgroundImage: `url(${
                                 fusedResultUrl ||
@@ -1273,16 +1336,25 @@ export default function personalizedWallArt() {
                               backgroundSize: "280%",
                               backgroundRepeat: "no-repeat",
                             }}
-                          />
+                          >
+                            <div className="absolute inset-0 flex items-center justify-center opacity-35">
+                              <img
+                                src="/logo.png"
+                                alt=""
+                                className="w-24 object-contain -rotate-12"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* MODE 2: BEFORE / AFTER SLIDER */}
+                  {/* MODE 2: BEFORE / AFTER SLIDER (Also Protected) */}
                   {viewMode === "compare" && petImage && (
                     <div
-                      className="relative max-h-[560px] aspect-[4/3] w-full max-w-[660px] rounded-2xl overflow-hidden border border-cream-200 bg-white shadow-card cursor-ew-resize"
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="relative max-h-[560px] aspect-[4/3] w-full max-w-[660px] rounded-2xl overflow-hidden border border-cream-200 bg-white shadow-card cursor-ew-resize select-none"
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onMouseUp={() => setIsDraggingSlider(false)}
                       onTouchMove={(e) => {
@@ -1304,8 +1376,22 @@ export default function personalizedWallArt() {
                           fusedResultUrl || selectedCharacter.fusionSampleUrl
                         }
                         alt="Retrato"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        draggable={false}
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
                       />
+
+                      {/* Watermark Pattern over After Image */}
+                      <div className="absolute inset-0 -rotate-24 scale-125 flex flex-wrap items-center justify-center gap-12 opacity-25 pointer-events-none">
+                        {Array.from({ length: 12 }).map((_, wIdx) => (
+                          <img
+                            key={wIdx}
+                            src="/logo.png"
+                            alt=""
+                            draggable={false}
+                            className="w-24 object-contain"
+                          />
+                        ))}
+                      </div>
 
                       {/* Before Pet Image (Clipped) */}
                       <div
@@ -1467,7 +1553,7 @@ export default function personalizedWallArt() {
                     </span>
                   </button>
 
-                  {/* Secondary Export Print-Ready File CTA */}
+                  {/* Secondary Export Watermarked Preview File CTA */}
                   <button
                     onClick={() => handleDownload(selectedPrintPreset)}
                     disabled={isExportingPrint}
@@ -1476,18 +1562,20 @@ export default function personalizedWallArt() {
                     {isExportingPrint ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Generando archivo 300 DPI...</span>
+                        <span>Generando muestra con marca de agua...</span>
                       </>
                     ) : (
                       <>
                         <Download className="w-4 h-4" />
                         <span>
-                          Descargar Muestra Digital{" "}
-                          {selectedPrintPreset.cmDimensions}
+                          Descargar Muestra con Marca de Agua
                         </span>
                       </>
                     )}
                   </button>
+                  <p className="text-[11px] text-stone-500 text-center leading-relaxed">
+                    La muestra descargable incluye marca de agua protectora en resolución web. Tu cuadro físico se imprime sin marcas a 300 DPI y al completarse la entrega se desbloquea tu <strong>Recuerdo Digital HD sin marca</strong> en <em>Mis Órdenes</em>.
+                  </p>
                 </div>
               </div>
             </div>

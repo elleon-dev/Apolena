@@ -12,14 +12,44 @@ import {
   getOrdersByBuyer,
   PaymentMethod,
 } from "@/lib/db-service";
+import { resolveCleanMasterArtwork } from "@/lib/server-watermark";
+
+/**
+ * Strips `master_art_url` from an order when returning to a non-admin buyer
+ * unless the order is 100% completed (`status === 'completed'` and `payment_status === 'paid_full'`).
+ */
+function sanitizeOrderArtworkForBuyer(order: any, isAdmin: boolean) {
+  const isCompletedAndPaid =
+    order.status === "completed" && order.payment_status === "paid_full";
+  if (isAdmin || isCompletedAndPaid) {
+    return order;
+  }
+  return {
+    ...order,
+    packages: (order.packages || []).map((pkg: any) => ({
+      ...pkg,
+      items: (pkg.items || []).map((it: any) => ({
+        ...it,
+        customizations: it.customizations
+          ? {
+              ...it.customizations,
+              master_art_url: null,
+            }
+          : it.customizations,
+      })),
+    })),
+  };
+}
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   }
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
   const orders = await getOrdersByBuyer(user.id, user.email);
-  return NextResponse.json({ orders });
+  const safeOrders = orders.map((o) => sanitizeOrderArtworkForBuyer(o, isAdmin));
+  return NextResponse.json({ orders: safeOrders });
 }
 
 export async function POST(request: Request) {
@@ -91,6 +121,24 @@ export async function POST(request: Request) {
       newSessionToken = await signSessionToken(sessionUser);
     }
 
+    // Resolve the clean unwatermarked 300 DPI master file from the server vault (if available)
+    // and store it privately inside `customizations.master_art_url` for admin production & post-completion unlock
+    const selectedVariantId =
+      body.selected_variant_id ||
+      body.customizations?.selected_variant_id ||
+      "variant-1";
+    const resolvedMasterArtUrl = resolveCleanMasterArtwork(
+      body.generation_job_id,
+      selectedVariantId,
+      body.generated_art_url || "/samples/cat-suit.jpg",
+    );
+
+    const enrichedCustomizations = {
+      ...(body.customizations || {}),
+      selected_variant_id: selectedVariantId,
+      master_art_url: resolvedMasterArtUrl,
+    };
+
     const createdOrder = await createOrderWithSplitPayment({
       buyer_id: sessionUser.id,
       product_id: body.product_id,
@@ -104,7 +152,7 @@ export async function POST(request: Request) {
       operation_number: body.operation_number,
       proof_image_url: body.proof_image_url || null,
       notes: body.notes || null,
-      customizations: body.customizations,
+      customizations: enrichedCustomizations,
       shipping: {
         name: shipping.name,
         phone: shipping.phone,
@@ -126,8 +174,10 @@ export async function POST(request: Request) {
       },
     });
 
+    const isAdmin =
+      sessionUser.role === "admin" || sessionUser.role === "super_admin";
     const response = NextResponse.json({
-      order: createdOrder,
+      order: sanitizeOrderArtworkForBuyer(createdOrder, isAdmin),
       trackingId: createdOrder.tracking_id,
     });
 

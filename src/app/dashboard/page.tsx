@@ -3811,6 +3811,7 @@ export default function AdminDashboardPage() {
                           <div className="flex items-center gap-3">
                             <img
                               src={
+                                modalItem.customizations?.master_art_url ||
                                 modalItem.generated_art_url ||
                                 "/samples/cat-suit.jpg"
                               }
@@ -3860,6 +3861,7 @@ export default function AdminDashboardPage() {
 
                           <a
                             href={
+                              modalItem.customizations?.master_art_url ||
                               modalItem.generated_art_url ||
                               "/samples/cat-suit.jpg"
                             }
@@ -3867,7 +3869,7 @@ export default function AdminDashboardPage() {
                             className="w-full py-2.5 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all"
                           >
                             <Download className="w-3.5 h-3.5 text-terracotta-400" />
-                            <span>Descargar Archivo Maestro HD</span>
+                            <span>Descargar Archivo Maestro HD (Sin Marca)</span>
                           </a>
                         </>
                       ) : (

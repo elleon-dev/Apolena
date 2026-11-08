@@ -24,6 +24,8 @@ import {
   Truck,
   PackageCheck,
   AlertCircle,
+  Download,
+  Lock,
 } from "lucide-react";
 import type { OrderRecord, OrderStatus } from "@/lib/db-service";
 import type { SessionUser } from "@/lib/auth";
@@ -446,7 +448,11 @@ export default function CommonUserOrdersPage() {
                       <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-cream-50 border border-secondary/10 flex flex-col sm:flex-row sm:items-center gap-4">
                         <img
                           src={
-                            item.generated_art_url || "/samples/cat-suit.jpg"
+                            (order.status === "completed" &&
+                            isPaidFull &&
+                            item.customizations?.master_art_url)
+                              ? item.customizations.master_art_url
+                              : item.generated_art_url || "/samples/cat-suit.jpg"
                           }
                           alt="Retrato Personalizado"
                           className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-primary/30 shrink-0 shadow-xs"
@@ -468,6 +474,31 @@ export default function CommonUserOrdersPage() {
                           <p className="text-secondary/60">
                             Acabado: {item.customizations?.finish_label}
                           </p>
+
+                          {/* Recuerdo Digital HD Post-Entrega (Unlocked only when status === 'completed' & paid_full) */}
+                          <div className="pt-2">
+                            {order.status === "completed" && isPaidFull ? (
+                              <a
+                                href={
+                                  item.customizations?.master_art_url ||
+                                  item.generated_art_url ||
+                                  "/samples/cat-suit.jpg"
+                                }
+                                download={`Apolena-Recuerdo-Digital-HD-${order.order_code}.png`}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[11px] font-bold shadow-xs transition-all"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Descargar Recuerdo Digital HD (Sin Marca de Agua)</span>
+                              </a>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-secondary/15 text-[11px] text-secondary/70 font-medium">
+                                <Lock className="w-3 h-3 text-primary" />
+                                <span>
+                                  Recuerdo Digital HD sin marca se desbloquea al completar la entrega (100%)
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
