@@ -11,6 +11,11 @@ export const metadata: Metadata = {
     "cuadros de perros y gatos",
     "fotografía de mascotas",
   ],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
