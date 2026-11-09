@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
-/*  AJUSTES RÁPIDOS (puedes cambiar estos números sin miedo)           */
+/*  AJUSTES RÁPIDOS                                                    */
 /* ------------------------------------------------------------------ */
-const SLIDE_MS = 6500; // Tiempo que dura cada banner (en milisegundos)
-const TILT_MAX_X = 14; // Inclinación vertical máxima de la tarjeta (grados)
-const TILT_MAX_Y = 18; // Inclinación horizontal máxima de la tarjeta (grados)
+const SLIDE_MS = 6500;
+const TILT_MAX_X = 14;
+const TILT_MAX_Y = 18;
 
 interface BannerSlide {
   id: string;
@@ -115,7 +115,6 @@ const BANNERS: BannerSlide[] = [
   },
 ];
 
-/* Partículas doradas (posiciones fijas para evitar errores de hidratación) */
 const PARTICLES = [
   { left: 6, size: 3, dur: 14, delay: -2 },
   { left: 14, size: 2, dur: 18, delay: -9 },
@@ -146,8 +145,8 @@ function TiltCard({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width; // 0 → 1
-    const py = (e.clientY - rect.top) / rect.height; // 0 → 1
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
 
     el.style.transition = "transform 120ms ease-out";
     el.style.setProperty("--rx", ((0.5 - py) * TILT_MAX_X).toFixed(2));
@@ -168,13 +167,11 @@ function TiltCard({
 
   return (
     <div
-      className="ap-m ap-card-in w-full max-w-[420px]"
+      className="ap-m ap-card-in w-full max-w-[340px] sm:max-w-[420px] mx-auto"
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
     >
-      {/* Capa de flotado suave (también sirve en móvil, donde no hay mouse) */}
       <div className="ap-m ap-float" style={{ perspective: "1100px" }}>
-        {/* Capa que se inclina en 3D */}
         <div
           ref={tiltRef}
           className="relative w-full aspect-[4/3] sm:aspect-square"
@@ -185,9 +182,8 @@ function TiltCard({
             willChange: "transform",
           }}
         >
-          {/* Marco de la imagen */}
           <div
-            className="absolute inset-0 rounded-3xl overflow-hidden border-2 border-white/20 bg-[#0A1F19]"
+            className="absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white/20 bg-[#0A1F19]"
             style={{
               boxShadow:
                 "calc(var(--ry, 0) * -2px) calc(var(--rx, 0) * 2px + 18px) 45px rgba(0,0,0,.5)",
@@ -204,9 +200,8 @@ function TiltCard({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-            {/* Brillo tipo barniz que sigue al cursor */}
             <div
-              className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300 hidden sm:block"
               style={{
                 opacity: "var(--go, 0)",
                 background:
@@ -215,9 +210,8 @@ function TiltCard({
             />
           </div>
 
-          {/* Badge: flota por delante de la imagen (profundidad Z) */}
           <div
-            className="absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl bg-[#0A1F19]/80 backdrop-blur-md border border-white/20 text-left flex items-center justify-between gap-3 shadow-lg"
+            className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#0A1F19]/80 backdrop-blur-md border border-white/20 text-left flex items-center justify-between gap-3 shadow-lg"
             style={{ transform: "translateZ(60px)" }}
           >
             <div className="min-w-0">
@@ -238,15 +232,12 @@ function TiltCard({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Check que se "dibuja" solo                                         */
-/* ------------------------------------------------------------------ */
 function DrawnCheck({ delay }: { delay: number }) {
   const style = { animationDelay: `${delay}ms` };
   return (
     <svg
       viewBox="0 0 24 24"
-      className="w-4 h-4 flex-shrink-0"
+      className="w-4 h-4 flex-shrink-0 mt-0.5"
       fill="none"
       stroke="#E9A17B"
       strokeWidth="2"
@@ -284,10 +275,8 @@ export default function BannerCarousel() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-    
-
-      <div className="relative min-h-[580px] sm:min-h-[560px] lg:min-h-[600px] flex items-center">
-        {/* Fondo: un degradado por banner con fundido suave y efecto aurora */}
+      <div className="relative min-h-[580px] sm:min-h-[560px] lg:min-h-[600px] flex items-center py-6 sm:py-8 lg:py-0">
+        {/* Tu fondo original */}
         {BANNERS.map((banner, index) => (
           <div
             key={`bg-${banner.id}`}
@@ -298,63 +287,17 @@ export default function BannerCarousel() {
           />
         ))}
 
-        {/* Blobs de color que flotan lentamente */}
-   {/* Capas de luz ambiental (4 Blobs gigantes sin restricciones CSS) */}
+        {/* Tus Blobs originales */}
         <div
           aria-hidden="true"
-          className="absolute -top-32 -left-32 w-[700px] h-[700px] bg-[#174B3D] rounded-full blur-[90px] opacity-70 pointer-events-none mix-blend-screen"
+          className="ap-m ap-blob-a absolute top-1/4 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-[#174B3D]/30 rounded-full blur-3xl pointer-events-none"
         />
         <div
           aria-hidden="true"
-          className="absolute -bottom-32 -right-32 w-[700px] h-[700px] bg-[#E9A17B] rounded-full blur-[100px] opacity-40 pointer-events-none mix-blend-screen"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#174B3D] rounded-full blur-[120px] opacity-45 pointer-events-none"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute top-10 right-1/4 w-[500px] h-[500px] bg-[#E9A17B] rounded-full blur-[110px] opacity-25 pointer-events-none"
+          className="ap-m ap-blob-b absolute bottom-10 right-10 w-72 sm:w-96 h-72 sm:h-96 bg-[#E9A17B]/15 rounded-full blur-3xl pointer-events-none"
         />
 
-        {/* Polvo de luz dorado (Multiplicado a 24 partículas para mayor densidad) */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 overflow-hidden pointer-events-none z-10"
-        >
-          {[
-            { left: 4, size: 3, dur: 12, delay: -1 },
-            { left: 9, size: 2, dur: 16, delay: -7 },
-            { left: 15, size: 4, dur: 14, delay: -3 },
-            { left: 22, size: 3, dur: 18, delay: -11 },
-            { left: 28, size: 2, dur: 15, delay: -5 },
-            { left: 35, size: 5, dur: 20, delay: -9 },
-            { left: 41, size: 3, dur: 13, delay: -2 },
-            { left: 48, size: 2, dur: 17, delay: -8 },
-            { left: 54, size: 4, dur: 15, delay: -4 },
-            { left: 61, size: 3, dur: 19, delay: -12 },
-            { left: 67, size: 2, dur: 14, delay: -6 },
-            { left: 73, size: 5, dur: 21, delay: -10 },
-            { left: 79, size: 3, dur: 16, delay: -3 },
-            { left: 85, size: 2, dur: 18, delay: -13 },
-            { left: 91, size: 4, dur: 15, delay: -7 },
-            { left: 96, size: 3, dur: 13, delay: -1 },
-          ].map((p, i) => (
-            <span
-              key={i}
-              className="ap-m ap-particle absolute bottom-0 rounded-full bg-[#E9A17B]/80 shadow-[0_0_8px_#E9A17B]"
-              style={{
-                left: `${p.left}%`,
-                width: p.size,
-                height: p.size,
-                animationDuration: `${p.dur}s`,
-                animationDelay: `${p.delay}s`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Polvo de luz dorado */}
+        {/* Tus Partículas originales */}
         <div
           aria-hidden="true"
           className="absolute inset-0 overflow-hidden pointer-events-none"
@@ -374,13 +317,11 @@ export default function BannerCarousel() {
           ))}
         </div>
 
-        {/* Slides: los 3 están montados, pero solo el activo se muestra.
-            Al pasar de "hidden" a visible, las animaciones se reinician solas. */}
+        {/* Slides adaptados para móvil sin tocar estilos de texto */}
         {BANNERS.map((banner, index) => {
           const isActive = index === currentIndex;
           const words = banner.headline.split(" ");
 
-          // Tiempos de la entrada escalonada (ms)
           const tagDelay = 0;
           const titleStart = 180;
           const subDelay = titleStart + words.length * 70 + 60;
@@ -391,12 +332,14 @@ export default function BannerCarousel() {
             <div
               key={banner.id}
               aria-hidden={!isActive}
-              className={`absolute inset-0 z-10 items-center ${
-                isActive ? "flex" : "hidden"
+              className={`w-full z-10 transition-all duration-500 ${
+                isActive
+                  ? "relative opacity-100 pointer-events-auto flex items-center"
+                  : "absolute inset-0 opacity-0 pointer-events-none hidden"
               }`}
             >
-              <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                <div className="lg:col-span-7 space-y-6 text-left">
+              <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
+                <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left">
                   {/* Tag Pill */}
                   <div
                     className="ap-m ap-rise inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-xs font-bold tracking-wider uppercase text-[#E9A17B]"
@@ -406,10 +349,10 @@ export default function BannerCarousel() {
                     <span>{banner.tag}</span>
                   </div>
 
-                  {/* Titular: palabra por palabra, de borroso a nítido */}
+                  {/* Titular */}
                   <h1
                     aria-label={banner.headline}
-                    className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight !text-white"
+                    className="font-serif text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight !text-white"
                   >
                     {words.map((word, wIdx) => (
                       <span
@@ -425,20 +368,20 @@ export default function BannerCarousel() {
 
                   {/* Subtitle */}
                   <p
-                    className="ap-m ap-rise text-sm sm:text-base text-[#F5EDE0]/85 font-light leading-relaxed"
+                    className="ap-m ap-rise text-xs sm:text-base text-[#F5EDE0]/85 font-light leading-relaxed"
                     style={{ animationDelay: `${subDelay}ms` }}
                   >
                     {banner.subheadline}
                   </p>
 
-                  {/* Bullets: entran uno tras otro y el check se dibuja */}
-                  <ul className="space-y-2.5 pt-1">
+                  {/* Bullets */}
+                  <ul className="space-y-2 sm:space-y-2.5 pt-1">
                     {banner.bullets.map((bullet, bIdx) => {
                       const d = bulletsStart + bIdx * 130;
                       return (
                         <li
                           key={bIdx}
-                          className="ap-m ap-rise flex items-center gap-2.5 text-xs sm:text-sm text-[#F5EDE0]"
+                          className="ap-m ap-rise flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-[#F5EDE0]"
                           style={{ animationDelay: `${d}ms` }}
                         >
                           <DrawnCheck delay={d + 150} />
@@ -448,11 +391,11 @@ export default function BannerCarousel() {
                     })}
                   </ul>
 
-                  {/* CTA Buttons: entran con un pequeño rebote */}
-                  <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-4">
+                  {/* CTA Buttons */}
+                  <div className="pt-2 sm:pt-3 flex flex-col xs:flex-row items-stretch xs:items-center gap-3 sm:gap-4">
                     <Link
                       href={banner.ctaLink}
-                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#E9A17B] hover:bg-[#d88e68] text-white font-bold text-sm shadow-lg transition-colors hover:scale-[1.02] active:scale-95"
+                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full bg-[#E9A17B] hover:bg-[#d88e68] text-white font-bold text-xs sm:text-sm shadow-lg transition-colors hover:scale-[1.02] active:scale-95 text-center"
                       style={{ animationDelay: `${ctaDelay}ms` }}
                     >
                       <span>{banner.ctaText}</span>
@@ -461,7 +404,7 @@ export default function BannerCarousel() {
 
                     <Link
                       href={banner.secondaryCtaLink}
-                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-[#F5EDE0] border border-white/20 font-semibold text-sm backdrop-blur-sm transition-colors hover:scale-[1.02] active:scale-95"
+                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-[#F5EDE0] border border-white/20 font-semibold text-xs sm:text-sm backdrop-blur-sm transition-colors hover:scale-[1.02] active:scale-95 text-center"
                       style={{ animationDelay: `${ctaDelay + 120}ms` }}
                     >
                       <span>{banner.secondaryCtaText}</span>
@@ -469,8 +412,8 @@ export default function BannerCarousel() {
                   </div>
                 </div>
 
-                {/* Columna de imagen con tilt 3D */}
-                <div className="lg:col-span-5 flex justify-center items-center">
+                {/* Columna de imagen */}
+                <div className="lg:col-span-5 flex justify-center items-center mt-2 lg:mt-0">
                   <TiltCard banner={banner} priorityImage={index === 0} />
                 </div>
               </div>
@@ -479,27 +422,27 @@ export default function BannerCarousel() {
         })}
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Flechas de navegación: se adaptan para no tapar contenido en pantalla chica */}
       <button
         type="button"
         onClick={prevSlide}
         aria-label="Banner anterior"
-        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95"
+        className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
       <button
         type="button"
         onClick={nextSlide}
         aria-label="Siguiente banner"
-        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95"
+        className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
-      {/* Dots con barra de progreso real: cuando la barra se llena, cambia el banner */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
+      {/* Dots con barra de progreso */}
+      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-2.5">
         {BANNERS.map((banner, index) => {
           const isActive = index === currentIndex;
           return (
@@ -508,10 +451,10 @@ export default function BannerCarousel() {
               type="button"
               onClick={() => setCurrentIndex(index)}
               aria-label={`Ir al banner ${index + 1}: ${banner.tag}`}
-              className={`relative h-2.5 rounded-full overflow-hidden transition-all duration-500 ${
+              className={`relative h-2 sm:h-2.5 rounded-full overflow-hidden transition-all duration-500 ${
                 isActive
-                  ? "w-12 bg-white/30"
-                  : "w-2.5 bg-white/40 hover:bg-white/70"
+                  ? "w-8 sm:w-12 bg-white/30"
+                  : "w-2 sm:w-2.5 bg-white/40 hover:bg-white/70"
               }`}
             >
               {isActive && (
@@ -529,10 +472,10 @@ export default function BannerCarousel() {
         })}
       </div>
 
-      {/* Contador 01 / 03 con número que se desliza */}
+      {/* Contador */}
       <div
         aria-hidden="true"
-        className="absolute bottom-3 right-4 sm:right-8 z-20 flex items-center gap-1.5 text-xs font-semibold tracking-widest text-white/70"
+        className="absolute bottom-3 right-3 sm:right-8 z-20 flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold tracking-widest text-white/70"
       >
         <span className="inline-block overflow-hidden h-4 leading-4">
           <span key={currentIndex} className="ap-m ap-num inline-block text-[#E9A17B]">
