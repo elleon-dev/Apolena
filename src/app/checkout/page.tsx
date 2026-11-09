@@ -498,89 +498,25 @@ export default function CheckoutPage() {
               </div>
 
               {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA) */}
-              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-cream-200">
-                  <div className="flex items-center gap-2.5">
-                    <FileText className="w-4 h-4 text-terracotta-500" />
-                    <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      2. Comprobante de Pago
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setInvoiceType("boleta")}
-                      className={`px-3.5 py-1.5 rounded-full border font-medium transition-all ${
-                        invoiceType === "boleta"
-                          ? "bg-stone-900 text-white border-stone-900"
-                          : "bg-cream-50 text-stone-600 border-cream-200"
-                      }`}
-                    >
-                      Boleta
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInvoiceType("factura")}
-                      className={`px-3.5 py-1.5 rounded-full border font-medium transition-all ${
-                        invoiceType === "factura"
-                          ? "bg-stone-900 text-white border-stone-900"
-                          : "bg-cream-50 text-stone-600 border-cream-200"
-                      }`}
-                    >
-                      Factura (RUC)
-                    </button>
-                  </div>
-                </div>
+              <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
+  <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
+    <div className="flex items-center gap-2.5">
+      <FileText className="w-5 h-5 text-[#E9A17B]" />
+      <h2 className="font-serif text-lg font-bold text-[#174B3D]">
+        2. Comprobante de Pago
+      </h2>
+    </div>
+    <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
+      Comprobante de Pedido
+    </span>
+  </div>
 
-                {invoiceType === "factura" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div className="space-y-1">
-                      <label className="font-semibold text-stone-800 block">
-                        Número de RUC *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={rucNumber}
-                        onChange={(e) => setRucNumber(e.target.value)}
-                        placeholder="20..."
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-semibold text-stone-800 block">
-                        Razón Social *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={legalName}
-                        onChange={(e) => setLegalName(e.target.value)}
-                        placeholder="Empresa SAC"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900"
-                      />
-                    </div>
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="font-semibold text-stone-800 block">
-                        Dirección Fiscal *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={taxAddress}
-                        onChange={(e) => setTaxAddress(e.target.value)}
-                        placeholder="Dirección fiscal registrada en SUNAT"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs text-stone-500">
-                    Se emitirá Boleta de Venta Electrónica con los datos de tu
-                    documento ingresado arriba.
-                  </p>
-                )}
-              </div>
+  <div className="p-4 rounded-2xl bg-[#F5EDE0]/60 border border-[#174B3D]/10">
+    <p className="text-xs text-[#4A6B60] leading-relaxed font-medium">
+      Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
+    </p>
+  </div>
+</div>
 
               {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
