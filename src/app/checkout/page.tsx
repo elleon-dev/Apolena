@@ -807,23 +807,24 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-stone-800 block">
-                      Captura del Voucher (Opcional)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) =>
-                          setProofImageUrl(ev.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-cream-50 border border-cream-200 text-stone-600 text-[11px]"
-                    />
+                  {/* Campo 2: Captura del Voucher */}
+                    <div className="space-y-1.5">
+                      <label className="font-extrabold text-[#174B3D] block">
+                        Captura del Voucher (Opcional)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) =>
+                            setProofImageUrl(ev.target?.result as string);
+                          reader.readAsDataURL(file);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#174B3D]/30 text-stone-700 text-[11px] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#174B3D] file:text-white hover:file:bg-[#0f3229] file:cursor-pointer transition-all"
+                      />
                   </div>
                 </div>
               </div>
