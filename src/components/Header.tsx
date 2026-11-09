@@ -132,7 +132,7 @@ export function Header(_props: HeaderProps = {}) {
           <Link href="/" className="flex items-center gap-3 group py-2 min-w-0">
             <div className="relative w-40 h-12 sm:w-52 sm:h-16 xl:w-60 xl:h-16 shrink-0 transition-transform duration-300 group-hover:scale-[1.03]">
               <Image 
-                src="/logo.png" 
+                src="/logo1.png" 
                 alt="Apolena — Retratos Personalizados de Mascotas" 
                 fill 
                 sizes="(min-width: 1280px) 240px, (min-width: 640px) 208px, 160px"

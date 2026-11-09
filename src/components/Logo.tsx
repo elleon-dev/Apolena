@@ -9,7 +9,7 @@ export default function Logo({ variant = "full", className = "" }: LogoProps) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Image
-        src="/logo.png"
+        src="/logo1.png"
         alt="Apolena Logo"
         width={variant === "full" ? 180 : 56}
         height={variant === "full" ? 60 : 56}
