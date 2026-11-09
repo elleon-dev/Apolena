@@ -38,7 +38,7 @@ const BANNERS: BannerSlide[] = [
   {
     id: "banner-living-room",
     tag: "ATELIER DIGITAL PARA MASCOTAS",
-    tagIcon: <Sparkles className="w-3.5 h-3.5 text-primary" />,
+    tagIcon: <Sparkles className="w-3.5 h-3.5 text-[#E9A17B]" />,
     headline: "El retrato de tu mascota en un lienzo de museo",
     subheadline:
       "Lienzo 100% algodón de bellas artes tensado a mano sobre bastidor de madera (Full Screen sin marco). Listo para colgar con orgullo en tu sala o dormitorio.",
@@ -57,12 +57,12 @@ const BANNERS: BannerSlide[] = [
       title: "Full Screen de Galería",
       subtitle: "Lienzo de algodón · Listo para colgar",
     },
-    bgGradient: "from-[#13253B] via-[#1A2F49] to-[#0F1E31]",
+    bgGradient: "from-[#0A1F19] via-[#174B3D] to-[#0A1F19]",
   },
   {
     id: "banner-split-payment",
     tag: "CONFIANZA Y PAGO SEGURO",
-    tagIcon: <ShieldCheck className="w-3.5 h-3.5 text-primary" />,
+    tagIcon: <ShieldCheck className="w-3.5 h-3.5 text-[#E9A17B]" />,
     headline: "Pagas 50% de adelanto y 50% contraentrega al recibir",
     subheadline:
       "Aprobación previa garantizada: elaboramos 2 propuestas artísticas exclusivas por cada pedido antes de enviar a imprenta y empaque.",
@@ -81,12 +81,12 @@ const BANNERS: BannerSlide[] = [
       title: "Modalidad 50% / 50%",
       subtitle: "Pagas el saldo al recibir tu cuadro",
     },
-    bgGradient: "from-[#2A1810] via-[#381F13] to-[#1C120B]",
+    bgGradient: "from-[#122A22] via-[#174B3D] to-[#0D211B]",
   },
   {
     id: "banner-collections",
     tag: "COLECCIONES EXCLUSIVAS",
-    tagIcon: <Palette className="w-3.5 h-3.5 text-primary" />,
+    tagIcon: <Palette className="w-3.5 h-3.5 text-[#E9A17B]" />,
     headline: "De soberanos andinos a leyendas del cine",
     subheadline:
       "Explora nuestra cuidada galería de personajes históricos, reyes y cineastas, o sube tu propia fotografía temática para personalizar el vestuario.",
@@ -105,7 +105,7 @@ const BANNERS: BannerSlide[] = [
       title: "2 Propuestas Artísticas",
       subtitle: "Técnica óleo y claroscuro en cada orden",
     },
-    bgGradient: "from-[#191F26] via-[#232B35] to-[#141920]",
+    bgGradient: "from-[#0F261F] via-[#174B3D] to-[#0A1C17]",
   },
 ];
 
@@ -121,7 +121,6 @@ export default function BannerCarousel() {
     setCurrentIndex((prev) => (prev - 1 + BANNERS.length) % BANNERS.length);
   }, []);
 
-  // Autoplay timer (every 6.5 seconds, pauses when hovering)
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
@@ -133,11 +132,10 @@ export default function BannerCarousel() {
   return (
     <section
       aria-label="Carrusel de Banners Apolena"
-      className="relative w-full overflow-hidden bg-stone-900 text-white select-none border-b border-stone-800"
+      className="relative w-full overflow-hidden bg-[#0A1F19] text-[#F5EDE0] select-none border-b border-[#174B3D]/30"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Container Slides */}
       <div className="relative min-h-[580px] sm:min-h-[560px] lg:min-h-[600px] flex items-center">
         {BANNERS.map((banner, index) => {
           const isActive = index === currentIndex;
@@ -150,31 +148,28 @@ export default function BannerCarousel() {
                   : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              {/* Dynamic Gradient Background with Texture */}
               <div
                 className={`absolute inset-0 bg-gradient-to-r ${banner.bgGradient} opacity-95`}
               />
 
-              {/* Subtle ambient lighting effect */}
-              <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#174B3D]/30 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#E9A17B]/15 rounded-full blur-3xl pointer-events-none" />
 
               <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                {/* Text Content Column (Left on Desktop) */}
                 <div className="lg:col-span-7 space-y-6 text-left">
                   {/* Tag Pill */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] sm:text-xs font-bold tracking-wider uppercase text-primary-200">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-xs font-bold tracking-wider uppercase text-[#E9A17B]">
                     {banner.tagIcon}
                     <span>{banner.tag}</span>
                   </div>
 
-                  {/* Main Title */}
-                  <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">
+                  {/* Main Title (Blanco Puro para máximo contraste) */}
+                  <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight !text-white">
                     {banner.headline}
                   </h1>
 
                   {/* Subtitle */}
-                  <p className="text-sm sm:text-base text-stone-300 max-w-2xl font-light leading-relaxed">
+                  <p className="text-sm sm:text-base text-[#F5EDE0]/85 font-light leading-relaxed">
                     {banner.subheadline}
                   </p>
 
@@ -183,9 +178,9 @@ export default function BannerCarousel() {
                     {banner.bullets.map((bullet, bIdx) => (
                       <li
                         key={bIdx}
-                        className="flex items-center gap-2.5 text-xs sm:text-sm text-stone-200"
+                        className="flex items-center gap-2.5 text-xs sm:text-sm text-[#F5EDE0]"
                       >
-                        <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-[#E9A17B] flex-shrink-0" />
                         <span>{bullet}</span>
                       </li>
                     ))}
@@ -195,7 +190,7 @@ export default function BannerCarousel() {
                   <div className="pt-3 flex flex-wrap items-center gap-3 sm:gap-4">
                     <Link
                       href={banner.ctaLink}
-                      className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-primary hover:bg-primary-600 text-white font-bold text-sm shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#E9A17B] hover:bg-[#d88e68] text-white font-bold text-sm shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                     >
                       <span>{banner.ctaText}</span>
                       <ArrowRight className="w-4 h-4" />
@@ -203,16 +198,16 @@ export default function BannerCarousel() {
 
                     <Link
                       href={banner.secondaryCtaLink}
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm backdrop-blur-sm transition-all hover:scale-[1.02] active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-[#F5EDE0] border border-white/20 font-semibold text-sm backdrop-blur-sm transition-all hover:scale-[1.02] active:scale-95"
                     >
                       <span>{banner.secondaryCtaText}</span>
                     </Link>
                   </div>
                 </div>
 
-                {/* Visual Image Presentation Column (Right on Desktop) */}
+                {/* Visual Image Presentation Column */}
                 <div className="lg:col-span-5 flex justify-center items-center">
-                  <div className="relative w-full max-w-[420px] aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden shadow-2xl border-2 border-white/15 bg-stone-950 group">
+                  <div className="relative w-full max-w-[420px] aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20 bg-[#0A1F19] group">
                     <Image
                       src={banner.imageSrc}
                       alt={banner.imageAlt}
@@ -222,20 +217,19 @@ export default function BannerCarousel() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 420px"
                     />
 
-                    {/* Subtle inner vignette */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-                    {/* Floating Badge Card inside image */}
-                    <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-left flex items-center justify-between gap-3 shadow-lg">
+                    {/* Floating Badge Card */}
+                    <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-2xl bg-[#0A1F19]/80 backdrop-blur-md border border-white/20 text-left flex items-center justify-between gap-3 shadow-lg">
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white truncate">
                           {banner.badge.title}
                         </p>
-                        <p className="text-[11px] text-stone-300 truncate">
+                        <p className="text-[11px] text-[#F5EDE0]/80 truncate">
                           {banner.badge.subtitle}
                         </p>
                       </div>
-                      <span className="w-7 h-7 rounded-full bg-primary/90 text-white flex items-center justify-center flex-shrink-0">
+                      <span className="w-7 h-7 rounded-full bg-[#E9A17B] text-white flex items-center justify-center flex-shrink-0">
                         <Check className="w-4 h-4 text-white" />
                       </span>
                     </div>
@@ -278,7 +272,7 @@ export default function BannerCarousel() {
               aria-label={`Ir al banner ${index + 1}: ${banner.tag}`}
               className={`h-2.5 rounded-full transition-all duration-300 ${
                 isActive
-                  ? "w-8 bg-primary shadow-sm"
+                  ? "w-8 bg-[#E9A17B] shadow-sm"
                   : "w-2.5 bg-white/40 hover:bg-white/70"
               }`}
             />
