@@ -138,7 +138,7 @@ export function Header(_props: HeaderProps = {}) {
     <header className="sticky top-0 z-50 bg-[#174B3D] text-white border-b border-[#c6a26c]/25 shadow-md transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-24 sm:h-28 gap-4">
-          {/* 1. Logotipo Oficial Apolena (Variación Gold sobre fondo Primary #174B3D) */}
+          {/* 1. Logotipo Oficial Apolena */}
           <Link
             href="/"
             className="flex items-center gap-3 group py-1 shrink-0"
@@ -155,7 +155,7 @@ export function Header(_props: HeaderProps = {}) {
             </div>
           </Link>
 
-          {/* 2. Navegación Central Desktop con separadores de punto (estilo editorial) */}
+          {/* 2. Navegación Central Desktop */}
           <nav
             aria-label="Navegación principal"
             className="hidden xl:flex items-center justify-center gap-1"
@@ -180,7 +180,7 @@ export function Header(_props: HeaderProps = {}) {
             ))}
           </nav>
 
-          {/* 3. Acciones Derecha Desktop (Usuario + Botón CREAR en Secondary #c6a26c, sin search ni cart) */}
+          {/* 3. Acciones Derecha Desktop */}
           <div className="hidden xl:flex items-center gap-3.5 shrink-0">
             {sessionUser ? (
               <div className="relative" ref={menuRef}>
@@ -299,7 +299,6 @@ export function Header(_props: HeaderProps = {}) {
               </Link>
             )}
 
-            {/* Botón CREAR estilo imagen de referencia */}
             <Link
               href="/products/cuadros-personalizados"
               className="bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] px-6 py-2.5 rounded-xl font-extrabold text-sm sm:text-base tracking-[0.04em] uppercase transition-all shadow-md hover:shadow-lg active:scale-95"
@@ -354,63 +353,95 @@ export function Header(_props: HeaderProps = {}) {
         </div>
       </div>
 
-      {/* Menú Mobile tipo Drawer Vertical */}
+      {/* Menú Mobile tipo Drawer Lateral (Issue #39) */}
       {isDrawerOpen && (
-        <div
-          className="xl:hidden fixed inset-0 top-24 sm:top-28 bg-black/50 backdrop-blur-sm z-40"
-          onClick={toggleDrawer}
-        >
+        <div className="xl:hidden fixed inset-0 z-50">
+          {/* Fondo oscuro semitransparente */}
           <div
-            className="w-full bg-[#174B3D] text-white border-b border-[#c6a26c]/40 p-6 flex flex-col gap-5 shadow-2xl max-h-[calc(100vh-5rem)] overflow-y-auto"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={toggleDrawer}
+          />
+
+          {/* Panel Lateral (Drawer) desglosado desde la derecha */}
+          <div
+            className="fixed inset-y-0 right-0 w-full max-w-xs bg-[#174B3D] text-white p-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-300 border-l border-[#c6a26c]/30"
             onClick={(e) => e.stopPropagation()}
           >
-            {sessionUser && (
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#123B30] border border-[#c6a26c]/40">
-                <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#c6a26c] bg-[#c6a26c] text-[#174B3D] flex items-center justify-center font-bold text-sm shrink-0">
-                  {sessionUser.avatar_url && !avatarError ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={sessionUser.avatar_url}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      onError={() => setAvatarError(true)}
-                      className="w-full h-full object-cover"
+            <div className="space-y-6">
+              {/* Header Drawer con Botón de Cierre */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#c6a26c]/30">
+                <Link href="/" onClick={toggleDrawer} className="flex items-center gap-2">
+                  <div className="relative w-32 h-16 shrink-0">
+                    <Image
+                      src="/logo-gold.png"
+                      alt="Apolena"
+                      fill
+                      className="object-contain object-left"
+                      priority
                     />
-                  ) : (
-                    <span>{initials}</span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-white truncate">
-                    {sessionUser.name || firstName}
-                  </p>
-                  <p className="text-xs text-[#FFFBF2]/70 truncate">
-                    {sessionUser.email}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <nav className="flex flex-col gap-2">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={toggleDrawer}
-                  className="px-4 py-2.5 rounded-xl font-bold text-base tracking-[0.03em] uppercase text-white hover:bg-white/10 hover:text-[#c6a26c] transition-colors"
-                >
-                  {item.label}
+                  </div>
                 </Link>
-              ))}
-            </nav>
+                <button
+                  onClick={toggleDrawer}
+                  className="p-2 rounded-xl border-2 border-[#c6a26c] text-[#c6a26c] hover:bg-[#c6a26c]/20 transition-colors"
+                  aria-label="Cerrar menú"
+                >
+                  <X className="w-5 h-5 text-[#c6a26c]" />
+                </button>
+              </div>
 
-            <div className="h-px w-full bg-[#c6a26c]/25 my-1" />
+              {/* Card de Usuario en Drawer Lateral */}
+              {sessionUser && (
+                <div className="p-4 rounded-2xl bg-[#123B30] border border-[#c6a26c]/40 shadow-sm flex items-center gap-3">
+                  <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#c6a26c] bg-[#c6a26c] text-[#174B3D] flex items-center justify-center font-bold text-sm shrink-0">
+                    {sessionUser.avatar_url && !avatarError ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={sessionUser.avatar_url}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        onError={() => setAvatarError(true)}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{initials}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white truncate">
+                      {sessionUser.name || firstName}{" "}
+                      <span className="text-[10px] text-[#c6a26c] font-semibold">
+                        ({sessionUser.role === "super_admin" ? "Super Admin" : sessionUser.role === "admin" ? "Admin" : "Usuario"})
+                      </span>
+                    </p>
+                    <p className="text-xs text-[#FFFBF2]/70 truncate">
+                      {sessionUser.email}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            <div className="flex flex-col gap-3">
+              {/* Lista de Links Navegación */}
+              <nav className="flex flex-col gap-2 pt-2">
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={toggleDrawer}
+                    className="px-4 py-2.5 rounded-xl font-bold text-base tracking-[0.03em] uppercase text-white hover:bg-white/10 hover:text-[#c6a26c] transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* CTAs del Drawer Móvil */}
+            <div className="space-y-3 pt-6 border-t border-[#c6a26c]/30">
               <Link
                 href="/products/cuadros-personalizados"
                 onClick={toggleDrawer}
-                className="w-full flex items-center justify-center gap-2 bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] py-3 rounded-xl font-extrabold text-sm tracking-wider uppercase shadow-md"
+                className="w-full flex items-center justify-center gap-2 bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] py-3.5 rounded-xl font-extrabold text-sm tracking-wider uppercase shadow-md transition-all"
               >
                 CREAR RETRATO
               </Link>
@@ -420,25 +451,27 @@ export function Header(_props: HeaderProps = {}) {
                   <Link
                     href="/orders"
                     onClick={toggleDrawer}
-                    className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/30"
+                    className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/30 transition-all"
                   >
                     <PackageCheck className="w-4 h-4 text-[#c6a26c]" />
                     MIS ÓRDENES Y ESTADO
                   </Link>
+
                   {isAdmin && (
                     <Link
                       href="/dashboard"
                       onClick={toggleDrawer}
-                      className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-[#c6a26c] py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/40"
+                      className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-[#c6a26c] py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/40 transition-all"
                     >
                       <ShieldCheck className="w-4 h-4 text-[#c6a26c]" />
                       DASHBOARD ADMINISTRADOR
                     </Link>
                   )}
+
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 py-3 rounded-xl font-bold text-sm border border-red-400/30"
+                    className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 py-3 rounded-xl font-bold text-sm border border-red-400/30 transition-all"
                   >
                     <LogOut className="w-4 h-4" />
                     CERRAR SESIÓN
@@ -448,7 +481,7 @@ export function Header(_props: HeaderProps = {}) {
                 <Link
                   href="/auth/login"
                   onClick={toggleDrawer}
-                  className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/40"
+                  className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white py-3 rounded-xl font-bold text-sm border border-[#c6a26c]/40 transition-all"
                 >
                   <User className="w-4 h-4 text-[#c6a26c]" />
                   INGRESAR A MI CUENTA
