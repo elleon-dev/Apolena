@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { setCachedSessionUser } from "@/lib/client-session";
 import { Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -73,6 +74,9 @@ function OAuthCallbackHandler() {
         }
 
         if (!active) return;
+        if (data.user) {
+          setCachedSessionUser(data.user);
+        }
 
         const isAdmin =
           data.user?.role === "admin" || data.user?.role === "super_admin";

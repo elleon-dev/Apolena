@@ -10,6 +10,10 @@ import {
 import { PRINT_PRESETS, FRAME_OPTIONS } from "@/lib/print-export";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import { dispatchEmailWithResend } from "@/lib/email-service";
+import {
+  externalizeBase64Image,
+  stripHeavyFieldsForEmailData,
+} from "@/lib/image-storage";
 
 export type OrderStatus =
   "manufacturing" | "in_transit" | "delivered" | "completed" | "cancelled";
@@ -537,12 +541,51 @@ async function createInitialLocalState(): Promise<LocalDbState> {
   };
 }
 
+interface InMemoryDbCache {
+  localDb?: LocalDbState;
+  productsAll?: { data: ProductRecord[]; expiresAt: number };
+  productsActive?: { data: ProductRecord[]; expiresAt: number };
+  settings?: { data: PlatformSettingsMap; expiresAt: number };
+  profilesById?: Map<string, { data: ProfileRecord; expiresAt: number }>;
+}
+
+const globalForDbCache = globalThis as unknown as {
+  __apolenaDbCache?: InMemoryDbCache;
+};
+
+const memCache: InMemoryDbCache =
+  globalForDbCache.__apolenaDbCache ?? (globalForDbCache.__apolenaDbCache = {});
+
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds in-memory cache with instant write invalidation
+
+export function invalidateProductsCache(): void {
+  memCache.productsAll = undefined;
+  memCache.productsActive = undefined;
+}
+
+export function invalidateSettingsCache(): void {
+  memCache.settings = undefined;
+}
+
+export function invalidateProfileCache(profileId?: string): void {
+  if (!memCache.profilesById) return;
+  if (profileId) {
+    memCache.profilesById.delete(profileId);
+  } else {
+    memCache.profilesById.clear();
+  }
+}
+
 export async function readLocalDb(): Promise<LocalDbState> {
+  if (memCache.localDb) {
+    return memCache.localDb;
+  }
   try {
     if (fs.existsSync(LOCAL_DB_PATH)) {
       const raw = fs.readFileSync(LOCAL_DB_PATH, "utf-8");
       const parsed = JSON.parse(raw) as LocalDbState;
       if (parsed && Array.isArray(parsed.profiles)) {
+        memCache.localDb = parsed;
         return parsed;
       }
     }
@@ -555,11 +598,14 @@ export async function readLocalDb(): Promise<LocalDbState> {
 }
 
 export function writeLocalDb(state: LocalDbState): void {
-  try {
-    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(state, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Error writing local DB:", err);
-  }
+  memCache.localDb = state;
+  setImmediate(() => {
+    try {
+      fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(state, null, 2), "utf-8");
+    } catch (err) {
+      console.error("Error writing local DB:", err);
+    }
+  });
 }
 
 export function generateTrackingId(): string {
@@ -617,17 +663,31 @@ export async function findProfileByEmail(
 export async function findProfileById(
   id: string,
 ): Promise<ProfileRecord | null> {
+  const now = Date.now();
+  if (!memCache.profilesById) {
+    memCache.profilesById = new Map();
+  }
+  const cached = memCache.profilesById.get(id);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
   if (isDatabaseConfigured()) {
     try {
       const profile = await prisma.profile.findUnique({ where: { id } });
       if (profile) {
         const resolvedRole = resolveUserRole(profile.email, profile.role);
-        return {
+        const record: ProfileRecord = {
           ...profile,
           role: resolvedRole,
           created_at: profile.created_at.toISOString(),
           updated_at: profile.updated_at.toISOString(),
         };
+        memCache.profilesById.set(id, {
+          data: record,
+          expiresAt: now + CACHE_TTL_MS,
+        });
+        return record;
       }
     } catch (e) {
       console.warn("Prisma findProfileById fallback:", e);
@@ -637,6 +697,10 @@ export async function findProfileById(
   const local = db.profiles.find((p) => p.id === id) || null;
   if (local) {
     local.role = resolveUserRole(local.email, local.role);
+    memCache.profilesById.set(id, {
+      data: local,
+      expiresAt: now + CACHE_TTL_MS,
+    });
   }
   return local;
 }
@@ -722,12 +786,14 @@ export async function upsertOAuthProfile(input: {
             name: existing.name || displayName,
           },
         });
-        return {
+        const record: ProfileRecord = {
           ...updated,
           role: resolvedRole,
           created_at: updated.created_at.toISOString(),
           updated_at: updated.updated_at.toISOString(),
         };
+        invalidateProfileCache(record.id);
+        return record;
       }
 
       const role = resolveUserRole(cleanEmail);
@@ -739,12 +805,14 @@ export async function upsertOAuthProfile(input: {
           role,
         },
       });
-      return {
+      const record: ProfileRecord = {
         ...created,
         role: resolveUserRole(created.email, created.role),
         created_at: created.created_at.toISOString(),
         updated_at: created.updated_at.toISOString(),
       };
+      invalidateProfileCache(record.id);
+      return record;
     } catch (e) {
       console.warn("Prisma upsertOAuthProfile fallback:", e);
     }
@@ -863,12 +931,14 @@ export async function updateProfileByAdmin(input: {
               : existing.phone,
         },
       });
-      return {
+      const record: ProfileRecord = {
         ...updated,
         role: resolveUserRole(updated.email, updated.role),
         created_at: updated.created_at.toISOString(),
         updated_at: updated.updated_at.toISOString(),
       };
+      invalidateProfileCache(record.id);
+      return record;
     } catch (e) {
       console.warn("Prisma updateProfileByAdmin fallback:", e);
     }
@@ -941,6 +1011,12 @@ function isWallArtProductSlug(slug?: string | null): boolean {
 }
 
 export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
+  const now = Date.now();
+  const cached = onlyActive ? memCache.productsActive : memCache.productsAll;
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.product.findMany({
@@ -949,7 +1025,7 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
         orderBy: { created_at: "asc" },
       });
       if (rows.length > 0) {
-        return rows.map((r) => ({
+        const mapped = rows.map((r) => ({
           id: r.id,
           title: r.title,
           slug: r.slug,
@@ -973,6 +1049,12 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
           created_at: r.created_at.toISOString(),
           updated_at: r.updated_at.toISOString(),
         }));
+        if (onlyActive) {
+          memCache.productsActive = { data: mapped, expiresAt: now + CACHE_TTL_MS };
+        } else {
+          memCache.productsAll = { data: mapped, expiresAt: now + CACHE_TTL_MS };
+        }
+        return mapped;
       }
     } catch (e) {
       console.warn("Prisma getProducts fallback:", e);
@@ -982,12 +1064,18 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
   const list = onlyActive
     ? db.products.filter((p) => p.status === "active")
     : db.products;
-  return list.map((p) => ({
+  const fallbackMapped = list.map((p) => ({
     ...p,
     customization_config: isWallArtProductSlug(p.slug)
       ? normalizeWallArtCustomizationConfig(p.customization_config)
       : p.customization_config,
   }));
+  if (onlyActive) {
+    memCache.productsActive = { data: fallbackMapped, expiresAt: now + CACHE_TTL_MS };
+  } else {
+    memCache.productsAll = { data: fallbackMapped, expiresAt: now + CACHE_TTL_MS };
+  }
+  return fallbackMapped;
 }
 
 export async function getWallArtCharacterById(
@@ -1016,9 +1104,33 @@ export async function updateProductCustomizationConfig(
     customization_config: ProductCustomizationConfig;
   }>,
 ): Promise<ProductRecord | null> {
+  // Automatically externalize any base64 character images before writing to DB
+  if (updates.customization_config?.characters) {
+    updates.customization_config = {
+      ...updates.customization_config,
+      characters: await Promise.all(
+        updates.customization_config.characters.map(async (ch) => ({
+          ...ch,
+          characterImageUrl:
+            (await externalizeBase64Image(ch.characterImageUrl, "characters", {
+              maxDimension: 900,
+              quality: 82,
+            })) || ch.characterImageUrl,
+          fusionSampleUrl:
+            (await externalizeBase64Image(ch.fusionSampleUrl, "characters", {
+              maxDimension: 900,
+              quality: 82,
+            })) || ch.fusionSampleUrl,
+        })),
+      ),
+    };
+  }
+
+  invalidateProductsCache();
+
   if (isDatabaseConfigured()) {
     try {
-      await prisma.product.update({
+      const updatedRow = await prisma.product.update({
         where: { id: productId },
         data: {
           title: updates.title,
@@ -1027,7 +1139,43 @@ export async function updateProductCustomizationConfig(
           stock: updates.stock,
           customization_config: updates.customization_config as any,
         },
+        include: { images: { orderBy: { position: "asc" } } },
       });
+
+      const mappedProduct: ProductRecord = {
+        id: updatedRow.id,
+        title: updatedRow.title,
+        slug: updatedRow.slug,
+        description: updatedRow.description,
+        category: updatedRow.category,
+        base_price: Number(updatedRow.base_price),
+        status: updatedRow.status as "active" | "inactive" | "archived",
+        stock: updatedRow.stock,
+        specifications: (updatedRow.specifications as Record<string, any>) || {},
+        customization_config: isWallArtProductSlug(updatedRow.slug)
+          ? normalizeWallArtCustomizationConfig(updatedRow.customization_config)
+          : (updatedRow.customization_config as unknown as ProductCustomizationConfig),
+        images: updatedRow.images.map((img) => ({
+          id: img.id,
+          product_id: img.product_id,
+          url: img.url,
+          alt_text: img.alt_text,
+          position: img.position,
+        })),
+        created_at: updatedRow.created_at.toISOString(),
+        updated_at: updatedRow.updated_at.toISOString(),
+      };
+
+      // Update local fallback asynchronously without blocking response
+      void readLocalDb().then((db) => {
+        const idx = db.products.findIndex((p) => p.id === productId);
+        if (idx !== -1) {
+          db.products[idx] = mappedProduct;
+          writeLocalDb(db);
+        }
+      });
+
+      return mappedProduct;
     } catch (e) {
       console.warn("Prisma updateProductCustomizationConfig fallback:", e);
     }
@@ -1055,6 +1203,11 @@ export async function updateProductCustomizationConfig(
 }
 
 export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
+  const now = Date.now();
+  if (memCache.settings && memCache.settings.expiresAt > now) {
+    return memCache.settings.data;
+  }
+
   const deepMergeSettings = (source?: any): PlatformSettingsMap => {
     const raw = source || {};
     const rawPay = raw.PAYMENT_METHODS_CONFIG || {};
@@ -1139,25 +1292,32 @@ export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
         for (const row of rows) {
           rawMap[row.key] = row.value;
         }
-        return deepMergeSettings(rawMap);
+        const merged = deepMergeSettings(rawMap);
+        memCache.settings = { data: merged, expiresAt: now + CACHE_TTL_MS };
+        return merged;
       }
     } catch (e) {
       console.warn("Prisma getPlatformSettings fallback:", e);
     }
   }
   const db = await readLocalDb();
-  return deepMergeSettings(db.platform_settings);
+  const fallbackSettings = deepMergeSettings(db.platform_settings);
+  memCache.settings = { data: fallbackSettings, expiresAt: now + CACHE_TTL_MS };
+  return fallbackSettings;
 }
 
 export async function updatePlatformSettings(
   partial: Partial<PlatformSettingsMap>,
   updatedBy?: string,
 ): Promise<PlatformSettingsMap> {
+  invalidateSettingsCache();
+
   if (isDatabaseConfigured()) {
     try {
-      for (const [key, value] of Object.entries(partial)) {
-        if (value) {
-          await prisma.platformSetting.upsert({
+      const ops = Object.entries(partial)
+        .filter(([, value]) => Boolean(value))
+        .map(([key, value]) =>
+          prisma.platformSetting.upsert({
             where: { key },
             update: { value: value as any, updated_by: updatedBy || null },
             create: {
@@ -1166,8 +1326,10 @@ export async function updatePlatformSettings(
               category: "general",
               updated_by: updatedBy || null,
             },
-          });
-        }
+          }),
+        );
+      if (ops.length > 0) {
+        await prisma.$transaction(ops);
       }
     } catch (e) {
       console.warn("Prisma updatePlatformSettings fallback:", e);
@@ -1179,6 +1341,10 @@ export async function updatePlatformSettings(
     ...partial,
   };
   writeLocalDb(db);
+  memCache.settings = {
+    data: db.platform_settings,
+    expiresAt: Date.now() + CACHE_TTL_MS,
+  };
   return db.platform_settings;
 }
 
@@ -1194,12 +1360,19 @@ export async function enqueueEmail(input: {
   cc?: string[];
 }): Promise<EmailQueueRecord> {
   const now = new Date().toISOString();
+  const safeData = {
+    ...input.data,
+    ...(input.data?.customizations
+      ? { customizations: stripHeavyFieldsForEmailData(input.data.customizations) }
+      : {}),
+  };
+
   const dispatchResult = await dispatchEmailWithResend({
     to: input.to_email,
     cc: input.cc,
     subject: input.subject,
     template: input.template,
-    data: input.data,
+    data: safeData,
   });
 
   const record: EmailQueueRecord = {
@@ -1207,7 +1380,7 @@ export async function enqueueEmail(input: {
     to_email: input.to_email,
     subject: input.subject,
     template: input.template,
-    data: input.data,
+    data: safeData,
     cc: input.cc || [],
     status: dispatchResult.sent ? "sent" : "failed",
     attempts: 1,
@@ -1237,9 +1410,10 @@ export async function enqueueEmail(input: {
     }
   }
 
-  const db = await readLocalDb();
-  db.email_queue.unshift(record);
-  writeLocalDb(db);
+  void readLocalDb().then((db) => {
+    db.email_queue.unshift(record);
+    writeLocalDb(db);
+  });
   return record;
 }
 
@@ -1615,9 +1789,55 @@ export async function createOrderWithSplitPayment(input: {
     tax_address?: string;
   };
 }): Promise<OrderRecord> {
-  await syncLocalOrdersToDatabase();
-  const db = await readLocalDb();
-  const settings = await getPlatformSettings();
+  const [
+    settings,
+    dbOrderCount,
+    validBuyerId,
+    validProductId,
+    existingJob,
+    cleanPetPhotoUrl,
+    cleanGeneratedArtUrl,
+    cleanProofImageUrl,
+    cleanMasterArtUrl,
+  ] = await Promise.all([
+    getPlatformSettings(),
+    isDatabaseConfigured()
+      ? prisma.order.count().catch(() => 0)
+      : readLocalDb().then((d) => d.orders.length),
+    ensureValidBuyerIdInDatabase(input.buyer_id, input.shipping),
+    ensureValidProductIdInDatabase(input.product_id),
+    input.generation_job_id && isDatabaseConfigured()
+      ? prisma.generationJob
+          .findUnique({ where: { id: input.generation_job_id } })
+          .catch(() => null)
+      : Promise.resolve(null),
+    externalizeBase64Image(input.pet_photo_url, "pets", {
+      maxDimension: 1200,
+      quality: 82,
+    }),
+    externalizeBase64Image(input.generated_art_url, "previews", {
+      maxDimension: 900,
+      quality: 80,
+    }),
+    externalizeBase64Image(input.proof_image_url, "proofs", {
+      maxDimension: 1200,
+      quality: 82,
+    }),
+    externalizeBase64Image(input.customizations?.master_art_url, "artworks", {
+      maxDimension: 2048,
+      quality: 88,
+    }),
+  ]);
+
+  const validGenerationJobId = existingJob?.id || null;
+  const finalPetPhotoUrl = cleanPetPhotoUrl || input.pet_photo_url || null;
+  const finalGeneratedArtUrl = cleanGeneratedArtUrl || input.generated_art_url;
+  const finalProofImageUrl = cleanProofImageUrl || input.proof_image_url || null;
+  const finalCustomizations: OrderItemCustomizations = {
+    ...input.customizations,
+    ...(cleanMasterArtUrl ? { master_art_url: cleanMasterArtUrl } : {}),
+  };
+
   const quantity = Math.max(1, input.quantity || 1);
   const subtotal = Number((input.unit_price * quantity).toFixed(2));
   const shippingCost = Number(input.shipping_cost.toFixed(2));
@@ -1627,23 +1847,16 @@ export async function createOrderWithSplitPayment(input: {
   const advanceAmount = Number((totalAmount * 0.5).toFixed(2));
   const remainingAmount = Number((totalAmount - advanceAmount).toFixed(2));
 
-  let dbOrderCount = db.orders.length;
-  if (isDatabaseConfigured()) {
-    try {
-      const countInDb = await prisma.order.count();
-      dbOrderCount = Math.max(dbOrderCount, countInDb);
-    } catch {}
-  }
-
   let sequence = dbOrderCount + 1;
   let orderCode = generateOrderCode(sequence);
   if (isDatabaseConfigured()) {
     try {
-      while (
-        await prisma.order.findUnique({ where: { order_code: orderCode } })
-      ) {
-        sequence += 1;
-        orderCode = generateOrderCode(sequence);
+      const collision = await prisma.order.findUnique({
+        where: { order_code: orderCode },
+        select: { id: true },
+      });
+      if (collision) {
+        orderCode = `ORD-${new Date().getFullYear()}-${String(sequence).padStart(4, "0")}-${Math.floor(10 + Math.random() * 89)}`;
       }
     } catch {}
   }
@@ -1656,21 +1869,6 @@ export async function createOrderWithSplitPayment(input: {
 
   const orderId = crypto.randomUUID();
   const packageId = crypto.randomUUID();
-  const validBuyerId = await ensureValidBuyerIdInDatabase(
-    input.buyer_id,
-    input.shipping,
-  );
-  const validProductId = await ensureValidProductIdInDatabase(input.product_id);
-
-  let validGenerationJobId: string | null = null;
-  if (input.generation_job_id && isDatabaseConfigured()) {
-    try {
-      const existingJob = await prisma.generationJob.findUnique({
-        where: { id: input.generation_job_id },
-      });
-      if (existingJob) validGenerationJobId = existingJob.id;
-    } catch {}
-  }
 
   const bankCfg = settings.PAYMENT_METHODS_CONFIG.bank_transfer;
   const yapeCfg = settings.PAYMENT_METHODS_CONFIG.yape;
@@ -1758,9 +1956,9 @@ export async function createOrderWithSplitPayment(input: {
             unit_price: input.unit_price,
             subtotal,
             status: "manufacturing",
-            pet_photo_url: input.pet_photo_url || null,
-            generated_art_url: input.generated_art_url,
-            customizations: input.customizations,
+            pet_photo_url: finalPetPhotoUrl,
+            generated_art_url: finalGeneratedArtUrl,
+            customizations: finalCustomizations,
           },
         ],
       },
@@ -1775,7 +1973,7 @@ export async function createOrderWithSplitPayment(input: {
         amount: advanceAmount,
         currency: "PEN",
         operation_number: input.operation_number.trim(),
-        proof_image_url: input.proof_image_url || null,
+        proof_image_url: finalProofImageUrl,
         payer_name: input.shipping.name.trim(),
         payer_phone: input.shipping.phone.trim(),
         notes: advancePaymentNotes,
@@ -1789,156 +1987,155 @@ export async function createOrderWithSplitPayment(input: {
 
   if (isDatabaseConfigured()) {
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.order.create({
-          data: {
-            id: newOrder.id,
-            order_code: newOrder.order_code,
-            tracking_id: newOrder.tracking_id,
-            buyer_id: validBuyerId,
-            status: newOrder.status,
-            payment_status: newOrder.payment_status,
-            payment_method: newOrder.payment_method,
-            subtotal: newOrder.subtotal,
-            shipping_cost: newOrder.shipping_cost,
-            tax_amount: newOrder.tax_amount,
-            total_amount: newOrder.total_amount,
-            advance_amount: newOrder.advance_amount,
-            remaining_amount: newOrder.remaining_amount,
-            notes: newOrder.notes,
-            manufacturing_started_at: new Date(now),
-            shipping: newOrder.shipping
-              ? {
-                  create: {
-                    id: newOrder.shipping.id,
-                    name: newOrder.shipping.name,
-                    phone: newOrder.shipping.phone,
-                    email: newOrder.shipping.email,
-                    address: newOrder.shipping.address,
-                    department: newOrder.shipping.department,
-                    province: newOrder.shipping.province,
-                    district: newOrder.shipping.district,
-                    reference: newOrder.shipping.reference,
-                    document_type: newOrder.shipping.document_type,
-                    document_number: newOrder.shipping.document_number,
-                  },
-                }
-              : undefined,
-            invoice: newOrder.invoice
-              ? {
-                  create: {
-                    id: newOrder.invoice.id,
-                    type: newOrder.invoice.type,
-                    doc_type: newOrder.invoice.doc_type,
-                    number: newOrder.invoice.number,
-                    legal_name: newOrder.invoice.legal_name,
-                    tax_address: newOrder.invoice.tax_address,
-                    sunat_status: "pending",
-                  },
-                }
-              : undefined,
-            packages: {
-              create: {
-                id: packageId,
-                package_number: 1,
-                total_packages: 1,
-                status: "manufacturing",
-                courier: "Apolena Express Delivery",
-                tracking_number: trackingId,
-                tracking_url: `/track/${trackingId}`,
-                carrier_phone:
-                  settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support ||
-                  "987 654 321",
-                estimated_delivery: new Date(estimatedDelivery),
-                destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
-                subtotal,
-                items: {
-                  create: {
-                    id: newOrder.packages[0].items[0].id,
-                    product_id: validProductId,
-                    generation_job_id: validGenerationJobId,
-                    quantity,
-                    unit_price: input.unit_price,
-                    subtotal,
-                    status: "manufacturing",
-                    pet_photo_url: input.pet_photo_url || null,
-                    generated_art_url: input.generated_art_url,
-                    customizations: input.customizations as any,
-                  },
+      await prisma.order.create({
+        data: {
+          id: newOrder.id,
+          order_code: newOrder.order_code,
+          tracking_id: newOrder.tracking_id,
+          buyer_id: validBuyerId,
+          status: newOrder.status,
+          payment_status: newOrder.payment_status,
+          payment_method: newOrder.payment_method,
+          subtotal: newOrder.subtotal,
+          shipping_cost: newOrder.shipping_cost,
+          tax_amount: newOrder.tax_amount,
+          total_amount: newOrder.total_amount,
+          advance_amount: newOrder.advance_amount,
+          remaining_amount: newOrder.remaining_amount,
+          notes: newOrder.notes,
+          manufacturing_started_at: new Date(now),
+          shipping: newOrder.shipping
+            ? {
+                create: {
+                  id: newOrder.shipping.id,
+                  name: newOrder.shipping.name,
+                  phone: newOrder.shipping.phone,
+                  email: newOrder.shipping.email,
+                  address: newOrder.shipping.address,
+                  department: newOrder.shipping.department,
+                  province: newOrder.shipping.province,
+                  district: newOrder.shipping.district,
+                  reference: newOrder.shipping.reference,
+                  document_type: newOrder.shipping.document_type,
+                  document_number: newOrder.shipping.document_number,
+                },
+              }
+            : undefined,
+          invoice: newOrder.invoice
+            ? {
+                create: {
+                  id: newOrder.invoice.id,
+                  type: newOrder.invoice.type,
+                  doc_type: newOrder.invoice.doc_type,
+                  number: newOrder.invoice.number,
+                  legal_name: newOrder.invoice.legal_name,
+                  tax_address: newOrder.invoice.tax_address,
+                  sunat_status: "pending",
+                },
+              }
+            : undefined,
+          packages: {
+            create: {
+              id: packageId,
+              package_number: 1,
+              total_packages: 1,
+              status: "manufacturing",
+              courier: "Apolena Express Delivery",
+              tracking_number: trackingId,
+              tracking_url: `/track/${trackingId}`,
+              carrier_phone:
+                settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support ||
+                "987 654 321",
+              estimated_delivery: new Date(estimatedDelivery),
+              destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
+              subtotal,
+              items: {
+                create: {
+                  id: newOrder.packages[0].items[0].id,
+                  product_id: validProductId,
+                  generation_job_id: validGenerationJobId,
+                  quantity,
+                  unit_price: input.unit_price,
+                  subtotal,
+                  status: "manufacturing",
+                  pet_photo_url: finalPetPhotoUrl,
+                  generated_art_url: finalGeneratedArtUrl,
+                  customizations: finalCustomizations as any,
                 },
               },
             },
-            paymentTransactions: {
-              create: {
-                id: newOrder.paymentTransactions[0].id,
-                payment_stage: "advance_50",
-                payment_method: input.payment_method,
-                status: "pending_verification",
-                amount: advanceAmount,
-                currency: "PEN",
-                operation_number: input.operation_number.trim(),
-                proof_image_url: input.proof_image_url || null,
-                payer_name: input.shipping.name.trim(),
-                payer_phone: input.shipping.phone.trim(),
-                notes: advancePaymentNotes,
-              },
+          },
+          paymentTransactions: {
+            create: {
+              id: newOrder.paymentTransactions[0].id,
+              payment_stage: "advance_50",
+              payment_method: input.payment_method,
+              status: "pending_verification",
+              amount: advanceAmount,
+              currency: "PEN",
+              operation_number: input.operation_number.trim(),
+              proof_image_url: finalProofImageUrl,
+              payer_name: input.shipping.name.trim(),
+              payer_phone: input.shipping.phone.trim(),
+              notes: advancePaymentNotes,
             },
           },
-        });
+        },
       });
     } catch (e) {
       console.error("Prisma createOrderWithSplitPayment error:", e);
     }
   }
 
-  db.orders.unshift(newOrder);
-  writeLocalDb(db);
-
-  // Doble notificación obligatoria en email_queue:
-  // 1. Al comprador confirmando su orden y su tracking_id
-  await enqueueEmail({
-    to_email: input.shipping.email,
-    subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
-    template: "order_created_buyer",
-    data: {
-      order_code: orderCode,
-      tracking_id: trackingId,
-      buyer_name: input.shipping.name,
-      total_amount: totalAmount,
-      advance_amount: advanceAmount,
-      remaining_amount: remainingAmount,
-      payment_method: input.payment_method,
-      bank_name: bankCfg.bank_name,
-      account_number: bankCfg.account_number,
-      cci: bankCfg.cci,
-      holder_name: bankCfg.holder_name,
-      customizations: input.customizations,
-      tracking_url: `/track/${trackingId}`,
-    },
+  void readLocalDb().then((db) => {
+    db.orders.unshift(newOrder);
+    writeLocalDb(db);
   });
 
-  // 2. A los administradores notificando la nueva orden y el comprobante del 50%
+  // Doble notificación obligatoria en email_queue (en segundo plano para respuesta inmediata):
   const adminEmails = settings.ADMIN_NOTIFICATION_EMAILS.emails;
-  await enqueueEmail({
-    to_email: adminEmails[0] || "admin@apolena.pe",
-    cc: adminEmails.slice(1),
-    subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
-    template: "order_created_admin",
-    data: {
-      order_id: orderId,
-      order_code: orderCode,
-      tracking_id: trackingId,
-      buyer_name: input.shipping.name,
-      buyer_phone: input.shipping.phone,
-      buyer_email: input.shipping.email,
-      shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
-      payment_method: input.payment_method,
-      operation_number: input.operation_number,
-      advance_amount: advanceAmount,
-      remaining_amount: remainingAmount,
-      customizations: input.customizations,
-    },
-  });
+  void Promise.all([
+    enqueueEmail({
+      to_email: input.shipping.email,
+      subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
+      template: "order_created_buyer",
+      data: {
+        order_code: orderCode,
+        tracking_id: trackingId,
+        buyer_name: input.shipping.name,
+        total_amount: totalAmount,
+        advance_amount: advanceAmount,
+        remaining_amount: remainingAmount,
+        payment_method: input.payment_method,
+        bank_name: bankCfg.bank_name,
+        account_number: bankCfg.account_number,
+        cci: bankCfg.cci,
+        holder_name: bankCfg.holder_name,
+        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+        tracking_url: `/track/${trackingId}`,
+      },
+    }),
+    enqueueEmail({
+      to_email: adminEmails[0] || "admin@apolena.pe",
+      cc: adminEmails.slice(1),
+      subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
+      template: "order_created_admin",
+      data: {
+        order_id: orderId,
+        order_code: orderCode,
+        tracking_id: trackingId,
+        buyer_name: input.shipping.name,
+        buyer_phone: input.shipping.phone,
+        buyer_email: input.shipping.email,
+        shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
+        payment_method: input.payment_method,
+        operation_number: input.operation_number,
+        advance_amount: advanceAmount,
+        remaining_amount: remainingAmount,
+        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+      },
+    }),
+  ]).catch((err) => console.warn("Background email dispatch warning:", err));
 
   return newOrder;
 }
@@ -1947,12 +2144,12 @@ export async function getOrdersByBuyer(
   buyerId: string,
   buyerEmail?: string | null,
 ): Promise<OrderRecord[]> {
-  await syncLocalOrdersToDatabase();
   const cleanEmail = buyerEmail?.trim().toLowerCase() || null;
 
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.order.findMany({
+        relationLoadStrategy: "join",
         where: cleanEmail
           ? {
               OR: [
@@ -1988,10 +2185,10 @@ export async function getOrdersByBuyer(
 }
 
 export async function getAllOrdersForAdmin(): Promise<OrderRecord[]> {
-  await syncLocalOrdersToDatabase();
   if (isDatabaseConfigured()) {
     try {
       const rows = await prisma.order.findMany({
+        relationLoadStrategy: "join",
         include: {
           shipping: true,
           invoice: true,
@@ -2013,10 +2210,10 @@ export async function getAllOrdersForAdmin(): Promise<OrderRecord[]> {
 export async function findOrderById(
   orderId: string,
 ): Promise<OrderRecord | null> {
-  await syncLocalOrdersToDatabase();
   if (isDatabaseConfigured()) {
     try {
       const row = await prisma.order.findUnique({
+        relationLoadStrategy: "join",
         where: { id: orderId },
         include: {
           shipping: true,
@@ -2038,11 +2235,11 @@ export async function findOrderById(
 export async function findOrderByTrackingId(
   trackingId: string,
 ): Promise<OrderRecord | null> {
-  await syncLocalOrdersToDatabase();
   const clean = trackingId.trim().toUpperCase();
   if (isDatabaseConfigured()) {
     try {
       const row = await prisma.order.findFirst({
+        relationLoadStrategy: "join",
         where: {
           OR: [
             { tracking_id: { equals: clean, mode: "insensitive" } },
@@ -2096,6 +2293,9 @@ export async function updateOrderAdminLifecycle(input: {
   const existingOrder = await findOrderById(input.orderId);
   if (!existingOrder) return null;
 
+  const hadExistingFinalTx = existingOrder.paymentTransactions.some(
+    (t) => t.payment_stage === "final_50",
+  );
   const order: OrderRecord = JSON.parse(JSON.stringify(existingOrder));
   const now = new Date().toISOString();
   const nowDate = new Date(now);
@@ -2193,11 +2393,11 @@ export async function updateOrderAdminLifecycle(input: {
 
   order.updated_at = now;
 
-  // 1. Persistir transaccionalmente en PostgreSQL (orders + order_packages + order_items + payment_transactions)
+  // 1. Persistir en un solo batch transaccional en PostgreSQL (sin round-trips secuenciales)
   if (isDatabaseConfigured()) {
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.order.update({
+      const batchOps: any[] = [
+        prisma.order.update({
           where: { id: order.id },
           data: {
             status: order.status,
@@ -2213,9 +2413,8 @@ export async function updateOrderAdminLifecycle(input: {
               ? new Date(order.completed_at)
               : null,
           },
-        });
-
-        await tx.orderPackage.updateMany({
+        }),
+        prisma.orderPackage.updateMany({
           where: { order_id: order.id },
           data: {
             status: order.status,
@@ -2224,21 +2423,25 @@ export async function updateOrderAdminLifecycle(input: {
               ? { carrier_phone: input.carrierPhone }
               : {}),
           },
-        });
+        }),
+      ];
 
-        const packageIds = order.packages.map((p) => p.id);
-        if (packageIds.length > 0) {
-          await tx.orderItem.updateMany({
+      const packageIds = order.packages.map((p) => p.id);
+      if (packageIds.length > 0) {
+        batchOps.push(
+          prisma.orderItem.updateMany({
             where: { package_id: { in: packageIds } },
             data: { status: order.status },
-          });
-        }
+          }),
+        );
+      }
 
-        if (
-          input.action === "verify_advance_50" ||
-          input.action === "complete_final_50_payment"
-        ) {
-          await tx.paymentTransaction.updateMany({
+      if (
+        input.action === "verify_advance_50" ||
+        input.action === "complete_final_50_payment"
+      ) {
+        batchOps.push(
+          prisma.paymentTransaction.updateMany({
             where: {
               order_id: order.id,
               payment_stage: "advance_50",
@@ -2248,22 +2451,17 @@ export async function updateOrderAdminLifecycle(input: {
               verified_by: input.adminId,
               verified_at: nowDate,
             },
-          });
-        }
+          }),
+        );
+      }
 
-        if (input.action === "complete_final_50_payment") {
-          const finalTxInDb = await tx.paymentTransaction.findFirst({
-            where: {
-              order_id: order.id,
-              payment_stage: "final_50",
-            },
-          });
-          const finalTxMemory = order.paymentTransactions.find(
-            (t) => t.payment_stage === "final_50",
-          );
-
-          if (!finalTxInDb && finalTxMemory) {
-            await tx.paymentTransaction.create({
+      if (input.action === "complete_final_50_payment") {
+        const finalTxMemory = order.paymentTransactions.find(
+          (t) => t.payment_stage === "final_50",
+        );
+        if (!hadExistingFinalTx && finalTxMemory) {
+          batchOps.push(
+            prisma.paymentTransaction.create({
               data: {
                 id: finalTxMemory.id,
                 order_id: order.id,
@@ -2279,35 +2477,43 @@ export async function updateOrderAdminLifecycle(input: {
                 verified_by: input.adminId,
                 verified_at: nowDate,
               },
-            });
-          } else if (finalTxInDb) {
-            await tx.paymentTransaction.update({
-              where: { id: finalTxInDb.id },
+            }),
+          );
+        } else if (hadExistingFinalTx) {
+          batchOps.push(
+            prisma.paymentTransaction.updateMany({
+              where: {
+                order_id: order.id,
+                payment_stage: "final_50",
+              },
               data: {
                 status: "verified",
                 verified_by: input.adminId,
                 verified_at: nowDate,
               },
-            });
-          }
+            }),
+          );
         }
-      });
+      }
+
+      await prisma.$transaction(batchOps);
     } catch (e) {
       console.error("Prisma updateOrderAdminLifecycle error:", e);
     }
   }
 
-  // 2. Mantener sincronizado el espejo local .apolena-dev-db.json
-  const db = await readLocalDb();
-  const localIdx = db.orders.findIndex((o) => o.id === order.id);
-  if (localIdx !== -1) {
-    db.orders[localIdx] = order;
-  } else {
-    db.orders.unshift(order);
-  }
-  writeLocalDb(db);
+  // 2. Mantener sincronizado el espejo local .apolena-dev-db.json en segundo plano
+  void readLocalDb().then((db) => {
+    const localIdx = db.orders.findIndex((o) => o.id === order.id);
+    if (localIdx !== -1) {
+      db.orders[localIdx] = order;
+    } else {
+      db.orders.unshift(order);
+    }
+    writeLocalDb(db);
+  });
 
-  // 3. Encolar email de notificación de cambio de estado al comprador
+  // 3. Encolar email de notificación de cambio de estado al comprador en segundo plano
   if (order.shipping?.email) {
     const stepLabels: Record<OrderStatus, string> = {
       manufacturing: "En Fabricación (Paso 1 de 3)",
@@ -2316,7 +2522,7 @@ export async function updateOrderAdminLifecycle(input: {
       completed: "¡Orden Exitosa! Pago 100% Completado",
       cancelled: "Orden Cancelada",
     };
-    await enqueueEmail({
+    void enqueueEmail({
       to_email: order.shipping.email,
       subject: `Actualización de tu orden ${order.order_code}: ${stepLabels[order.status]}`,
       template: "order_status_updated",
@@ -2327,7 +2533,7 @@ export async function updateOrderAdminLifecycle(input: {
         status_label: stepLabels[order.status],
         payment_status: order.payment_status,
       },
-    });
+    }).catch((err) => console.warn("Async status email error:", err));
   }
 
   return order;
@@ -2343,13 +2549,12 @@ export async function createOrderReview(input: {
   if (!existingOrder) return null;
 
   const order: OrderRecord = JSON.parse(JSON.stringify(existingOrder));
-  const validProductId = await ensureValidProductIdInDatabase(
-    order.packages?.[0]?.items?.[0]?.product_id,
-  );
-  const validBuyerId = await ensureValidBuyerIdInDatabase(
-    input.buyer_id,
-    order.shipping,
-  );
+  const [validProductId, validBuyerId] = await Promise.all([
+    ensureValidProductIdInDatabase(
+      order.packages?.[0]?.items?.[0]?.product_id,
+    ),
+    ensureValidBuyerIdInDatabase(input.buyer_id, order.shipping),
+  ]);
 
   const review = {
     id: crypto.randomUUID(),
@@ -2392,12 +2597,13 @@ export async function createOrderReview(input: {
   }
 
   order.reviews = [review];
-  const db = await readLocalDb();
-  const idx = db.orders.findIndex((o) => o.id === order.id);
-  if (idx !== -1) {
-    db.orders[idx] = order;
-    writeLocalDb(db);
-  }
+  void readLocalDb().then((db) => {
+    const idx = db.orders.findIndex((o) => o.id === order.id);
+    if (idx !== -1) {
+      db.orders[idx] = order;
+      writeLocalDb(db);
+    }
+  });
 
-  return (await findOrderById(order.id)) || order;
+  return order;
 }

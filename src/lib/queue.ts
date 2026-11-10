@@ -1,5 +1,5 @@
 import { AIProviderId, ApiKeysOverride, GenerationJob } from "./types";
-import { FAMOUS_CHARACTERS } from "@/data/characters";
+import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import { getWallArtCharacterById } from "./db-service";
 import { runMultiModelFusionPipeline } from "./ai-providers";
 import { saveJob, localJobs } from "./supabase";
@@ -28,8 +28,27 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     return;
   }
 
-  const character =
-    (await getWallArtCharacterById(job.templateId)) || FAMOUS_CHARACTERS[0];
+  const isCustomReference =
+    Boolean(job.customThemeImageUrl) || job.templateId === "custom-reference";
+  const character: FamousCharacter = isCustomReference
+    ? {
+        id: "custom-reference",
+        name: "Referencia Personalizada",
+        characterTitle: "Vestuario y Escenario a Medida",
+        universe: "Referencia del Usuario",
+        description:
+          job.customPrompt?.trim() ||
+          "Vestuario, atuendo, accesorios, iluminación y escenario exactos de la imagen de referencia subida por el usuario.",
+        prompt: "",
+        negativePrompt:
+          "pirate hat, tricorn hat, unrelated costume, wrong background, cropped head, cut off ears",
+        characterImageUrl: job.customThemeImageUrl || "",
+        fusionSampleUrl: job.customThemeImageUrl || "",
+        maskUrl: "/masks/default-mask.png",
+        accentColor: "bg-terracotta-500",
+        tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+      }
+    : (await getWallArtCharacterById(job.templateId)) || FAMOUS_CHARACTERS[0];
   const apiKeys = jobApiKeysMap.get(jobId);
 
   try {

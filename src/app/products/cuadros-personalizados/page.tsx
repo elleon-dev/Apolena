@@ -337,7 +337,10 @@ export default function personalizedWallArt() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          characterId: selectedCharacter.id,
+          characterId:
+            useCustomTheme && customThemeImage
+              ? "custom-reference"
+              : selectedCharacter.id,
           petImageUrl: petImage,
           secondPetImageUrl: secondPetImage,
           customThemeImageUrl: useCustomTheme ? customThemeImage : null,
@@ -1115,13 +1118,13 @@ export default function personalizedWallArt() {
                                 onContextMenu={(e) => e.preventDefault()}
                                 className="w-full h-full object-contain object-top pointer-events-none select-none"
                               />
-                              {/* Mini Watermark Overlay on Proposal Thumbnail */}
-                              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-35">
+                              {/* Subtle Mini Watermark on Proposal Thumbnail */}
+                              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-15">
                                 <img
                                   src="/logo-light.png"
                                   alt=""
                                   draggable={false}
-                                  className="w-12 object-contain -rotate-12 drop-shadow"
+                                  className="w-10 object-contain -rotate-12"
                                 />
                               </div>
                               {isActiveVariant && (
@@ -1270,51 +1273,11 @@ export default function personalizedWallArt() {
                         className="rounded-sm"
                       />
 
-                      {/* CAPA PROTECTORA INTERACTIVA CON LOGOTIPO DE APOLENA (ANTI-DESCARGA Y ANTI-CAPTURA LIMPIA) */}
+                      {/* Escudo invisible interactivo anti-descarga y anti-arrastre (la marca de agua sutil ya viene integrada en el lienzo) */}
                       <div
                         onContextMenu={(e) => e.preventDefault()}
-                        className="absolute inset-0 z-10 pointer-events-auto select-none overflow-hidden flex flex-col justify-between"
-                      >
-                        {/* Malla diagonal repetitiva de seguridad con el logotipo oficial Apolena */}
-                        <div className="absolute inset-0 -rotate-24 scale-125 flex flex-wrap items-center justify-center gap-x-12 gap-y-10 opacity-25 pointer-events-none">
-                          {Array.from({ length: 15 }).map((_, wIdx) => (
-                            <div
-                              key={wIdx}
-                              className="flex flex-col items-center justify-center gap-1"
-                            >
-                              <img
-                                src="/logo-light.png"
-                                alt=""
-                                draggable={false}
-                                className="w-16 sm:w-20 object-contain drop-shadow-md"
-                              />
-                              <span className="text-[9px] font-bold tracking-widest uppercase text-white bg-[#174B3D]/70 px-2 py-0.5 rounded">
-                                MUESTRA PROTEGIDA
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Sello inferior oficial Apolena */}
-                        <div className="mt-auto relative z-20 bg-gradient-to-t from-[#174B3D]/95 via-[#174B3D]/70 to-transparent pt-8 pb-3 px-4 flex items-center justify-between gap-3 pointer-events-none">
-                          <div className="flex items-center">
-                            <img
-                              src="/logo-light.png"
-                              alt="Apolena"
-                              draggable={false}
-                              className="h-9 w-auto object-contain"
-                            />
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#c6a26c]">
-                              Vista Previa Protegida
-                            </p>
-                            <p className="text-[9px] text-[#FFFBF2]/90">
-                              El lienzo físico se imprime sin marcas a 300 DPI
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                        className="absolute inset-0 z-10 pointer-events-auto select-none"
+                      />
 
                       {/* Deep Zoom Magnifier Loupe (also watermarked) */}
                       {isZoomActive && (
@@ -1370,7 +1333,7 @@ export default function personalizedWallArt() {
                         setSliderPos(x);
                       }}
                     >
-                      {/* After Fused Image */}
+                      {/* After Fused Image (already contains server watermark) */}
                       <img
                         src={
                           fusedResultUrl || selectedCharacter.fusionSampleUrl
@@ -1379,19 +1342,6 @@ export default function personalizedWallArt() {
                         draggable={false}
                         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
                       />
-
-                      {/* Watermark Pattern over After Image */}
-                      <div className="absolute inset-0 -rotate-24 scale-125 flex flex-wrap items-center justify-center gap-12 opacity-25 pointer-events-none">
-                        {Array.from({ length: 12 }).map((_, wIdx) => (
-                          <img
-                            key={wIdx}
-                            src="/logo-light.png"
-                            alt=""
-                            draggable={false}
-                            className="w-20 object-contain"
-                          />
-                        ))}
-                      </div>
 
                       {/* Before Pet Image (Clipped) */}
                       <div

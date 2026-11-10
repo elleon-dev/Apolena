@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { setCachedSessionUser } from "@/lib/client-session";
 import {
   Lock,
   Mail,
@@ -112,6 +113,9 @@ function LoginForm() {
       if (!res.ok) {
         setError(data.error || "Error al iniciar sesión.");
         return;
+      }
+      if (data.user) {
+        setCachedSessionUser(data.user);
       }
       const isAdmin =
         data.user?.role === "admin" || data.user?.role === "super_admin";

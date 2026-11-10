@@ -276,29 +276,34 @@ export async function exportWatermarkedPreviewImage(
   // 1. Draw the base artwork
   ctx.drawImage(artImg, 0, 0, targetW, targetH);
 
-  // 2. Diagonal repeating security watermark pattern across the entire image (including face/torso)
+  // If the image already comes from the server preview generator, return without adding a duplicate watermark layer
+  if (imageSrc.includes("/uploads/previews/")) {
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+    return { dataUrl, widthPx: targetW, heightPx: targetH };
+  }
+
+  // 2. Subtle diagonal repeating security watermark pattern across the image
   ctx.save();
   ctx.translate(targetW / 2, targetH / 2);
-  ctx.rotate((-28 * Math.PI) / 180);
+  ctx.rotate((-24 * Math.PI) / 180);
 
-  const stepX = 230;
-  const stepY = 145;
-  ctx.font = "700 15px Georgia, serif";
+  const stepX = 330;
+  const stepY = 230;
+  ctx.font = "700 13px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   for (let y = -targetH; y <= targetH; y += stepY) {
     for (let x = -targetW; x <= targetW; x += stepX) {
-      // Subtle dark shadow + translucent white text so it is visible on both dark and light fur
-      ctx.fillStyle = "rgba(23, 75, 61, 0.25)";
-      ctx.fillText("APOLENA · MUESTRA DIGITAL", x + 1, y + 1);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.30)";
-      ctx.fillText("APOLENA · MUESTRA DIGITAL", x, y);
+      ctx.fillStyle = "rgba(23, 75, 61, 0.16)";
+      ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x + 1, y + 1);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x, y);
 
       if (logoImg) {
         ctx.save();
-        ctx.globalAlpha = 0.18;
-        const wmLogoW = 72;
+        ctx.globalAlpha = 0.14;
+        const wmLogoW = 68;
         const wmLogoH = Math.round(
           (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * wmLogoW,
         );

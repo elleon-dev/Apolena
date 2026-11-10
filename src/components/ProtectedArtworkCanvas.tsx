@@ -57,26 +57,28 @@ export function ProtectedArtworkCanvas({
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(artImg, 0, 0, w, h);
 
-      // Subtle additional canvas-level diagonal security grid so even if source is a local sample,
-      // the pixel buffer in the DOM is watermarked
-      if (!src.startsWith("data:image/jpeg")) {
+      // Only draw canvas watermark if the image has not already been watermarked by the server
+      const isAlreadyServerWatermarked =
+        src.includes("/uploads/previews/") || src.startsWith("data:image/jpeg");
+
+      if (!isAlreadyServerWatermarked) {
         ctx.save();
         ctx.translate(w / 2, h / 2);
-        ctx.rotate((-26 * Math.PI) / 180);
-        ctx.font = "700 13px Georgia, serif";
+        ctx.rotate((-24 * Math.PI) / 180);
+        ctx.font = "700 12px Georgia, serif";
         ctx.textAlign = "center";
 
-        for (let y = -h; y <= h; y += 150) {
-          for (let x = -w; x <= w; x += 230) {
-            ctx.fillStyle = "rgba(23, 75, 61, 0.26)";
+        for (let y = -h; y <= h; y += 230) {
+          for (let x = -w; x <= w; x += 330) {
+            ctx.fillStyle = "rgba(23, 75, 61, 0.16)";
             ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x + 1, y + 1);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.32)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
             ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x, y);
 
             if (logoImg.complete && logoImg.naturalWidth > 0) {
               ctx.save();
-              ctx.globalAlpha = 0.22;
-              const lw = 76;
+              ctx.globalAlpha = 0.14;
+              const lw = 68;
               const lh = Math.round(
                 (logoImg.naturalHeight / logoImg.naturalWidth) * lw,
               );

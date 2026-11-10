@@ -295,11 +295,13 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
-      if (res.ok) {
-        await loadAdminData();
+      const data = await res.json();
+      if (res.ok && data.order) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? data.order : o)),
+        );
         showToast("success", "Estado de la orden actualizado correctamente.");
       } else {
-        const data = await res.json();
         showToast("error", data.error || "No se pudo actualizar la orden.");
       }
     } finally {

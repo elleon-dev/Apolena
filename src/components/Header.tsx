@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import type { AIProviderId } from "@/lib/types";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import {
+  type SessionUserInfo,
+  getCachedSessionUser,
+  getHydrationSafeSessionUser,
+  isSessionHydratedOnClient,
+  refreshSessionUser,
+  setCachedSessionUser,
+  subscribeSessionUser,
+} from "@/lib/client-session";
 
 export interface HeaderProps {
   currentStep?: 1 | 2 | 3;
@@ -22,14 +31,6 @@ export interface HeaderProps {
   selectedProvider?: AIProviderId;
   onOpenSettings?: () => void;
   hasActiveKey?: boolean;
-}
-
-interface SessionUserInfo {
-  id: string;
-  email: string;
-  name: string;
-  role: "user" | "admin" | "super_admin";
-  avatar_url?: string | null;
 }
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -53,31 +54,33 @@ export function Header(_props: HeaderProps = {}) {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [sessionUser, setSessionUser] = useState<SessionUserInfo | null>(null);
-  const [authLoaded, setAuthLoaded] = useState(false);
+  const [sessionUser, setSessionUser] = useState<SessionUserInfo | null>(() =>
+    getHydrationSafeSessionUser(),
+  );
+  const [authLoaded, setAuthLoaded] = useState<boolean>(() =>
+    isSessionHydratedOnClient(),
+  );
   const [avatarError, setAvatarError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mounted = true;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((res) => res.json())
-      .then(async (data) => {
+    const cached = getCachedSessionUser();
+    if (cached) {
+      setSessionUser(cached);
+      setAuthLoaded(true);
+    }
+
+    const unsubscribe = subscribeSessionUser((nextUser) => {
+      if (!mounted) return;
+      setAvatarError(false);
+      setSessionUser(nextUser);
+      setAuthLoaded(true);
+    });
+
+    refreshSessionUser()
+      .then((user) => {
         if (!mounted) return;
-        let user: SessionUserInfo | null = data?.user || null;
-        if (user && !user.avatar_url && supabaseBrowser) {
-          try {
-            const { data: sb } = await supabaseBrowser.auth.getSession();
-            const meta = sb.session?.user?.user_metadata;
-            const googlePic = meta?.avatar_url || meta?.picture || null;
-            if (googlePic) {
-              user = { ...user, avatar_url: googlePic };
-            }
-          } catch {
-            // ignore
-          }
-        }
-        setAvatarError(false);
         setSessionUser(user);
         setAuthLoaded(true);
       })
@@ -89,6 +92,7 @@ export function Header(_props: HeaderProps = {}) {
 
     return () => {
       mounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -108,6 +112,7 @@ export function Header(_props: HeaderProps = {}) {
 
   const handleLogout = async () => {
     try {
+      setCachedSessionUser(null);
       await Promise.allSettled([
         fetch("/api/auth/logout", { method: "POST" }),
         supabaseBrowser?.auth.signOut(),

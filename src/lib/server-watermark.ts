@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
+import { externalizeBase64Image } from "@/lib/image-storage";
 
 interface MasterArtworkVaultEntry {
   jobId: string;
@@ -117,44 +118,43 @@ export async function burnServerSideWatermark(
       logoDataUri = `data:image/png;base64,${resizedLogoBuf.toString("base64")}`;
     }
 
-    // Build SVG overlay with repeating diagonal pattern + bottom security banner
-    const patternW = 240;
-    const patternH = 160;
-    const footerH = 54;
+    // Build SVG overlay with subtle, well-spaced diagonal pattern + clean bottom security banner
+    const patternW = 340;
+    const patternH = 240;
+    const footerH = 48;
 
     const svgOverlay = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <pattern id="apolenaSecGrid" width="${patternW}" height="${patternH}" patternTransform="rotate(-26)" patternUnits="userSpaceOnUse">
+        <pattern id="apolenaSecGrid" width="${patternW}" height="${patternH}" patternTransform="rotate(-24)" patternUnits="userSpaceOnUse">
           ${
             logoDataUri
-              ? `<image href="${logoDataUri}" x="55" y="10" width="130" height="48" opacity="0.24" />`
+              ? `<image href="${logoDataUri}" x="115" y="18" width="110" height="40" opacity="0.14" />`
               : ""
           }
-          <text x="120" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#174B3D" fill-opacity="0.28">APOLENA · MUESTRA PROTEGIDA</text>
-          <text x="119" y="77" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#FFFFFF" fill-opacity="0.34">APOLENA · MUESTRA PROTEGIDA</text>
-          <text x="120" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#c6a26c" fill-opacity="0.38">PROHIBIDA SU IMPRESIÓN · 300 DPI EN TALLER</text>
+          <text x="170" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="12" fill="#174B3D" fill-opacity="0.16">APOLENA · MUESTRA PROTEGIDA</text>
+          <text x="169" y="77" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="12" fill="#FFFFFF" fill-opacity="0.22">APOLENA · MUESTRA PROTEGIDA</text>
         </pattern>
         <linearGradient id="footerGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#174B3D" stop-opacity="0" />
-          <stop offset="45%" stop-color="#174B3D" stop-opacity="0.82" />
-          <stop offset="100%" stop-color="#174B3D" stop-opacity="0.96" />
+          <stop offset="50%" stop-color="#174B3D" stop-opacity="0.72" />
+          <stop offset="100%" stop-color="#174B3D" stop-opacity="0.92" />
         </linearGradient>
       </defs>
 
-      <!-- Full-canvas diagonal watermark mesh covering face, fur, and costume -->
+      <!-- Subtle diagonal watermark mesh -->
       <rect x="0" y="0" width="${width}" height="${height}" fill="url(#apolenaSecGrid)" />
 
       <!-- Bottom Institutional Protection Strip -->
-      <rect x="0" y="${height - footerH * 1.6}" width="${width}" height="${footerH * 1.6}" fill="url(#footerGrad)" />
+      <rect x="0" y="${height - footerH * 1.5}" width="${width}" height="${footerH * 1.5}" fill="url(#footerGrad)" />
 
       ${
         logoDataUri
-          ? `<image href="${logoDataUri}" x="18" y="${height - 44}" width="64" height="36" />`
-          : `<text x="50" y="${height - 22}" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="14" fill="#FFFFFF">Apolena</text>`
+          ? `<image href="${logoDataUri}" x="16" y="${height - 40}" width="58" height="32" />`
+          : `<text x="46" y="${height - 20}" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#FFFFFF">Apolena</text>`
       }
 
-      <text x="${width - 14}" y="${height - 26}" text-anchor="end" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#c6a26c">VISTA PREVIA CON MARCA DE AGUA</text>
-      <text x="${width - 14}" y="${height - 13}" text-anchor="end" font-family="Arial, sans-serif" font-size="9.5" fill="#FFFBF2">Tu cuadro físico se fabrica sin marcas a 300 DPI</text>
+      <text x="${width - 14}" y="${height - 24}" text-anchor="end" font-family="Arial, sans-serif" font-weight="bold" font-size="9.5" fill="#c6a26c">VISTA PREVIA PROTEGIDA</text>
+      <text x="${width - 14}" y="${height - 12}" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#FFFBF2">El lienzo físico se imprime sin marcas a 300 DPI</text>
     </svg>`;
 
     const outBuffer = await baseImage
@@ -169,7 +169,13 @@ export async function burnServerSideWatermark(
       .jpeg({ quality: 80, mozjpeg: true })
       .toBuffer();
 
-    return `data:image/jpeg;base64,${outBuffer.toString("base64")}`;
+    const rawPreviewDataUri = `data:image/jpeg;base64,${outBuffer.toString("base64")}`;
+    return (
+      (await externalizeBase64Image(rawPreviewDataUri, "previews", {
+        maxDimension: 860,
+        quality: 80,
+      })) || rawPreviewDataUri
+    );
   } catch (err) {
     console.warn("[burnServerSideWatermark warning]:", err);
     return sourceImageUrl;
@@ -202,7 +208,12 @@ export async function protectAndStoreJobVariants(
   const watermarkedVariants: typeof variants = [];
 
   for (const v of variants) {
-    masterMap[v.id] = v.imageUrl;
+    const cleanMasterUrl =
+      (await externalizeBase64Image(v.imageUrl, "artworks", {
+        maxDimension: 2048,
+        quality: 88,
+      })) || v.imageUrl;
+    masterMap[v.id] = cleanMasterUrl;
     const wmUrl = await burnServerSideWatermark(v.imageUrl);
     watermarkedMap[v.id] = wmUrl;
     watermarkedVariants.push({
@@ -220,7 +231,7 @@ export async function protectAndStoreJobVariants(
   persistVaultToDisk();
 
   const firstWm = watermarkedVariants[0]?.imageUrl || "";
-  const firstMaster = variants[0]?.imageUrl || "";
+  const firstMaster = Object.values(masterMap)[0] || variants[0]?.imageUrl || "";
 
   return {
     watermarkedOutputUrl: firstWm,

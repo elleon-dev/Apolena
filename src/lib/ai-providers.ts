@@ -260,23 +260,43 @@ function buildFusionPrompt(
   customPrompt?: string | null,
   extractedWardrobeDescription?: string | null,
   petIdentityFingerprint?: string | null,
+  hasCustomReferenceImage: boolean = false,
 ): string {
   const petCountText = hasSecondPet
-    ? "BOTH uploaded pets (Pet #1 from the first input image and Pet #2 from the second input image) side by side"
-    : "the exact uploaded pet shown in the first input image";
+    ? "BOTH uploaded pets (Pet #1 from Image 1 and Pet #2 from Image 2) side by side"
+    : "the exact uploaded pet shown in Image 1";
 
-  const themeGuideText =
-    extractedWardrobeDescription ||
-    `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${character.description}`;
+  const isCustomRef =
+    hasCustomReferenceImage || character.id === "custom-reference";
+  const refImageIndex = hasSecondPet ? 3 : 2;
 
-  const protagonistSection = `PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST ALWAYS BE CLEARLY VISIBLE AND RECOGNIZABLE):
+  const themeGuideText = isCustomRef
+    ? extractedWardrobeDescription ||
+      customPrompt?.trim() ||
+      `Copy 100% of the exact clothing, headwear, accessories, lighting mood, and exact background architecture/scenery shown in Image ${refImageIndex} (the user's custom reference image).`
+    : extractedWardrobeDescription ||
+      `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${character.description}`;
+
+  const multiImageAssignment = isCustomRef
+    ? `INPUT IMAGES ROLE ASSIGNMENT (STRICT SEPARATION):
+- IMAGE 1${hasSecondPet ? " & IMAGE 2" : ""}: THE PROTAGONIST PET. Keep 100% of this exact animal's species, breed, facial structure, fur color, snout, eyes, and ears.
+- IMAGE ${refImageIndex}: THE CUSTOM WARDROBE & BACKGROUND REFERENCE. Copy 100% of the exact garments/clothing, exact headwear (or lack of headwear), and the exact background landmark, architecture, sky, and environment from Image ${refImageIndex} onto the pet from Image 1. Replace any human or other subject in Image ${refImageIndex} with the pet from Image 1.\n\n`
+    : "";
+
+  const protagonistSection = `${multiImageAssignment}PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST ALWAYS BE CLEARLY VISIBLE AND RECOGNIZABLE):
 Create an ultra-realistic 8K fine art portrait of ${petCountText}.${
     petIdentityFingerprint
       ? `\nEXACT UPLOADED PET IDENTITY TO PRESERVE 100%: ${petIdentityFingerprint}`
       : ""
   }`;
 
-  const themeGuideSection = `
+  const themeGuideSection = isCustomRef
+    ? `
+CUSTOM REFERENCE WARDROBE & EXACT BACKGROUND SCENE (MANDATORY FIDELITY TO USER'S REFERENCE IMAGE):
+Dress the user's pet in the EXACT outfit/headwear and place it in the EXACT background environment and architecture from the uploaded reference image:
+${themeGuideText}
+CRITICAL: Do NOT invent pirate hats, tricorn hats, armor, or unrelated costumes. Match the reference image's exact clothing colors, headwear style, and background scenery/landmarks.`
+    : `
 THEMATIC WARDROBE & SCENE GUIDE (SECONDARY - USE "${character.name}" ONLY AS A COSTUME & ENVIRONMENT GUIDE AROUND THE USER'S PET):
 Adapt the following thematic attire, accessories, lighting mood, and background setting onto the user's pet:
 ${themeGuideText}`;
@@ -288,7 +308,7 @@ MANDATORY PET VISIBILITY, PROTAGONIST & UNCROPPED CANVAS FRAMING RULES:
 3. MANDATORY 20% HEADROOM & SIDE BREATHING ROOM: Leave at least 20% to 25% of open background space above the highest point of the pet's head, ears, or headwear, and 15% breathing room on the left and right edges so the entire head and costume are 100% inside the frame with generous gallery margins.
 4. UNOBSTRUCTED PET FACE & EARS: Never let crowns, hats, helmets, wigs, collars, or costumes hide, replace, or distort the pet's face, eyes, muzzle, or distinctive ears. Any headwear from the theme guide must sit lightly and naturally on top of the head as an accessory so the pet's natural ears, forehead fur, and head silhouette remain 100% visible.
 5. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural canine/feline head-to-shoulder and neck proportions. Never make the head bobble-headed, zoomed-in, cartoon, 3D-rendered, or plastic.
-6. ORGANIC WARDROBE FIT: Tailor the character's garments, collar, and accessories around the pet's natural neck, shoulders, and chest with real fur micro-textures overlapping the collar edge.
+6. ORGANIC WARDROBE FIT: Tailor the garments, collar, and accessories around the pet's natural neck, shoulders, and chest with real fur micro-textures overlapping the collar edge.
 7. PHOTOGRAPHY SPECS: Medium-wide half-body portrait (35mm full-frame camera, 50mm gallery portrait lens, camera positioned slightly stepped back so the full head, ears, and chest are framed with ample headroom), museum-grade fine art lighting, sharp eye catchlights. No watermarks, no text.`;
 
   const extraUserPrompt = customPrompt?.trim()
@@ -296,6 +316,13 @@ MANDATORY PET VISIBILITY, PROTAGONIST & UNCROPPED CANVAS FRAMING RULES:
     : "";
 
   return `${protagonistSection}\n${themeGuideSection}\n${identityRules}${extraUserPrompt}`;
+}
+
+function isVisionRefusal(text?: string | null): boolean {
+  if (!text) return true;
+  return /\b(i'm sorry|i am sorry|i can't|i cannot|cannot assist|unable to|as an ai)\b/i.test(
+    text,
+  );
 }
 
 /**
@@ -308,8 +335,15 @@ async function extractWardrobeFromThemeImage(
   characterDescription?: string,
   openaiKey?: string,
   geminiKey?: string,
+  isCustomReference: boolean = false,
 ): Promise<string | null> {
-  const promptText = `You are a costume and set design analyst. Inspect this reference image for "${characterName}"${characterDescription ? ` (${characterDescription})` : ""} and describe ONLY in English:
+  const promptText = isCustomReference
+    ? `You are a costume, prop, and location designer for a portrait studio. Inspect this reference image and describe ONLY in English (90 to 120 words):
+1. EXACT ATTIRE & GARMENTS: Every piece of clothing, robe, tunic, coat, suit, cloak, collar, fabric texture, exact colors, trim, and embroidery visible in the image.
+2. EXACT HEADWEAR & ACCESSORIES: Describe the exact headwear (for example: white Arab ghutra headscarf with black agal cord, crown, helmet, hat, glasses, necklace, etc.) OR explicitly write "no headwear" if none is worn. Do NOT invent pirate hats or unrelated costumes.
+3. EXACT BACKGROUND, LANDMARKS & LIGHTING: Describe the exact background environment, recognizable buildings/architecture (e.g., sail-shaped hotel, beach, ocean, city skyline, palace, landscape), sky, time of day, and lighting mood.
+CRITICAL RULE: Do NOT identify any person and do NOT mention any animal species (never write "cat", "dog", "feline", "canine", "tabby", "fur", or "person"). Output ONLY the factual description of the wardrobe, headwear, and background scenery.`
+    : `You are a costume and set design analyst. Inspect this reference image for "${characterName}"${characterDescription ? ` (${characterDescription})` : ""} and describe ONLY in English:
 1. The exact clothing, tunic, coat, cape, fabrics, colors, and embroidery patterns.
 2. The exact headwear, crown, diadem, hat, earrings, necklaces, or props.
 3. The background environment, architecture, and lighting atmosphere.
@@ -334,19 +368,22 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
                   type: "image_url",
                   image_url: {
                     url: `data:${themeData.mimeType};base64,${themeData.base64}`,
-                    detail: "low",
+                    detail: isCustomReference ? "high" : "low",
                   },
                 },
               ],
             },
           ],
-          max_tokens: 180,
+          max_tokens: 220,
         }),
       });
       if (res.ok) {
         const json = await res.json();
         const text = json?.choices?.[0]?.message?.content?.trim();
-        if (text) return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+        const refusal = json?.choices?.[0]?.message?.refusal;
+        if (text && !refusal && !isVisionRefusal(text)) {
+          return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+        }
       }
     } catch (e) {
       console.warn("[extractWardrobeFromThemeImage OpenAI warning]:", e);
@@ -382,7 +419,9 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
           ?.map((p: any) => p.text || "")
           .join(" ")
           .trim();
-        if (text) return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+        if (text && !isVisionRefusal(text)) {
+          return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+        }
       }
     } catch (e) {
       console.warn("[extractWardrobeFromThemeImage Gemini warning]:", e);
@@ -418,6 +457,8 @@ async function runOpenAIFusion(
   } = input;
   const themeSource = customThemeImageUrl || character.characterImageUrl;
   const hasSecondPet = Boolean(secondPetImageUrl);
+  const isCustomRef =
+    Boolean(customThemeImageUrl) || character.id === "custom-reference";
 
   onProgress?.(
     20,
@@ -429,6 +470,9 @@ async function runOpenAIFusion(
   const pet2Data = secondPetImageUrl
     ? await resolveImageData(secondPetImageUrl)
     : null;
+  const customThemeData = customThemeImageUrl
+    ? await resolveImageData(customThemeImageUrl).catch(() => null)
+    : null;
 
   const petIdentityFingerprint =
     precomputedPetFingerprint ??
@@ -437,12 +481,15 @@ async function runOpenAIFusion(
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
   if (!wardrobeDesc && themeSource) {
     try {
-      const themeData = await resolveImageData(themeSource);
+      const themeData =
+        customThemeData || (await resolveImageData(themeSource));
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
         character.name,
         character.description,
         openaiKey,
+        undefined,
+        isCustomRef,
       );
     } catch (e) {
       console.warn("[OpenAI theme wardrobe extraction fallback]:", e);
@@ -455,12 +502,10 @@ async function runOpenAIFusion(
     customPrompt,
     wardrobeDesc,
     petIdentityFingerprint,
+    isCustomRef,
   );
 
   // Attempt 1: Native Pet Image Transformation (/v1/images/edits)
-  // IMPORTANT: We ONLY pass the user's pet photo(s) (pet1Data, and pet2Data if present) in `image[]`.
-  // We NEVER pass the catalog character's reference image into `image[]` because catalog reference images
-  // often depict another animal (e.g. a sample cat) or human whose face/species would overwrite the user's pet!
   const editModels = preferredModels;
 
   for (const editModel of editModels) {
@@ -478,7 +523,8 @@ async function runOpenAIFusion(
       // Cost-optimized quality tier: 'medium' reduces cost by ~75% ($0.034 vs $0.133) while preserving photorealism
       formData.append("quality", "medium");
 
-      // Append ONLY Pet 1 (and optional Pet 2) so the subject species & identity is 100% the user's pet
+      // Append Pet 1 (and optional Pet 2) first, and if the user uploaded a custom reference image,
+      // append it last so the model can visually match the exact custom outfit and background landmark!
       formData.append(
         "image[]",
         new Blob([new Uint8Array(pet1Data.buffer)], {
@@ -493,6 +539,15 @@ async function runOpenAIFusion(
             type: pet2Data.mimeType,
           }),
           `pet2.${pet2Data.ext}`,
+        );
+      }
+      if (customThemeData) {
+        formData.append(
+          "image[]",
+          new Blob([new Uint8Array(customThemeData.buffer)], {
+            type: customThemeData.mimeType,
+          }),
+          `custom_reference.${customThemeData.ext}`,
         );
       }
 
@@ -693,6 +748,8 @@ async function runGeminiFusion(
   } = input;
   const themeSource = customThemeImageUrl || character.characterImageUrl;
   const hasSecondPet = Boolean(secondPetImageUrl);
+  const isCustomRef =
+    Boolean(customThemeImageUrl) || character.id === "custom-reference";
 
   onProgress?.(
     20,
@@ -703,6 +760,9 @@ async function runGeminiFusion(
   const pet1Data = await resolveImageData(petImageUrl);
   const pet2Data = secondPetImageUrl
     ? await resolveImageData(secondPetImageUrl)
+    : null;
+  const customThemeData = customThemeImageUrl
+    ? await resolveImageData(customThemeImageUrl).catch(() => null)
     : null;
 
   const petIdentityFingerprint =
@@ -717,13 +777,15 @@ async function runGeminiFusion(
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
   if (!wardrobeDesc && themeSource) {
     try {
-      const themeData = await resolveImageData(themeSource);
+      const themeData =
+        customThemeData || (await resolveImageData(themeSource));
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
         character.name,
         character.description,
         openaiKeyFallback,
         geminiKey,
+        isCustomRef,
       );
     } catch (e) {
       console.warn("[Gemini theme wardrobe extraction fallback]:", e);
@@ -736,9 +798,9 @@ async function runGeminiFusion(
     customPrompt,
     wardrobeDesc,
     petIdentityFingerprint,
+    isCustomRef,
   );
 
-  // Only include the user's pet photo(s) in inlineData so the model never copies a sample cat/actor from a theme image
   const petParts: any[] = [
     {
       inlineData: {
@@ -757,7 +819,20 @@ async function runGeminiFusion(
     });
   }
 
-  const parts: any[] = [...petParts, { text: fusionPrompt }];
+  const parts: any[] = [
+    ...petParts,
+    ...(customThemeData
+      ? [
+          {
+            inlineData: {
+              mimeType: customThemeData.mimeType,
+              data: customThemeData.base64,
+            },
+          },
+        ]
+      : []),
+    { text: fusionPrompt },
+  ];
 
   // Ordered from lowest cost ($0.039/img) to standard ($0.067/img), avoiding expensive pro tier ($0.134/img)
   const candidateModels = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
@@ -1109,6 +1184,8 @@ export async function runMultiModelFusionPipeline(
     let sharedPetFingerprint: string | null = null;
     let sharedWardrobeDesc: string | null = null;
     const themeSource = customThemeImageUrl || character.characterImageUrl;
+    const isCustomRef =
+      Boolean(customThemeImageUrl) || character.id === "custom-reference";
 
     try {
       const pet1Data = await resolveImageData(petImageUrl);
@@ -1135,6 +1212,7 @@ export async function runMultiModelFusionPipeline(
               character.description,
               hasValidOpenAI ? openaiKey : undefined,
               hasValidGemini ? geminiKey : undefined,
+              isCustomRef,
             )
           : Promise.resolve(null),
       ]);

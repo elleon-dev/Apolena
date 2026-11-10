@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { setCachedSessionUser } from "@/lib/client-session";
 import {
   UserPlus,
   Mail,
@@ -97,6 +98,9 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || "No se pudo completar el registro.");
         return;
+      }
+      if (data.user) {
+        setCachedSessionUser(data.user);
       }
       router.push(data.redirectTo || "/orders");
       router.refresh();

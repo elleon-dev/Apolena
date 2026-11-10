@@ -133,10 +133,13 @@ export default function CommonUserOrdersPage() {
           comment: reviewComment,
         }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.order) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? data.order : o)),
+        );
         setActiveReviewOrderId(null);
         setReviewComment("");
-        await loadUserOrders();
       }
     } finally {
       setIsSavingReview(false);
