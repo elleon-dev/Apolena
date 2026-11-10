@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Star } from "lucide-react";
+import React, { useRef } from "react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Testimonial {
   id: number;
@@ -20,7 +20,7 @@ const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     comment:
       "Quedé impresionada con los detalles del cuadro. Capturaron la mirada de Max tal cual es.",
-    videoId: "7683304112737226004?_r=1&_t=ZS-9B7zYVjlPk8",
+    videoId: "7683304112737226004",
   },
   {
     id: 2,
@@ -29,7 +29,7 @@ const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     comment:
       "El paquete llegó súper rápido a Lima y la calidad del bastidor superó totalmente mis expectativas.",
-    videoId: "7512067676089421078?_r=1&_t=ZS-9B7zQ55Q2o3",
+    videoId: "7512067676089421078",
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     comment:
       "Un regalo hermoso para la casa. La atención por WhatsApp para elegir el diseño fue un 10/10.",
-    videoId: "7669976015036239124?_r=1&_t=ZS-9B7zYSX4Cgy",
+    videoId: "7669976015036239124",
   },
   {
     id: 4,
@@ -47,41 +47,65 @@ const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     comment:
       "Increíble trabajo con la pintura digital. Mis amigos siempre me preguntan dónde lo mandé a hacer.",
-    videoId: "7566088412436892946?_r=1&_t=ZS-9B80SrMNMNL",
-  },
-  {
-    id: 5,
-    clientName: "Lucía P.",
-    petName: "Mascota: Mimi",
-    rating: 5,
-    comment:
-      "Superó lo que esperaba. Recomendadísimos si quieren inmortalizar a sus mascotas.",
-    videoId: "7430472140584930593?_r=1&_t=ZS-9B80T9ex5D6",
+    videoId: "7566088412436892946",
   },
 ];
 
 export default function TestimonialsSection() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -340 : 340;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
   return (
-    <section className="w-full py-20 bg-[#FFFBF2] text-[#141414] border-b border-[#c6a26c]/25">
+    <section className="w-full py-20 bg-[#FFFBF2] text-[#141414] border-b border-[#c6a26c]/25 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-[#c6a26c]/20 text-[#174B3D] font-bold text-xs uppercase tracking-widest border border-[#c6a26c]/40">
-            Historias Reales
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-[#174B3D]">
-            Lo que dicen nuestros clientes
-          </h2>
-          <p className="mt-2 text-sm sm:text-base text-[#141414]/75">
-            Mira las reacciones reales de quienes ya recibieron el retrato
-            personalizado de su mascota.
-          </p>
+        {/* Encabezado y Botones */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4 text-center md:text-left">
+          <div className="space-y-2 max-w-xl">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-[#c6a26c]/20 text-[#174B3D] font-bold text-xs uppercase tracking-widest border border-[#c6a26c]/40">
+              Historias Reales
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-[#174B3D]">
+              Lo que dicen nuestros clientes
+            </h2>
+            <p className="text-sm sm:text-base text-[#141414]/75">
+              Mira las reacciones reales de quienes ya recibieron el retrato personalizado de su mascota.
+            </p>
+          </div>
+
+          <div className="hidden sm:flex items-center justify-center gap-3">
+            <button
+              onClick={() => handleScroll("left")}
+              className="p-3 rounded-full bg-white border border-[#c6a26c]/40 text-[#174B3D] hover:bg-[#174B3D] hover:text-white transition-all shadow-sm active:scale-95"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => handleScroll("right")}
+              className="p-3 rounded-full bg-white border border-[#c6a26c]/40 text-[#174B3D] hover:bg-[#174B3D] hover:text-white transition-all shadow-sm active:scale-95"
+              aria-label="Siguiente"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 justify-items-center">
+        {/* Carrusel Horizontal (Scroll Snap) */}
+        <div
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory scroll-smooth"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {TESTIMONIALS.map((item) => (
             <div
               key={item.id}
-              className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-[#c6a26c]/35 p-5 flex flex-col justify-between hover:shadow-md transition-shadow duration-300"
+              className="w-[290px] sm:w-[320px] shrink-0 snap-start bg-white rounded-2xl shadow-sm border border-[#c6a26c]/35 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300"
             >
               <div className="w-full aspect-[9/16] rounded-xl overflow-hidden bg-[#174B3D] mb-4 relative shadow-inner">
                 <iframe
@@ -89,6 +113,7 @@ export default function TestimonialsSection() {
                   className="w-full h-full border-0"
                   allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  loading="lazy"
                   title={`Testimonio de ${item.clientName}`}
                 ></iframe>
               </div>
