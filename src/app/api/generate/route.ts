@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get("content-type") || "";
     let characterId = "";
     let petName = "Mi Mascota";
-    let species: "dog" | "cat" | "both" = "cat";
+    let species: "dog" | "cat" | "both" | "other" = "dog";
     let petImageUrl = "";
     let secondPetImageUrl: string | null = null;
     let customThemeImageUrl: string | null = null;
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         (formData.get("templateId") as string) ||
         "";
       petName = (formData.get("petName") as string) || "Mi Mascota";
-      species = ((formData.get("species") as string) || "cat") as any;
+      species = ((formData.get("species") as string) || "dog") as any;
       provider = ((formData.get("provider") as string) ||
         "openai") as AIProviderId;
       customPrompt = (formData.get("customPrompt") as string) || null;
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       const body = await req.json();
       characterId = body.characterId || body.templateId;
       petName = body.petName || "Mi Mascota";
-      species = body.species || "cat";
+      species = body.species || "dog";
       petImageUrl = body.petImageUrl;
       secondPetImageUrl = body.secondPetImageUrl || null;
       customThemeImageUrl = body.customThemeImageUrl || null;

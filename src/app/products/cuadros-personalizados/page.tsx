@@ -62,6 +62,9 @@ export default function personalizedWallArt() {
   // Pet Images (1 mandatory, 2nd optional for duo portrait)
   const [petImage, setPetImage] = useState<string | null>(null);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
+  const [petSpecies, setPetSpecies] = useState<"dog" | "cat" | "other">("dog");
+  const [isSimulationJob, setIsSimulationJob] = useState<boolean>(false);
+  const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
 
   // Dynamic Catalog from Supabase (products.customization_config)
   const [wallArtProductId, setWallArtProductId] = useState<string>(
@@ -313,16 +316,19 @@ export default function personalizedWallArt() {
     setSecondPetImage("/samples/cat-suit.jpg");
     setSelectedCharacter(FAMOUS_CHARACTERS[0]);
     setUseCustomTheme(false);
+    setPetSpecies("cat");
   };
 
   const loadDemoDog = () => {
     setPetImage("/samples/dog-sample.jpg");
     setSecondPetImage(null);
+    setPetSpecies("dog");
   };
 
   const loadDemoCat = () => {
     setPetImage("/samples/cat-sample.jpg");
     setSecondPetImage(null);
+    setPetSpecies("cat");
   };
 
   // Start Portrait Generation
@@ -337,7 +343,6 @@ export default function personalizedWallArt() {
     );
 
     try {
-      const isCat = petImage.includes("cat") || petImage.includes("gato");
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -352,7 +357,7 @@ export default function personalizedWallArt() {
           customPrompt: customPrompt.trim() || null,
           provider: selectedProvider,
           petName: secondPetImage ? "Dúo de Mascotas" : "Mascota",
-          species: isCat ? "cat" : "dog",
+          species: petSpecies,
         }),
       });
 
@@ -367,6 +372,8 @@ export default function personalizedWallArt() {
       setActiveGenerationJobId(jobId);
 
       const handleJobCompletion = (job: any) => {
+        setIsSimulationJob(Boolean(job.isSimulation));
+        setSimulationNotice(job.simulationReason || null);
         if (Array.isArray(job.variants) && job.variants.length > 0) {
           setGeneratedVariants(job.variants);
           setSelectedVariantId(job.variants[0].id);
@@ -479,6 +486,8 @@ export default function personalizedWallArt() {
     setFusedResultUrl("");
     setFusionError(null);
     setIsGenerating(false);
+    setIsSimulationJob(false);
+    setSimulationNotice(null);
   };
 
   const activeThemeImageUrl =
@@ -703,6 +712,48 @@ export default function personalizedWallArt() {
                     />
                   </div>
                 )}
+
+                {/* Pet Type Selector to guarantee 100% facial and species fidelity */}
+                <div className="pt-3 border-t border-cream-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-stone-800 flex items-center gap-1.5">
+                      <PawPrint className="w-3.5 h-3.5 text-terracotta-500" />
+                      <span>Tipo de mascota:</span>
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Garantiza la fidelidad fisonómica
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "dog", label: "Perro", Icon: Dog },
+                      { id: "cat", label: "Gato", Icon: Cat },
+                      { id: "other", label: "Otra Mascota", Icon: PawPrint },
+                    ].map((t) => {
+                      const Icon = t.Icon;
+                      const isSelected = petSpecies === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setPetSpecies(t.id as any)}
+                          className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                            isSelected
+                              ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                              : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-3.5 h-3.5 ${
+                              isSelected ? "text-[#c6a26c]" : "text-stone-500"
+                            }`}
+                          />
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1002,6 +1053,22 @@ export default function personalizedWallArt() {
                 </button>
               </div>
             </div>
+
+            {/* Simulation Warning Banner when APIs exceed quota (429) */}
+            {isSimulationJob && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-3.5 shadow-soft">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-950 text-sm">
+                    Muestra de Ilustración de Estudio (Modo Demostración)
+                  </p>
+                  <p className="text-amber-800 leading-relaxed text-xs">
+                    {simulationNotice ||
+                      "Las claves de API de los motores de IA (OpenAI / Google Gemini) alcanzaron su cuota o saldo disponible (Error 429 Quota Exceeded). Por ello, el sistema desplegó una muestra ilustrativa del atelier en lugar de la transformación en vivo de tu foto. Para fusionar en tiempo real conservando al 100% las facciones exactas de tu mascota, por favor recarga los créditos de tu cuenta de OpenAI o habilita facturación en Google Cloud / AI Studio."}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Reference Summary Strip: [Pet 1] + [Pet 2] + [Theme] = [Portrait] */}
             <div className="p-4 rounded-2xl bg-white border border-cream-200 shadow-soft flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-600">

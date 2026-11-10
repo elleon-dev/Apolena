@@ -53,10 +53,11 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
 
 ## 3. Flujo de Creación de Retratos en el Atelier Digital
 
-1. **Carga de Fotografía de Mascota:** El usuario sube la foto de su mascota (1 o 2 mascotas para retrato individual o dúo).
+1. **Carga de Fotografía de Mascota y Selección de Especie:** El usuario sube la foto de su mascota y selecciona o confirma su especie (🐶 Perro, 🐱 Gato, 🐾 Otra Mascota) para garantizar fidelidad fisonómica total. Queda estrictamente prohibido inferir la especie mediante búsquedas de texto (`.includes('cat')`) en cadenas base64 o URLs.
 2. **Selección de Personaje o Temática:** El usuario escoge una obra del catálogo de Apolena o sube una referencia personalizada.
 3. **Generación Dual de Atelier (OpenAI + Gemini en paralelo):**
    - **Invisibilidad de la IA para el cliente:** La plataforma opera bajo la identidad de un atelier artístico de lujo ("Atelier Apolena"). La interfaz del cliente (`/products/cuadros-personalizados`) **NO** expone selectores técnicos de modelos de IA, nombres de motores ni tarifas por generación.
+   - **Transparencia en Modo Contingencia (Cuota de API Excedida 429):** En caso de agotamiento de cuotas o créditos en las cuentas de IA de OpenAI o Google Cloud, el sistema informa con un banner elegante y claro en el Paso 3 que se desplegó una muestra ilustrativa del catálogo, respetando rigurosamente la especie seleccionada (un perro jamás mostrará una muestra de gato).
    - **2 Propuestas Artísticas Simultáneas:** Al presionar "Crear Retrato Ahora", el sistema ejecuta en paralelo los motores de OpenAI y Google Gemini para entregar **2 propuestas artísticas complementarias**:
      - _Propuesta 1 · Óleo Fine Art_ (técnica con rica textura de óleo y calidez clásica).
      - _Propuesta 2 · Claroscuro y Detalle_ (contrastes profundos, realce de brillo y mirada).

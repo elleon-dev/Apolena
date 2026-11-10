@@ -75,7 +75,7 @@ export interface GenerationJob {
   userId?: string | null;
   templateId: string;
   petName: string;
-  species: "dog" | "cat" | "both";
+  species: "dog" | "cat" | "both" | "other";
   petImageUrl: string;
   secondPetImageUrl?: string | null;
   customThemeImageUrl?: string | null;
@@ -92,6 +92,8 @@ export interface GenerationJob {
   falUpscaleRequestId?: string | null;
   errorMessage?: string | null;
   executionSeconds?: number;
+  isSimulation?: boolean;
+  simulationReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
