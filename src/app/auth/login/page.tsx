@@ -247,39 +247,6 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Quick Demo Credentials Box */}
-      <div className="pt-4 border-t border-cream-200 space-y-2.5">
-        <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider text-center">
-          Accesos rápidos de prueba (Prisma RBAC)
-        </p>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <button
-            type="button"
-            onClick={() => fillDemo("cliente@apolena.pe", "cliente123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium flex items-center justify-center gap-1 transition-colors"
-          >
-            <User className="w-3.5 h-3.5 text-terracotta-500" />
-            <span>Usuario</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemo("admin@apolena.pe", "admin123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-800 font-medium flex items-center justify-center gap-1 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5 text-stone-700" />
-            <span>Admin</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemo("nmoriano26@gmail.com", "admin123")}
-            className="p-2.5 rounded-2xl border border-terracotta-200 bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-800 font-semibold flex items-center justify-center gap-1 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5 text-terracotta-600" />
-            <span>Super Admin</span>
-          </button>
-        </div>
-      </div>
-
       <p className="text-center text-xs text-stone-500">
         ¿Aún no tienes cuenta?{" "}
         <Link
