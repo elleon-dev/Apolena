@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
-import { Upload, Palette, Sparkles, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 
 interface StepItem {
   number: string;
   badgeText: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  imageSrc: string;
+  imageAlt: string;
   accentBg: string;
 }
 
@@ -19,9 +21,8 @@ const STEPS: StepItem[] = [
     title: "Sube una foto de tu mascota",
     description:
       "Elige tu estilo artístico favorito. Sube una foto clara de tu mascota y realiza tu pedido en minutos.",
-    icon: (
-      <Upload className="w-8 h-8 text-[#174B3D] group-hover:scale-110 transition-transform duration-300" />
-    ),
+    imageSrc: "/images/steps/img1.jpg",
+    imageAlt: "Ilustración 2D subir foto de mascota",
     accentBg: "bg-[#FFFBF2] border-[#c6a26c]/45",
   },
   {
@@ -30,9 +31,8 @@ const STEPS: StepItem[] = [
     title: "Aprueba tu diseño personalizado",
     description:
       "Visualiza 2 propuestas artísticas al instante en nuestro estudio y elige tu favorita antes de pasar a fabricación.",
-    icon: (
-      <Palette className="w-8 h-8 text-[#c6a26c] group-hover:rotate-12 transition-transform duration-300" />
-    ),
+    imageSrc: "/images/steps/img2.jpg",
+    imageAlt: "Ilustración 2D diseño y paleta de arte",
     accentBg: "bg-[#174B3D]/10 border-[#174B3D]/25",
   },
   {
@@ -41,9 +41,8 @@ const STEPS: StepItem[] = [
     title: "Atesóralo para siempre",
     description:
       "Recibe tu lienzo de museo listo para colgar. Exhibe a tu mejor amigo con orgullo o regálalo a alguien especial.",
-    icon: (
-      <Sparkles className="w-8 h-8 text-[#174B3D] group-hover:scale-110 transition-transform duration-300" />
-    ),
+    imageSrc: "/images/steps/img3.jpg",
+    imageAlt: "Ilustración 2D cuadro de mascota terminado",
     accentBg: "bg-[#FFFBF2] border-[#c6a26c]/45",
   },
 ];
@@ -89,12 +88,18 @@ export default function StepsSection() {
                 </span>
               </div>
 
-              {/* Contenedor del Icono con fondo decorativo */}
+              {/* Contenedor de la Imagen 2D */}
               <div
-                className={`w-24 h-24 mt-3 mb-6 rounded-2xl ${step.accentBg} border flex items-center justify-center shadow-inner relative group-hover:scale-105 transition-transform duration-300`}
+                className={`w-32 h-32 mt-3 mb-6 rounded-2xl ${step.accentBg} border flex items-center justify-center shadow-inner relative group-hover:scale-105 transition-transform duration-300 overflow-hidden p-2`}
               >
-                <div className="p-3 bg-white/95 backdrop-blur-md rounded-xl shadow-sm">
-                  {step.icon}
+                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm">
+                  <Image
+                    src={step.imageSrc}
+                    alt={step.imageAlt}
+                    fill
+                    sizes="128px"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 </div>
               </div>
 
