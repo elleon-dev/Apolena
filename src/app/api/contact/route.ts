@@ -44,7 +44,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error processing contact message:", error);
     return NextResponse.json(
-      { error: "Ocurrió un error al enviar el mensaje. Por favor intenta nuevamente o contáctanos por WhatsApp." },
+      {
+        error:
+          "Ocurrió un error al enviar el mensaje. Por favor intenta nuevamente o contáctanos por WhatsApp.",
+      },
       { status: 500 },
     );
   }

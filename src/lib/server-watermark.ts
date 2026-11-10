@@ -231,7 +231,8 @@ export async function protectAndStoreJobVariants(
   persistVaultToDisk();
 
   const firstWm = watermarkedVariants[0]?.imageUrl || "";
-  const firstMaster = Object.values(masterMap)[0] || variants[0]?.imageUrl || "";
+  const firstMaster =
+    Object.values(masterMap)[0] || variants[0]?.imageUrl || "";
 
   return {
     watermarkedOutputUrl: firstWm,

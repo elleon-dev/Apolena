@@ -91,8 +91,7 @@ export async function hashPassword(
   salt?: string,
 ): Promise<string> {
   const activeSalt =
-    salt ||
-    toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
+    salt || toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
   const encoder = new TextEncoder();
   const data = encoder.encode(`${activeSalt}:${password}:${getAuthSecret()}`);
   const digest = await crypto.subtle.digest("SHA-256", data);

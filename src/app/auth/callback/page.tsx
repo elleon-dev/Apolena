@@ -98,7 +98,8 @@ function OAuthCallbackHandler() {
       } catch (err: any) {
         if (active) {
           setError(
-            err?.message || "No se pudo completar el inicio de sesión con Google.",
+            err?.message ||
+              "No se pudo completar el inicio de sesión con Google.",
           );
         }
       }
@@ -157,4 +158,3 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
-

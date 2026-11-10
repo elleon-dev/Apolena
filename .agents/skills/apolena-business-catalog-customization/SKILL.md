@@ -35,15 +35,32 @@ Este skill define la arquitectura de productos y personalizaciones en Apolena, g
 
 ---
 
-## 2. Flujo de Creación de Retratos en el Atelier Digital
+## 2. Almacenamiento Cloud Escalable (Supabase Storage: `apolena-media`)
 
-1. **Carga de Fotografía de Mascota:** El usuario sube la foto de su mascota (1 o 2 mascotas para retrato individual o dúo).
+Para garantizar que el catálogo escale a múltiples tipos de productos y que el repositorio Git no se sobrecargue con archivos binarios ni dependa de sistemas de archivos locales efímeros (como en Vercel o Railway), todas las imágenes se gestionan a través de **Supabase Storage** (`src/lib/image-storage.ts`):
+
+- **Bucket Central (`apolena-media`):**
+  - `artworks/`: Obras maestras de alta resolución (300 DPI) para taller y producción.
+  - `previews/`: Vistas previas optimizadas para web con marca de agua oficial Apolena.
+  - `pets/`: Fotografías originales de las mascotas subidas por los usuarios.
+  - `proofs/`: Comprobantes de pago de transacciones (Yape, Plin, Transferencia).
+  - `characters/`: Diseños y vestuarios de personajes y temáticas del atelier.
+  - `products/`: Fotografías de catálogo y recursos de nuevos productos futuros (tazas, collares, mantas, etc.).
+- **Deduplicación SHA-1:** Toda imagen procesada por `externalizeBase64Image` se optimiza con `sharp` y se almacena bajo su hash de contenido para evitar duplicaciones innecesarias de archivos.
+- **Fallback Automático:** En entornos de desarrollo local sin credenciales de Supabase, se mantiene un respaldo automático a disco local.
+
+---
+
+## 3. Flujo de Creación de Retratos en el Atelier Digital
+
+1. **Carga de Fotografía de Mascota y Selección de Especie:** El usuario sube la foto de su mascota y selecciona o confirma su especie (🐶 Perro, 🐱 Gato, 🐾 Otra Mascota) para garantizar fidelidad fisonómica total. Queda estrictamente prohibido inferir la especie mediante búsquedas de texto (`.includes('cat')`) en cadenas base64 o URLs.
 2. **Selección de Personaje o Temática:** El usuario escoge una obra del catálogo de Apolena o sube una referencia personalizada.
 3. **Generación Dual de Atelier (OpenAI + Gemini en paralelo):**
    - **Invisibilidad de la IA para el cliente:** La plataforma opera bajo la identidad de un atelier artístico de lujo ("Atelier Apolena"). La interfaz del cliente (`/products/cuadros-personalizados`) **NO** expone selectores técnicos de modelos de IA, nombres de motores ni tarifas por generación.
+   - **Transparencia en Modo Contingencia (Cuota de API Excedida 429):** En caso de agotamiento de cuotas o créditos en las cuentas de IA de OpenAI o Google Cloud, el sistema informa con un banner elegante y claro en el Paso 3 que se desplegó una muestra ilustrativa del catálogo, respetando rigurosamente la especie seleccionada (un perro jamás mostrará una muestra de gato).
    - **2 Propuestas Artísticas Simultáneas:** Al presionar "Crear Retrato Ahora", el sistema ejecuta en paralelo los motores de OpenAI y Google Gemini para entregar **2 propuestas artísticas complementarias**:
-     - *Propuesta 1 · Óleo Fine Art* (técnica con rica textura de óleo y calidez clásica).
-     - *Propuesta 2 · Claroscuro y Detalle* (contrastes profundos, realce de brillo y mirada).
+     - _Propuesta 1 · Óleo Fine Art_ (técnica con rica textura de óleo y calidez clásica).
+     - _Propuesta 2 · Claroscuro y Detalle_ (contrastes profundos, realce de brillo y mirada).
    - **Prioridad Absoluta de la Mascota del Usuario y Personaje como Guía Temática:**
      - Antes de generar la obra, el sistema extrae la huella fisonómica exacta de la mascota del usuario (`extractPetIdentityFingerprint`: especie exacta perro/gato, raza, hocico, orejas, pelaje y mirada) y la coloca como **Prioridad #1 (Protagonista)** al inicio del prompt maestro.
      - El personaje o temática escogida (`character.prompt` o vestuario personalizado) actúa **únicamente como guía secundaria de vestuario, accesorios, iluminación y escenario** alrededor de la mascota del cliente, prohibiendo que coronas, sombreros o prendas oculten, deformen o reemplacen las orejas, el rostro o las facciones reales de la mascota.

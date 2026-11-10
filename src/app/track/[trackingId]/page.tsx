@@ -156,7 +156,10 @@ export default function TrackingDetailPage({
             <Loader2 className="w-7 h-7 animate-spin text-[#174B3D] mx-auto" />
             <p className="text-xs text-stone-500">
               Consultando estado en tiempo real para{" "}
-              <strong className="font-mono text-[#174B3D]">{params.trackingId}</strong>...
+              <strong className="font-mono text-[#174B3D]">
+                {params.trackingId}
+              </strong>
+              ...
             </p>
           </div>
         ) : error || !order ? (
@@ -169,7 +172,8 @@ export default function TrackingDetailPage({
                 No encontramos el pedido
               </h2>
               <p className="text-xs sm:text-sm text-stone-600">
-                {error || "Verifica el código ingresado o consúltanos directamente por WhatsApp."}
+                {error ||
+                  "Verifica el código ingresado o consúltanos directamente por WhatsApp."}
               </p>
             </div>
             <div className="pt-2">
@@ -190,7 +194,9 @@ export default function TrackingDetailPage({
                 <div className="space-y-1">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c6a26c]/20 text-[#174B3D] text-[10px] font-bold tracking-widest uppercase border border-[#c6a26c]/40">
                     <PackageCheck className="w-3.5 h-3.5" />
-                    <span>Seguimiento Oficial Apolena · Orden #{order.order_code}</span>
+                    <span>
+                      Seguimiento Oficial Apolena · Orden #{order.order_code}
+                    </span>
                   </div>
                   <h1 className="font-mono text-2xl sm:text-3xl font-extrabold text-[#174B3D]">
                     {order.tracking_id}
@@ -203,7 +209,8 @@ export default function TrackingDetailPage({
                     {order.shipping?.name}
                   </strong>
                   <p className="text-stone-500">
-                    {order.shipping?.district}, {order.shipping?.department || "Lima"}
+                    {order.shipping?.district},{" "}
+                    {order.shipping?.department || "Lima"}
                   </p>
                 </div>
               </div>
@@ -237,7 +244,8 @@ export default function TrackingDetailPage({
                       Cuadro Personalizado ({item.customizations?.size_label})
                     </h3>
                     <p className="text-stone-600">
-                      Presentación: <strong>Lienzo en Bastidor (Full Screen)</strong>
+                      Presentación:{" "}
+                      <strong>Lienzo en Bastidor (Full Screen)</strong>
                     </p>
                     <p className="text-stone-500">
                       Listo para colgar · Algodón 100% de bellas artes
@@ -260,7 +268,9 @@ export default function TrackingDetailPage({
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 font-medium">
                           <Lock className="w-3 h-3 text-[#174B3D]" />
-                          <span>Recuerdo Digital HD se desbloquea al entregar</span>
+                          <span>
+                            Recuerdo Digital HD se desbloquea al entregar
+                          </span>
                         </span>
                       )}
                     </div>
@@ -302,7 +312,8 @@ export default function TrackingDetailPage({
             {/* Assistance Banner */}
             <div className="p-4 rounded-2xl bg-white border border-[#E8DEC8] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs text-stone-600">
               <p>
-                ¿Deseas coordinar un cambio en tu entrega o consultar el horario del repartidor?
+                ¿Deseas coordinar un cambio en tu entrega o consultar el horario
+                del repartidor?
               </p>
               <a
                 href="https://wa.me/51987654321?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20mi%20orden"

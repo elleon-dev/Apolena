@@ -307,13 +307,7 @@ export async function exportWatermarkedPreviewImage(
         const wmLogoH = Math.round(
           (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * wmLogoW,
         );
-        ctx.drawImage(
-          logoImg,
-          x - wmLogoW / 2,
-          y + 16,
-          wmLogoW,
-          wmLogoH,
-        );
+        ctx.drawImage(logoImg, x - wmLogoW / 2, y + 16, wmLogoW, wmLogoH);
         ctx.restore();
       }
     }
@@ -322,7 +316,12 @@ export async function exportWatermarkedPreviewImage(
 
   // 3. Center-bottom translucent badge with official Apolena Logo on Primary #174B3D
   const footerHeight = 64;
-  const grad = ctx.createLinearGradient(0, targetH - footerHeight * 1.8, 0, targetH);
+  const grad = ctx.createLinearGradient(
+    0,
+    targetH - footerHeight * 1.8,
+    0,
+    targetH,
+  );
   grad.addColorStop(0, "rgba(23, 75, 61, 0)");
   grad.addColorStop(0.5, "rgba(23, 75, 61, 0.78)");
   grad.addColorStop(1, "rgba(23, 75, 61, 0.96)");
@@ -334,13 +333,7 @@ export async function exportWatermarkedPreviewImage(
     const logoDrawH = Math.round(
       (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * logoDrawW,
     );
-    ctx.drawImage(
-      logoImg,
-      18,
-      targetH - logoDrawH - 10,
-      logoDrawW,
-      logoDrawH,
-    );
+    ctx.drawImage(logoImg, 18, targetH - logoDrawH - 10, logoDrawW, logoDrawH);
   }
 
   // Right-side protection legend

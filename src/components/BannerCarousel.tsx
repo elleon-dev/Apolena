@@ -101,8 +101,7 @@ const BANNERS: BannerSlide[] = [
     secondaryCtaText: "Quiénes Somos",
     secondaryCtaLink: "#quienes-somos",
     imageSrc: "/fusions/jack-sparrow-cat.jpg",
-    imageAlt:
-      "Retrato personalizado de mascota en estilo Capitán Jack Sparrow",
+    imageAlt: "Retrato personalizado de mascota en estilo Capitán Jack Sparrow",
     badge: {
       title: "2 Propuestas Artísticas",
       subtitle: "Técnica óleo y claroscuro en cada orden",

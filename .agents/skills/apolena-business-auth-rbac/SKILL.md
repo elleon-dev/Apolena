@@ -17,7 +17,7 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 - La tabla `profiles` es la entidad central de identidad en la base de datos gestionada por Prisma.
 - Soporta dos modalidades de inicio de sesión que convergen en la misma sesión firmada (`apolena_session`) y en `public.profiles`:
   1. **Credenciales (Correo + Contraseña):** `/api/auth/login` y `/api/auth/register`.
-  2. **Proveedor Google OAuth (vía Supabase Auth):** El botón *"Continuar con Google"* en `/auth/login` y `/auth/register` inicia `supabaseBrowser.auth.signInWithOAuth({ provider: "google" })`, redirige a `/auth/callback` y sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `POST /api/auth/oauth/google` y `upsertOAuthProfile`.
+  2. **Proveedor Google OAuth (vía Supabase Auth):** El botón _"Continuar con Google"_ en `/auth/login` y `/auth/register` inicia `supabaseBrowser.auth.signInWithOAuth({ provider: "google" })`, redirige a `/auth/callback` y sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `POST /api/auth/oauth/google` y `upsertOAuthProfile`.
 - Campos clave de `Profile` (`@@map("profiles")`):
   - `id`: UUID (`@id @default(dbgenerated("gen_random_uuid()")) @db.Uuid`).
   - `email`: Único (`@unique`).
@@ -51,12 +51,12 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 
 ## 3. Matriz de Rutas Privadas y Públicas
 
-| Ruta / Prefijo | Acceso | Comportamiento si no cumple |
-| :--- | :--- | :--- |
-| `/`, `/products/*`, `/track/*` | **Público** | Accesible para cualquier visitante (permite explorar, probar fusión y rastrear por `tracking_id`). |
-| `/auth/login`, `/auth/register` | **Público (Solo invitados)** | Si ya tiene sesión activa, redirige a `/dashboard` (si es `admin` o `super_admin`) o a `/orders` (si es `user`). |
-| `/orders`, `/orders/*` | **Vista Común Privada (`user`, `admin`, `super_admin`)** | Si no está autenticado, redirige a `/auth/login?callbackUrl=/orders`. Permite a todo tipo de usuario visualizar sus órdenes, buscar por `tracking_id` y seguir el progreso en los 3 steps + estado `Exitoso`. |
-| `/dashboard`, `/dashboard/*`, `/admin`, `/admin/*` | **Dashboard Privado Exclusivo (`admin` y `super_admin`)** | Si no está autenticado → redirige a `/auth/login`. Si está autenticado con `role === "user"` → redirige a `/orders` (código 403 en `/api/admin/*`). |
+| Ruta / Prefijo                                     | Acceso                                                    | Comportamiento si no cumple                                                                                                                                                                                   |
+| :------------------------------------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`, `/products/*`, `/track/*`                     | **Público**                                               | Accesible para cualquier visitante (permite explorar, probar fusión y rastrear por `tracking_id`).                                                                                                            |
+| `/auth/login`, `/auth/register`                    | **Público (Solo invitados)**                              | Si ya tiene sesión activa, redirige a `/dashboard` (si es `admin` o `super_admin`) o a `/orders` (si es `user`).                                                                                              |
+| `/orders`, `/orders/*`                             | **Vista Común Privada (`user`, `admin`, `super_admin`)**  | Si no está autenticado, redirige a `/auth/login?callbackUrl=/orders`. Permite a todo tipo de usuario visualizar sus órdenes, buscar por `tracking_id` y seguir el progreso en los 3 steps + estado `Exitoso`. |
+| `/dashboard`, `/dashboard/*`, `/admin`, `/admin/*` | **Dashboard Privado Exclusivo (`admin` y `super_admin`)** | Si no está autenticado → redirige a `/auth/login`. Si está autenticado con `role === "user"` → redirige a `/orders` (código 403 en `/api/admin/*`).                                                           |
 
 ---
 

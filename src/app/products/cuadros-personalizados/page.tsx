@@ -62,13 +62,17 @@ export default function personalizedWallArt() {
   // Pet Images (1 mandatory, 2nd optional for duo portrait)
   const [petImage, setPetImage] = useState<string | null>(null);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
+  const [petSpecies, setPetSpecies] = useState<"dog" | "cat" | "other">("dog");
+  const [isSimulationJob, setIsSimulationJob] = useState<boolean>(false);
+  const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
 
   // Dynamic Catalog from Supabase (products.customization_config)
   const [wallArtProductId, setWallArtProductId] = useState<string>(
     "00000000-0000-4000-8000-000000000101",
   );
-  const [catalogCharacters, setCatalogCharacters] =
-    useState<FamousCharacter[]>(FAMOUS_CHARACTERS);
+  const [catalogCharacters, setCatalogCharacters] = useState<FamousCharacter[]>(
+    () => FAMOUS_CHARACTERS.filter((c) => c.isAvailable !== false),
+  );
   const [catalogSizes, setCatalogSizes] =
     useState<PrintPreset[]>(PRINT_PRESETS);
   const [catalogFrames, setCatalogFrames] =
@@ -185,8 +189,12 @@ export default function personalizedWallArt() {
       .then((data) => {
         const productsList: ProductRecord[] = data?.products || [];
         const wallArt =
-          productsList.find((p) => p.slug === "cuadros-personalizados") ||
-          productsList[0];
+          productsList.find(
+            (p) =>
+              p.slug === "cuadros-personalizados" ||
+              p.slug === "personalized-wall-art" ||
+              p.category === "wall_art",
+          ) || productsList[0];
         if (!wallArt) return;
 
         setWallArtProductId(wallArt.id);
@@ -308,16 +316,19 @@ export default function personalizedWallArt() {
     setSecondPetImage("/samples/cat-suit.jpg");
     setSelectedCharacter(FAMOUS_CHARACTERS[0]);
     setUseCustomTheme(false);
+    setPetSpecies("cat");
   };
 
   const loadDemoDog = () => {
     setPetImage("/samples/dog-sample.jpg");
     setSecondPetImage(null);
+    setPetSpecies("dog");
   };
 
   const loadDemoCat = () => {
     setPetImage("/samples/cat-sample.jpg");
     setSecondPetImage(null);
+    setPetSpecies("cat");
   };
 
   // Start Portrait Generation
@@ -332,7 +343,6 @@ export default function personalizedWallArt() {
     );
 
     try {
-      const isCat = petImage.includes("cat") || petImage.includes("gato");
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -347,7 +357,7 @@ export default function personalizedWallArt() {
           customPrompt: customPrompt.trim() || null,
           provider: selectedProvider,
           petName: secondPetImage ? "Dúo de Mascotas" : "Mascota",
-          species: isCat ? "cat" : "dog",
+          species: petSpecies,
         }),
       });
 
@@ -362,6 +372,8 @@ export default function personalizedWallArt() {
       setActiveGenerationJobId(jobId);
 
       const handleJobCompletion = (job: any) => {
+        setIsSimulationJob(Boolean(job.isSimulation));
+        setSimulationNotice(job.simulationReason || null);
         if (Array.isArray(job.variants) && job.variants.length > 0) {
           setGeneratedVariants(job.variants);
           setSelectedVariantId(job.variants[0].id);
@@ -474,6 +486,8 @@ export default function personalizedWallArt() {
     setFusedResultUrl("");
     setFusionError(null);
     setIsGenerating(false);
+    setIsSimulationJob(false);
+    setSimulationNotice(null);
   };
 
   const activeThemeImageUrl =
@@ -572,7 +586,9 @@ export default function personalizedWallArt() {
             <div className="bg-white border border-cream-200 rounded-3xl p-8 shadow-soft space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 text-stone-700 text-xs font-medium">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-terracotta-500" />
-                <span>Atelier Apolena · Elaborando 2 propuestas artísticas</span>
+                <span>
+                  Atelier Apolena · Elaborando 2 propuestas artísticas
+                </span>
               </div>
               <h2 className="font-serif text-2xl font-semibold text-stone-900">
                 Revelando tu Retrato Personalizado
@@ -696,6 +712,48 @@ export default function personalizedWallArt() {
                     />
                   </div>
                 )}
+
+                {/* Pet Type Selector to guarantee 100% facial and species fidelity */}
+                <div className="pt-3 border-t border-cream-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-stone-800 flex items-center gap-1.5">
+                      <PawPrint className="w-3.5 h-3.5 text-terracotta-500" />
+                      <span>Tipo de mascota:</span>
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Garantiza la fidelidad fisonómica
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "dog", label: "Perro", Icon: Dog },
+                      { id: "cat", label: "Gato", Icon: Cat },
+                      { id: "other", label: "Otra Mascota", Icon: PawPrint },
+                    ].map((t) => {
+                      const Icon = t.Icon;
+                      const isSelected = petSpecies === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setPetSpecies(t.id as any)}
+                          className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                            isSelected
+                              ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                              : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-3.5 h-3.5 ${
+                              isSelected ? "text-[#c6a26c]" : "text-stone-500"
+                            }`}
+                          />
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -968,9 +1026,7 @@ export default function personalizedWallArt() {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
-                  <span>
-                    2 propuestas artísticas listas para tu elección
-                  </span>
+                  <span>2 propuestas artísticas listas para tu elección</span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
                   {secondPetImage ? "Retrato Doble" : "Retrato"} ·{" "}
@@ -997,6 +1053,22 @@ export default function personalizedWallArt() {
                 </button>
               </div>
             </div>
+
+            {/* Simulation Warning Banner when APIs exceed quota (429) */}
+            {isSimulationJob && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-3.5 shadow-soft">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-950 text-sm">
+                    Muestra de Ilustración de Estudio (Modo Demostración)
+                  </p>
+                  <p className="text-amber-800 leading-relaxed text-xs">
+                    {simulationNotice ||
+                      "Las claves de API de los motores de IA (OpenAI / Google Gemini) alcanzaron su cuota o saldo disponible (Error 429 Quota Exceeded). Por ello, el sistema desplegó una muestra ilustrativa del atelier en lugar de la transformación en vivo de tu foto. Para fusionar en tiempo real conservando al 100% las facciones exactas de tu mascota, por favor recarga los créditos de tu cuenta de OpenAI o habilita facturación en Google Cloud / AI Studio."}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Reference Summary Strip: [Pet 1] + [Pet 2] + [Theme] = [Portrait] */}
             <div className="p-4 rounded-2xl bg-white border border-cream-200 shadow-soft flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-600">
@@ -1070,7 +1142,9 @@ export default function personalizedWallArt() {
                           <span>Elige tu propuesta artística favorita</span>
                         </h3>
                         <p className="text-xs text-stone-500">
-                          Hemos preparado 2 propuestas de retrato para tu mascota. Selecciona la que más te guste para tu cuadro:
+                          Hemos preparado 2 propuestas de retrato para tu
+                          mascota. Selecciona la que más te guste para tu
+                          cuadro:
                         </p>
                       </div>
                       <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-cream-100 text-stone-700 self-start sm:self-auto">
@@ -1107,7 +1181,7 @@ export default function personalizedWallArt() {
                                 : "bg-white border-cream-200 hover:border-stone-300 hover:bg-cream-50/40 shadow-soft"
                             }`}
                           >
-                             <div
+                            <div
                               onContextMenu={(e) => e.preventDefault()}
                               className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden border border-cream-200 bg-stone-900 flex-shrink-0 select-none"
                             >
@@ -1517,14 +1591,16 @@ export default function personalizedWallArt() {
                     ) : (
                       <>
                         <Download className="w-4 h-4" />
-                        <span>
-                          Descargar Muestra con Marca de Agua
-                        </span>
+                        <span>Descargar Muestra con Marca de Agua</span>
                       </>
                     )}
                   </button>
                   <p className="text-[11px] text-stone-500 text-center leading-relaxed">
-                    La muestra descargable incluye marca de agua protectora en resolución web. Tu cuadro físico se imprime sin marcas a 300 DPI y al completarse la entrega se desbloquea tu <strong>Recuerdo Digital HD sin marca</strong> en <em>Mis Órdenes</em>.
+                    La muestra descargable incluye marca de agua protectora en
+                    resolución web. Tu cuadro físico se imprime sin marcas a 300
+                    DPI y al completarse la entrega se desbloquea tu{" "}
+                    <strong>Recuerdo Digital HD sin marca</strong> en{" "}
+                    <em>Mis Órdenes</em>.
                   </p>
                 </div>
               </div>

@@ -15,7 +15,7 @@ export interface EnqueueJobParams {
   provider?: AIProviderId;
   apiKeys?: ApiKeysOverride;
   petName?: string;
-  species?: "dog" | "cat" | "both";
+  species?: "dog" | "cat" | "both" | "other";
 }
 
 // Store transient API keys in memory per job (never persisted to database)
@@ -68,6 +68,7 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       customThemeImageUrl: job.customThemeImageUrl,
       customPrompt: job.customPrompt,
       provider: job.provider,
+      species: job.species,
       apiKeys,
       onProgress: async (progress, stepLabel, stage) => {
         const statusMap: Record<string, GenerationJob["status"]> = {
@@ -106,6 +107,8 @@ export async function processGenerationJob(jobId: string): Promise<void> {
       variants: protectedArt.watermarkedVariants,
       modelUsed: result.modelUsed,
       executionSeconds: result.executionSeconds,
+      isSimulation: result.isSimulation ?? false,
+      simulationReason: result.simulationReason || null,
     });
 
     jobApiKeysMap.delete(jobId);

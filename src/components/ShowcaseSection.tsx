@@ -168,7 +168,9 @@ export default function ShowcaseSection() {
               }}
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
-              onTouchStart={(e) => updateSliderFromClientX(e.touches[0].clientX)}
+              onTouchStart={(e) =>
+                updateSliderFromClientX(e.touches[0].clientX)
+              }
               onTouchMove={(e) => updateSliderFromClientX(e.touches[0].clientX)}
               className="relative w-full max-w-[460px] aspect-[4/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-[#174B3D] cursor-ew-resize select-none"
             >

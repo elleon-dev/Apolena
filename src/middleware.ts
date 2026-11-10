@@ -19,10 +19,7 @@ export async function middleware(request: NextRequest) {
   ) {
     if (!user) {
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "No autenticado." },
-          { status: 401 },
-        );
+        return NextResponse.json({ error: "No autenticado." }, { status: 401 });
       }
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);

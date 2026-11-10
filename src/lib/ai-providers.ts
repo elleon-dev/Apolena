@@ -21,6 +21,7 @@ export interface MultiModelFusionInput {
   provider: AIProviderId;
   apiKeys?: ApiKeysOverride;
   onProgress?: PipelineProgressCallback;
+  species?: "dog" | "cat" | "both" | "other";
 }
 
 export interface MultiModelFusionOutput {
@@ -31,6 +32,7 @@ export interface MultiModelFusionOutput {
   modelUsed: string;
   variants: GeneratedVariant[];
   isSimulation?: boolean;
+  simulationReason?: string;
 }
 
 interface ResolvedImageData {
@@ -225,21 +227,29 @@ Output ONLY the factual physical description of the pet(s), nothing else.`;
       }
       parts.push({ text: promptText });
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts }],
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        const text = json?.candidates?.[0]?.content?.parts
-          ?.map((p: any) => p.text || "")
-          .join(" ")
-          .trim();
-        if (text) return text;
+      const candidateVisionModels = [
+        "gemini-3.5-flash-lite",
+        "gemini-3.5-flash",
+      ];
+      for (const modelId of candidateVisionModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts }],
+            }),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const text = json?.candidates?.[0]?.content?.parts
+              ?.map((p: any) => p.text || "")
+              .join(" ")
+              .trim();
+            if (text) return text;
+          }
+        } catch {}
       }
     } catch (e) {
       console.warn("[extractPetIdentityFingerprint Gemini warning]:", e);
@@ -392,36 +402,44 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
 
   if (geminiKey && !geminiKey.includes("your_")) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
+      const candidateVisionModels = [
+        "gemini-3.5-flash-lite",
+        "gemini-3.5-flash",
+      ];
+      for (const modelId of candidateVisionModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
                 {
-                  inlineData: {
-                    mimeType: themeData.mimeType,
-                    data: themeData.base64,
-                  },
+                  role: "user",
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType: themeData.mimeType,
+                        data: themeData.base64,
+                      },
+                    },
+                    { text: promptText },
+                  ],
                 },
-                { text: promptText },
               ],
-            },
-          ],
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        const text = json?.candidates?.[0]?.content?.parts
-          ?.map((p: any) => p.text || "")
-          .join(" ")
-          .trim();
-        if (text && !isVisionRefusal(text)) {
-          return sanitizeCharacterPromptToSpeciesNeutral(text, false);
-        }
+            }),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const text = json?.candidates?.[0]?.content?.parts
+              ?.map((p: any) => p.text || "")
+              .join(" ")
+              .trim();
+            if (text && !isVisionRefusal(text)) {
+              return sanitizeCharacterPromptToSpeciesNeutral(text, false);
+            }
+          }
+        } catch {}
       }
     } catch (e) {
       console.warn("[extractWardrobeFromThemeImage Gemini warning]:", e);
@@ -904,26 +922,35 @@ Output ONLY the direction note, nothing else.`;
 
   let geminiDirectionNote = customPrompt || "";
   try {
-    const visionUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
-    const visionRes = await fetch(visionUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: visionParts }],
-      }),
-    });
+    const candidateVisionModels = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash",
+    ];
+    for (const modelId of candidateVisionModels) {
+      try {
+        const visionUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+        const visionRes = await fetch(visionUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: visionParts }],
+          }),
+        });
 
-    if (visionRes.ok) {
-      const visionJson = await visionRes.json();
-      const textOut = visionJson?.candidates?.[0]?.content?.parts
-        ?.map((p: any) => p.text || "")
-        .join(" ")
-        .trim();
-      if (textOut) {
-        geminiDirectionNote = customPrompt
-          ? `${customPrompt}\n${textOut}`
-          : textOut;
-      }
+        if (visionRes.ok) {
+          const visionJson = await visionRes.json();
+          const textOut = visionJson?.candidates?.[0]?.content?.parts
+            ?.map((p: any) => p.text || "")
+            .join(" ")
+            .trim();
+          if (textOut) {
+            geminiDirectionNote = customPrompt
+              ? `${customPrompt}\n${textOut}`
+              : textOut;
+            break;
+          }
+        }
+      } catch {}
     }
   } catch (e) {
     console.warn("[Gemini Flash vision fallback warning]:", e);
@@ -976,21 +1003,12 @@ async function runFalMultiImageFusion(
   character: FamousCharacter,
   falKey: string,
 ): Promise<{ imageUrl: string; hdImageUrl: string; modelUsed: string }> {
-  const {
-    petImageUrl,
-    secondPetImageUrl,
-    customPrompt,
-    onProgress,
-  } = input;
+  const { petImageUrl, secondPetImageUrl, customPrompt, onProgress } = input;
   const hasSecondPet = Boolean(secondPetImageUrl);
 
   fal.config({ credentials: falKey });
 
-  onProgress?.(
-    20,
-    "Subiendo fotos de mascotas a fal.ai CDN...",
-    "analyzing",
-  );
+  onProgress?.(20, "Subiendo fotos de mascotas a fal.ai CDN...", "analyzing");
 
   const pet1Data = await resolveImageData(petImageUrl);
   const pet2Data = secondPetImageUrl
@@ -1003,11 +1021,7 @@ async function runFalMultiImageFusion(
   ]);
 
   const imageUrls = [pet1Cdn, ...(pet2Cdn ? [pet2Cdn] : [])];
-  const fusionPrompt = buildFusionPrompt(
-    character,
-    hasSecondPet,
-    customPrompt,
-  );
+  const fusionPrompt = buildFusionPrompt(character, hasSecondPet, customPrompt);
 
   let fusedUrl = "";
   let modelUsed = "FLUX.1 Kontext Pro";
@@ -1152,21 +1166,27 @@ export async function runMultiModelFusionPipeline(
   const hasValidGemini = Boolean(geminiKey && !geminiKey.includes("your_"));
   const hasValidFal = Boolean(falKey && !falKey.includes("your_"));
 
+  const species = input.species || "dog";
+  const isCat = species === "cat";
+
   // Helper to resolve demo sample image when running in pure offline simulation
   const getSampleFallbackUrl = (variantIndex: 1 | 2) => {
-    const isCat =
-      petImageUrl.toLowerCase().includes("cat") ||
-      petImageUrl.toLowerCase().includes("gato");
+    if (
+      character.id !== "custom-reference" &&
+      character.fusionSampleUrl &&
+      character.fusionSampleUrl.startsWith("http")
+    ) {
+      return character.fusionSampleUrl;
+    }
+
     const knownSamplePrefix = ["jack-sparrow", "joker", "godfather"].includes(
       character.id,
     )
       ? character.id
-      : "jack-sparrow";
-    if (variantIndex === 1) {
-      return isCat
-        ? `/fusions/${knownSamplePrefix}-cat.jpg`
-        : `/fusions/${knownSamplePrefix}-dog.jpg`;
-    }
+      : variantIndex === 1
+        ? "jack-sparrow"
+        : "joker";
+
     return isCat
       ? `/fusions/${knownSamplePrefix}-cat.jpg`
       : `/fusions/${knownSamplePrefix}-dog.jpg`;
@@ -1375,8 +1395,10 @@ export async function runMultiModelFusionPipeline(
     hdOutputImageUrl: sample1,
     executionSeconds,
     providerUsed: "openai",
-    modelUsed: "Composición Doble de Atelier",
+    modelUsed: "Muestra Ilustrativa de Atelier",
     variants: demoVariants,
     isSimulation: true,
+    simulationReason:
+      "Las claves de API alcanzaron el límite de cuota o saldo disponible (Error 429 Quota Exceeded). Se desplegó una muestra ilustrativa.",
   };
 }

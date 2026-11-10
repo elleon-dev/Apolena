@@ -34,7 +34,9 @@ export default function TrackLookupPage() {
               Rastrea tu Pedido
             </h1>
             <p className="text-xs sm:text-sm text-[#141414]/75 max-w-md mx-auto">
-              Ingresa tu <strong>Tracking ID único</strong> (ej. <code>APO-2026-849201</code>) para consultar la etapa de fabricación y delivery de tu cuadro.
+              Ingresa tu <strong>Tracking ID único</strong> (ej.{" "}
+              <code>APO-2026-849201</code>) para consultar la etapa de
+              fabricación y delivery de tu cuadro.
             </p>
           </div>
 
