@@ -497,7 +497,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA) */}
+              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA) 
               <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
   <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
     <div className="flex items-center gap-2.5">
@@ -516,7 +516,7 @@ export default function CheckoutPage() {
       Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
     </p>
   </div>
-</div>
+</div>*/}
 
               {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
@@ -524,7 +524,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      3. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
+                      2. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
                     </h2>
                   </div>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-terracotta-50 text-terracotta-700 border border-terracotta-100">
