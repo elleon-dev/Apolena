@@ -3,6 +3,9 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Header } from "@/components/Header";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { setCachedSessionUser } from "@/lib/client-session";
@@ -12,9 +15,21 @@ import {
   ArrowRight,
   AlertCircle,
   Loader2,
-  Shield,
-  User,
 } from "lucide-react";
+
+// Esquema de validación con Zod
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "El email es obligatorio.")
+    .email("Ingresa un correo electrónico válido."),
+  password: z
+    .string()
+    .min(1, "La contraseña es obligatoria.")
+    .min(6, "La contraseña debe tener al menos 6 caracteres."),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 function GoogleIcon() {
   return (
@@ -44,13 +59,20 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Si Supabase redirige de vuelta con #access_token o ?code a /auth/login
+  // Configuración de react-hook-form con Zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onTouched",
+  });
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hasHashToken = window.location.hash.includes("access_token=");
@@ -67,7 +89,7 @@ function LoginForm() {
     try {
       if (!supabaseBrowser) {
         setError(
-          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
         );
         setIsGoogleLoading(false);
         return;
@@ -99,26 +121,25 @@ function LoginForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
-      const data = await res.json();
+      const resData = await res.json();
       if (!res.ok) {
-        setError(data.error || "Error al iniciar sesión.");
+        setError(resData.error || "Error al iniciar sesión.");
         return;
       }
-      if (data.user) {
-        setCachedSessionUser(data.user);
+      if (resData.user) {
+        setCachedSessionUser(resData.user);
       }
       const isAdmin =
-        data.user?.role === "admin" || data.user?.role === "super_admin";
+        resData.user?.role === "admin" || resData.user?.role === "super_admin";
       const safeCallbackUrl =
         callbackUrl &&
         !isAdmin &&
@@ -127,9 +148,7 @@ function LoginForm() {
           ? "/orders"
           : callbackUrl;
       const target =
-        safeCallbackUrl ||
-        data.redirectTo ||
-        (isAdmin ? "/dashboard" : "/orders");
+        safeCallbackUrl || resData.redirectTo || (isAdmin ? "/dashboard" : "/orders");
       router.push(target);
       router.refresh();
     } catch {
@@ -137,12 +156,6 @@ function LoginForm() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillDemo = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
   };
 
   return (
@@ -195,7 +208,8 @@ function LoginForm() {
         <div className="border-t border-[#E8DEC8] w-full" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {/* Campo Email */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-[#174B3D] block">
             Correo electrónico
@@ -204,15 +218,23 @@ function LoginForm() {
             <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
               placeholder="tu@correo.com"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+              className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border text-xs text-[#141414] focus:bg-white focus:outline-none transition-colors ${
+                errors.email
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E8DEC8] focus:border-[#174B3D]"
+              }`}
             />
           </div>
+          {errors.email && (
+            <p className="text-[11px] font-medium text-red-600 mt-1">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
+        {/* Campo Contraseña */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-[#174B3D] block">
             Contraseña
@@ -221,19 +243,26 @@ function LoginForm() {
             <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+              className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border text-xs text-[#141414] focus:bg-white focus:outline-none transition-colors ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E8DEC8] focus:border-[#174B3D]"
+              }`}
             />
           </div>
+          {errors.password && (
+            <p className="text-[11px] font-medium text-red-600 mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all mt-2"
         >
           {isLoading ? (
             <>
@@ -248,39 +277,6 @@ function LoginForm() {
           )}
         </button>
       </form>
-
-      {/* Quick Demo Credentials Box */}
-      <div className="pt-4 border-t border-cream-200 space-y-2.5">
-        <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider text-center">
-          Accesos rápidos de prueba (Prisma RBAC)
-        </p>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <button
-            type="button"
-            onClick={() => fillDemo("cliente@apolena.pe", "cliente123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium flex items-center justify-center gap-1 transition-colors"
-          >
-            <User className="w-3.5 h-3.5 text-terracotta-500" />
-            <span>Usuario</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemo("admin@apolena.pe", "admin123")}
-            className="p-2.5 rounded-2xl border border-cream-200 bg-cream-50 hover:bg-cream-100 text-stone-800 font-medium flex items-center justify-center gap-1 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5 text-stone-700" />
-            <span>Admin</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemo("nmoriano26@gmail.com", "admin123")}
-            className="p-2.5 rounded-2xl border border-terracotta-200 bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-800 font-semibold flex items-center justify-center gap-1 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5 text-terracotta-600" />
-            <span>Super Admin</span>
-          </button>
-        </div>
-      </div>
 
       <p className="text-center text-xs text-stone-500">
         ¿Aún no tienes cuenta?{" "}
