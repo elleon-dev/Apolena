@@ -90,17 +90,15 @@ export default function StepsSection() {
 
               {/* Contenedor de la Imagen 2D */}
               <div
-                className={`w-32 h-32 mt-3 mb-6 rounded-2xl ${step.accentBg} border flex items-center justify-center shadow-inner relative group-hover:scale-105 transition-transform duration-300 overflow-hidden p-2`}
+                className={`w-[17em] h-[17em] mt-3 mb-6 ${step.accentBg} flex items-center justify-center relative group-hover:scale-105 transition-transform duration-300`}
               >
-                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm">
                   <Image
                     src={step.imageSrc}
                     alt={step.imageAlt}
                     fill
-                    sizes="128px"
+                    sizes="628px"
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                </div>
               </div>
 
               {/* Título del Paso */}
