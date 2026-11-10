@@ -99,8 +99,8 @@ export function ResultSection({
               <span className="text-[#94713F]">{characterTitle}</span>
             </h2>
             <p className="text-xs sm:text-sm text-[#141414]/75 mt-1">
-              Visualiza el resultado y selecciona el formato
-              para encargar tu cuadro.
+              Visualiza el resultado y selecciona el formato para encargar tu
+              cuadro.
             </p>
           </div>
 
@@ -271,7 +271,8 @@ export function ResultSection({
 
             <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/40 text-center">
               <p className="text-[11px] font-semibold text-[#174B3D]">
-                Incluye impresión a 300 DPI y bastidor de madera listo para colgar.
+                Incluye impresión a 300 DPI y bastidor de madera listo para
+                colgar.
               </p>
             </div>
           </div>

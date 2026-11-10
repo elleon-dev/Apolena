@@ -366,9 +366,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? data.user : u)),
-        );
+        setUsers((prev) => prev.map((u) => (u.id === userId ? data.user : u)));
         showToast("success", "Perfil de usuario actualizado.");
       } else {
         showToast("error", data.error || "Error al actualizar el usuario.");
@@ -416,8 +414,7 @@ export default function AdminDashboardPage() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const matchesRole =
-        userRoleFilter === "all" || u.role === userRoleFilter;
+      const matchesRole = userRoleFilter === "all" || u.role === userRoleFilter;
       if (!matchesRole) return false;
 
       const q = userSearch.trim().toLowerCase();
@@ -436,7 +433,12 @@ export default function AdminDashboardPage() {
   // ============================================================================
   const wallArtProduct = useMemo(() => {
     return (
-      products.find((p) => p.slug === "cuadros-personalizados") ||
+      products.find(
+        (p) =>
+          p.slug === "cuadros-personalizados" ||
+          p.slug === "personalized-wall-art" ||
+          p.category === "wall_art",
+      ) ||
       products[0] ||
       null
     );
@@ -597,7 +599,8 @@ export default function AdminDashboardPage() {
         negativePrompt: data.negativePrompt || prev.negativePrompt,
         characterImageUrl: dataUrl,
         fusionSampleUrl:
-          !prev.fusionSampleUrl || prev.fusionSampleUrl === "/samples/cat-suit.jpg"
+          !prev.fusionSampleUrl ||
+          prev.fusionSampleUrl === "/samples/cat-suit.jpg"
             ? dataUrl
             : prev.fusionSampleUrl,
       }));
@@ -688,8 +691,7 @@ export default function AdminDashboardPage() {
       characterTitle:
         charForm.characterTitle || charForm.name || "Colección Apolena",
       universe: charForm.universe || "Colección Apolena",
-      fusionSampleUrl:
-        charForm.fusionSampleUrl || charForm.characterImageUrl,
+      fusionSampleUrl: charForm.fusionSampleUrl || charForm.characterImageUrl,
       maskUrl: charForm.maskUrl || "/masks/default-mask.png",
       tagColor:
         charForm.tagColor || "bg-white/90 text-stone-800 border-stone-200/80",
@@ -1408,9 +1410,7 @@ export default function AdminDashboardPage() {
                     key={tab.id}
                     type="button"
                     onClick={() =>
-                      setOrderStatusFilter(
-                        tab.id as typeof orderStatusFilter,
-                      )
+                      setOrderStatusFilter(tab.id as typeof orderStatusFilter)
                     }
                     className={`px-3.5 py-2 rounded-full font-semibold transition-all ${
                       orderStatusFilter === tab.id ||
@@ -1722,11 +1722,11 @@ export default function AdminDashboardPage() {
                   {isSuperAdmin ? (
                     <>
                       Como <strong>Super Admin</strong> tienes acceso total para
-                      crear y gestionar usuarios con rol{" "}
-                      <code>user</code>, <code>admin</code> y{" "}
-                      <code>super_admin</code>. La cuenta principal{" "}
-                      <strong>{SUPER_ADMIN_EMAIL}</strong> tiene el rol{" "}
-                      <code>super_admin</code> garantizado de forma permanente.
+                      crear y gestionar usuarios con rol <code>user</code>,{" "}
+                      <code>admin</code> y <code>super_admin</code>. La cuenta
+                      principal <strong>{SUPER_ADMIN_EMAIL}</strong> tiene el
+                      rol <code>super_admin</code> garantizado de forma
+                      permanente.
                     </>
                   ) : (
                     <>
@@ -1816,8 +1816,7 @@ export default function AdminDashboardPage() {
                     uEmail === SUPER_ADMIN_EMAIL.toLowerCase();
                   const isTargetSuperAdmin = u.role === "super_admin";
                   const canCurrentActorEdit =
-                    !isImmutableMaster &&
-                    (isSuperAdmin || !isTargetSuperAdmin);
+                    !isImmutableMaster && (isSuperAdmin || !isTargetSuperAdmin);
                   const userOrdersCount = orders.filter(
                     (o) =>
                       o.buyer_id === u.id ||
@@ -2167,9 +2166,7 @@ export default function AdminDashboardPage() {
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5 text-terracotta-400" />
-                  <span>
-                    Acabados ({wallArtConfig.finishes?.length || 0})
-                  </span>
+                  <span>Acabados ({wallArtConfig.finishes?.length || 0})</span>
                 </button>
               </div>
             </div>
@@ -2300,8 +2297,9 @@ export default function AdminDashboardPage() {
                       Marcos de Cuadros y Bastidores
                     </h3>
                     <p className="text-xs text-stone-500">
-                      Gestiona los marcos disponibles, su color de previsualización
-                      en vivo y su precio adicional en Soles (S/).
+                      Gestiona los marcos disponibles, su color de
+                      previsualización en vivo y su precio adicional en Soles
+                      (S/).
                     </p>
                   </div>
 
@@ -3299,9 +3297,11 @@ export default function AdminDashboardPage() {
                   <p className="text-stone-600">{prod.description}</p>
                   <div className="space-y-2 pt-2 border-t border-cream-200">
                     <p className="font-semibold text-stone-800">
-                      Personajes IA ({prod.customization_config?.characters?.length || 0}) · Marcos (
-                      {prod.customization_config?.frames?.length || 0}) · Medidas (
-                      {prod.customization_config?.sizes?.length || 0})
+                      Personajes IA (
+                      {prod.customization_config?.characters?.length || 0}) ·
+                      Marcos ({prod.customization_config?.frames?.length || 0})
+                      · Medidas ({prod.customization_config?.sizes?.length || 0}
+                      )
                     </p>
                     <button
                       type="button"
@@ -3644,7 +3644,9 @@ export default function AdminDashboardPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => copyTracking(selectedOrder.tracking_id, e)}
+                      onClick={(e) =>
+                        copyTracking(selectedOrder.tracking_id, e)
+                      }
                       className="text-xs font-mono px-3 py-1 rounded-full bg-cream-100 hover:bg-cream-200 text-stone-800 border border-cream-200 inline-flex items-center gap-1.5 transition-colors"
                     >
                       <span>Tracking: {selectedOrder.tracking_id}</span>
@@ -3871,7 +3873,9 @@ export default function AdminDashboardPage() {
                             className="w-full py-2.5 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all"
                           >
                             <Download className="w-3.5 h-3.5 text-terracotta-400" />
-                            <span>Descargar Archivo Maestro HD (Sin Marca)</span>
+                            <span>
+                              Descargar Archivo Maestro HD (Sin Marca)
+                            </span>
                           </a>
                         </>
                       ) : (

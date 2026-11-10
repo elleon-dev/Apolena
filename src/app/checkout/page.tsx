@@ -499,24 +499,26 @@ export default function CheckoutPage() {
 
               {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA) */}
               <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
-  <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
-    <div className="flex items-center gap-2.5">
-      <FileText className="w-5 h-5 text-[#c6a26c]" />
-      <h2 className="font-serif text-lg font-bold text-[#174B3D]">
-        2. Comprobante de Pago
-      </h2>
-    </div>
-    <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
-      Comprobante de Pedido
-    </span>
-  </div>
+                <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
+                  <div className="flex items-center gap-2.5">
+                    <FileText className="w-5 h-5 text-[#c6a26c]" />
+                    <h2 className="font-serif text-lg font-bold text-[#174B3D]">
+                      2. Comprobante de Pago
+                    </h2>
+                  </div>
+                  <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
+                    Comprobante de Pedido
+                  </span>
+                </div>
 
-  <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
-    <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
-      Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
-    </p>
-  </div>
-</div>
+                <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
+                  <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
+                    Se emitirá un <strong>Comprobante de Pedido </strong>{" "}
+                    digital con los datos de contacto ingresados en la orden
+                    para el seguimiento y recepción de tu cuadro.
+                  </p>
+                </div>
+              </div>
 
               {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
@@ -579,7 +581,11 @@ export default function CheckoutPage() {
                   {paymentMethod === "yape" && (
                     <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Yapea <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
+                        Yapea{" "}
+                        <strong className="text-terracotta-600 font-bold">
+                          S/ {advance50.toFixed(2)}
+                        </strong>{" "}
+                        al número oficial de Apolena:
                       </p>
                       <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
                         <div>
@@ -627,7 +633,11 @@ export default function CheckoutPage() {
                   {paymentMethod === "plin" && (
                     <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Envía por Plin <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
+                        Envía por Plin{" "}
+                        <strong className="text-terracotta-600 font-bold">
+                          S/ {advance50.toFixed(2)}
+                        </strong>{" "}
+                        al número oficial de Apolena:
                       </p>
                       <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
                         <div>
@@ -675,14 +685,24 @@ export default function CheckoutPage() {
                   {paymentMethod === "bank_transfer" && (
                     <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Transfiere <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> a nuestra cuenta {paymentSettings?.bank_transfer?.bank_name || "BCP Soles"}:
+                        Transfiere{" "}
+                        <strong className="text-terracotta-600 font-bold">
+                          S/ {advance50.toFixed(2)}
+                        </strong>{" "}
+                        a nuestra cuenta{" "}
+                        {paymentSettings?.bank_transfer?.bank_name ||
+                          "BCP Soles"}
+                        :
                       </p>
 
                       {/* Cuenta Bancaria */}
                       <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-cream-200 shadow-xs">
                         <div className="min-w-0 pr-2">
                           <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
-                            Número de Cuenta ({paymentSettings?.bank_transfer?.bank_name || "BCP Soles"})
+                            Número de Cuenta (
+                            {paymentSettings?.bank_transfer?.bank_name ||
+                              "BCP Soles"}
+                            )
                           </span>
                           <span className="font-mono text-xs sm:text-sm font-bold text-stone-900 truncate block">
                             {paymentSettings?.bank_transfer?.account_number ||
@@ -808,23 +828,23 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Campo 2: Captura del Voucher */}
-                    <div className="space-y-1.5">
-                      <label className="font-extrabold text-[#174B3D] block">
-                        Captura del Voucher (Opcional)
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) =>
-                            setProofImageUrl(ev.target?.result as string);
-                          reader.readAsDataURL(file);
-                        }}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#174B3D]/30 text-stone-700 text-[11px] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#174B3D] file:text-white hover:file:bg-[#0f3229] file:cursor-pointer transition-all"
-                      />
+                  <div className="space-y-1.5">
+                    <label className="font-extrabold text-[#174B3D] block">
+                      Captura del Voucher (Opcional)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) =>
+                          setProofImageUrl(ev.target?.result as string);
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#174B3D]/30 text-stone-700 text-[11px] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#174B3D] file:text-white hover:file:bg-[#0f3229] file:cursor-pointer transition-all"
+                    />
                   </div>
                 </div>
               </div>
@@ -854,7 +874,8 @@ export default function CheckoutPage() {
                       Medida: <strong>{draft.customizations.size_label}</strong>
                     </p>
                     <p className="text-stone-600">
-                      Presentación: <strong>Lienzo en Bastidor (Full Screen)</strong>
+                      Presentación:{" "}
+                      <strong>Lienzo en Bastidor (Full Screen)</strong>
                     </p>
                   </div>
                 </div>

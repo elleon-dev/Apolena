@@ -7,9 +7,18 @@ import path from "path";
 function sanitizeSpanishDescriptionToSpeciesNeutral(desc: string): string {
   if (!desc) return "";
   return desc
-    .replace(/\bun\s+majestuoso\s+(?:felino|gato|canino|perro)\b/gi, "Tu mascota majestuosamente")
-    .replace(/\b(?:realeza\s+felina|realeza\s+canina)\b/gi, "realeza de tu mascota")
-    .replace(/\b(?:el\s+felino|el\s+gato|el\s+perro|el\s+canino)\b/gi, "tu mascota")
+    .replace(
+      /\bun\s+majestuoso\s+(?:felino|gato|canino|perro)\b/gi,
+      "Tu mascota majestuosamente",
+    )
+    .replace(
+      /\b(?:realeza\s+felina|realeza\s+canina)\b/gi,
+      "realeza de tu mascota",
+    )
+    .replace(
+      /\b(?:el\s+felino|el\s+gato|el\s+perro|el\s+canino)\b/gi,
+      "tu mascota",
+    )
     .replace(/\b(?:felino|gato|perro|canino)\b/gi, "mascota");
 }
 
@@ -26,69 +35,123 @@ interface CharacterAnalysisResult {
 function getLocalHeuristicAnalysis(fileName?: string): CharacterAnalysisResult {
   const cleanName = (fileName || "").toLowerCase().replace(/[-_.]+/g, " ");
 
-  if (cleanName.includes("inca") || cleanName.includes("cusco") || cleanName.includes("andes") || cleanName.includes("sol")) {
+  if (
+    cleanName.includes("inca") ||
+    cleanName.includes("cusco") ||
+    cleanName.includes("andes") ||
+    cleanName.includes("sol")
+  ) {
     return {
       name: "Sapa Inca Imperial",
       characterTitle: "Gobernante Supremo del Tahuantinsuyo",
       universe: "Colección Andina · Cusco Imperial",
-      description: "Corona solar de oro macizo, túnica unku de alpaca con bordados tocapus sagrados y manto real tejido con hilos ceremoniales.",
-      prompt: "Museum-grade oil portrait of the pet dressed in authentic royal Inca emperor regalia, solid gold mascapaicha crown, finely woven alpaca unku tunic with geometric tocapu patterns, bathed in warm Andean sunset light. 8k photorealistic masterpiece.",
-      negativePrompt: "human face, human hands, cartoon, 3d render, deformed eyes, extra limbs, modern elements, low quality",
+      description:
+        "Corona solar de oro macizo, túnica unku de alpaca con bordados tocapus sagrados y manto real tejido con hilos ceremoniales.",
+      prompt:
+        "Museum-grade oil portrait of the pet dressed in authentic royal Inca emperor regalia, solid gold mascapaicha crown, finely woven alpaca unku tunic with geometric tocapu patterns, bathed in warm Andean sunset light. 8k photorealistic masterpiece.",
+      negativePrompt:
+        "human face, human hands, cartoon, 3d render, deformed eyes, extra limbs, modern elements, low quality",
     };
   }
 
-  if (cleanName.includes("militar") || cleanName.includes("general") || cleanName.includes("soldier") || cleanName.includes("capitan") || cleanName.includes("almirante")) {
+  if (
+    cleanName.includes("militar") ||
+    cleanName.includes("general") ||
+    cleanName.includes("soldier") ||
+    cleanName.includes("capitan") ||
+    cleanName.includes("almirante")
+  ) {
     return {
       name: "General Libertador",
       characterTitle: "Comandante en Jefe de las Fuerzas Reales",
       universe: "Época Independentista · Siglo XIX",
-      description: "Chaqueta militar de paño azul noche con charreteras de oro bruñido, cordones ceremoniales y banda de honor sobre fondo de biblioteca clásica.",
-      prompt: "Photorealistic fine art portrait of the pet wearing an authentic 19th-century military general uniform, velvet navy coat, gleaming golden braided epaulettes, brass buttons, and ceremonial sash. Dramatic Rembrandt studio lighting, 8k resolution, oil canvas texture.",
-      negativePrompt: "human face, human hands, cartoon, illustration, low quality, blurry, deformed eyes, modern clothing",
+      description:
+        "Chaqueta militar de paño azul noche con charreteras de oro bruñido, cordones ceremoniales y banda de honor sobre fondo de biblioteca clásica.",
+      prompt:
+        "Photorealistic fine art portrait of the pet wearing an authentic 19th-century military general uniform, velvet navy coat, gleaming golden braided epaulettes, brass buttons, and ceremonial sash. Dramatic Rembrandt studio lighting, 8k resolution, oil canvas texture.",
+      negativePrompt:
+        "human face, human hands, cartoon, illustration, low quality, blurry, deformed eyes, modern clothing",
     };
   }
 
-  if (cleanName.includes("rey") || cleanName.includes("king") || cleanName.includes("corona") || cleanName.includes("principe") || cleanName.includes("realeza") || cleanName.includes("queen") || cleanName.includes("reina")) {
+  if (
+    cleanName.includes("rey") ||
+    cleanName.includes("king") ||
+    cleanName.includes("corona") ||
+    cleanName.includes("principe") ||
+    cleanName.includes("realeza") ||
+    cleanName.includes("queen") ||
+    cleanName.includes("reina")
+  ) {
     return {
       name: "Monarca de la Alta Corte",
       characterTitle: "Soberano de la Corona Real",
       universe: "Realeza Europea Clásica",
-      description: "Capa de armiño blanco con motas negras, jubón de terciopelo carmesí con filigranas doradas y corona enjoyada con rubíes y zafiros.",
-      prompt: "Majestic regal portrait of the pet as a royal monarch, wearing a crimson velvet coronation robe lined with ermine fur, intricate golden embroidery, and a jeweled crown. Warm palace interior ambient lighting, hyperrealistic 8k oil painting.",
-      negativePrompt: "human face, human hands, cartoon, distorted body, blurry, extra ears, plastic texture, low quality",
+      description:
+        "Capa de armiño blanco con motas negras, jubón de terciopelo carmesí con filigranas doradas y corona enjoyada con rubíes y zafiros.",
+      prompt:
+        "Majestic regal portrait of the pet as a royal monarch, wearing a crimson velvet coronation robe lined with ermine fur, intricate golden embroidery, and a jeweled crown. Warm palace interior ambient lighting, hyperrealistic 8k oil painting.",
+      negativePrompt:
+        "human face, human hands, cartoon, distorted body, blurry, extra ears, plastic texture, low quality",
     };
   }
 
-  if (cleanName.includes("cyber") || cleanName.includes("neon") || cleanName.includes("futuro") || cleanName.includes("robot") || cleanName.includes("sci-fi")) {
+  if (
+    cleanName.includes("cyber") ||
+    cleanName.includes("neon") ||
+    cleanName.includes("futuro") ||
+    cleanName.includes("robot") ||
+    cleanName.includes("sci-fi")
+  ) {
     return {
       name: "Comandante Cyberpunk",
       characterTitle: "Operativo Táctico del Año 2099",
       universe: "Neo-Metrópolis Futurista",
-      description: "Armadura ligera de fibra de carbono con circuitos luminosos en cian y magenta, cuello alto aerodinámico y reflejos holográficos.",
-      prompt: "Cinematic portrait of the pet wearing high-tech sleek cyberpunk carbon armor with glowing cyan and magenta optical fiber accents, high collar, rainy futuristic cityscape neon background, hyper-detailed photorealistic render.",
-      negativePrompt: "human face, human hands, cartoon, lowres, blurry, distorted anatomy, ancient clothing",
+      description:
+        "Armadura ligera de fibra de carbono con circuitos luminosos en cian y magenta, cuello alto aerodinámico y reflejos holográficos.",
+      prompt:
+        "Cinematic portrait of the pet wearing high-tech sleek cyberpunk carbon armor with glowing cyan and magenta optical fiber accents, high collar, rainy futuristic cityscape neon background, hyper-detailed photorealistic render.",
+      negativePrompt:
+        "human face, human hands, cartoon, lowres, blurry, distorted anatomy, ancient clothing",
     };
   }
 
-  if (cleanName.includes("samurai") || cleanName.includes("japon") || cleanName.includes("ninja") || cleanName.includes("bushido")) {
+  if (
+    cleanName.includes("samurai") ||
+    cleanName.includes("japon") ||
+    cleanName.includes("ninja") ||
+    cleanName.includes("bushido")
+  ) {
     return {
       name: "Guerrero Samurái",
       characterTitle: "Maestro del Código Bushido",
       universe: "Japón Feudal · Era Edo",
-      description: "Armadura tradicional lacada en negro y rojo con cordones de seda, hombreras sode ornamentadas y fondo de cerezos en flor.",
-      prompt: "Authentic feudal Japanese portrait of the pet wearing traditional lacquered samurai armor, silk cords, ornamented kabuto details, cherry blossom petals gently floating in background, cinematic warm lighting, photorealistic 8k.",
-      negativePrompt: "human face, human hands, cartoon, distorted eyes, blurry, plastic armor, low quality",
+      description:
+        "Armadura tradicional lacada en negro y rojo con cordones de seda, hombreras sode ornamentadas y fondo de cerezos en flor.",
+      prompt:
+        "Authentic feudal Japanese portrait of the pet wearing traditional lacquered samurai armor, silk cords, ornamented kabuto details, cherry blossom petals gently floating in background, cinematic warm lighting, photorealistic 8k.",
+      negativePrompt:
+        "human face, human hands, cartoon, distorted eyes, blurry, plastic armor, low quality",
     };
   }
 
-  if (cleanName.includes("mago") || cleanName.includes("wizard") || cleanName.includes("brujo") || cleanName.includes("magia") || cleanName.includes("fantasia")) {
+  if (
+    cleanName.includes("mago") ||
+    cleanName.includes("wizard") ||
+    cleanName.includes("brujo") ||
+    cleanName.includes("magia") ||
+    cleanName.includes("fantasia")
+  ) {
     return {
       name: "Archimago del Oráculo",
       characterTitle: "Guardián de los Arcanos Antiguos",
       universe: "Fantasía Arcana & Magia Medieval",
-      description: "Túnica de terciopelo azul medianoche bordada con constelaciones plateadas, amuleto rúnico brillante y tomo místico abierto.",
-      prompt: "Ethereal mystical fantasy portrait of the pet as a grand sorcerer wearing celestial midnight blue robes embroidered with glowing silver constellations, arcane crystal amulet, magical library background with floating motes of light, 8k masterpiece.",
-      negativePrompt: "human face, human hands, cartoon, low quality, deformed, blurry, extra limbs",
+      description:
+        "Túnica de terciopelo azul medianoche bordada con constelaciones plateadas, amuleto rúnico brillante y tomo místico abierto.",
+      prompt:
+        "Ethereal mystical fantasy portrait of the pet as a grand sorcerer wearing celestial midnight blue robes embroidered with glowing silver constellations, arcane crystal amulet, magical library background with floating motes of light, 8k masterpiece.",
+      negativePrompt:
+        "human face, human hands, cartoon, low quality, deformed, blurry, extra limbs",
     };
   }
 
@@ -97,9 +160,12 @@ function getLocalHeuristicAnalysis(fileName?: string): CharacterAnalysisResult {
     name: "Retrato Aristócrata Ilustrado",
     characterTitle: "Noble de la Casa de Galería",
     universe: "Colección Clásica Apolena",
-    description: "Vestimenta distinguida de época con gorguera de encaje holandés, chaqueta de terciopelo bordada a mano y atmósfera cálida de claroscuro.",
-    prompt: "Exquisite fine art oil portrait of the pet dressed in opulent classical aristocratic attire, velvet embroidered coat, intricate lace collar, and antique gold jewelry. Rembrandt chiaroscuro lighting, rich atmospheric tones, museum exhibition quality, 8k photorealistic.",
-    negativePrompt: "human face, human hands, cartoon, illustration, low quality, blurry, distorted eyes, modern casual clothes",
+    description:
+      "Vestimenta distinguida de época con gorguera de encaje holandés, chaqueta de terciopelo bordada a mano y atmósfera cálida de claroscuro.",
+    prompt:
+      "Exquisite fine art oil portrait of the pet dressed in opulent classical aristocratic attire, velvet embroidered coat, intricate lace collar, and antique gold jewelry. Rembrandt chiaroscuro lighting, rich atmospheric tones, museum exhibition quality, 8k photorealistic.",
+    negativePrompt:
+      "human face, human hands, cartoon, illustration, low quality, blurry, distorted eyes, modern casual clothes",
   };
 }
 
@@ -144,7 +210,9 @@ export async function POST(request: Request) {
       }
     } else {
       // Ruta relativa local en public/ (ej. /characters/jack-sparrow.webp, /samples/..., /fusions/...)
-      const cleanPath = image.replace(/^https?:\/\/[^\/]+/, "").replace(/^\/+/, "");
+      const cleanPath = image
+        .replace(/^https?:\/\/[^\/]+/, "")
+        .replace(/^\/+/, "");
       const fullPath = path.join(process.cwd(), "public", cleanPath);
       if (fs.existsSync(fullPath)) {
         const buffer = fs.readFileSync(fullPath);
@@ -351,4 +419,3 @@ Devuelve SOLO el JSON sin explicaciones adicionales.`;
     );
   }
 }
-

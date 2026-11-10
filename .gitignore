@@ -46,8 +46,9 @@ next-env.d.ts
 supabase/.branches
 supabase/.temp
 
-# Local dev fallback DB
+# Local dev fallback DB & uploads
 .apolena-dev-db.json
 .apolena-master-art-vault.json
+/public/uploads/
 
 

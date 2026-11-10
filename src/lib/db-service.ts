@@ -951,7 +951,8 @@ export async function updateProfileByAdmin(input: {
       ...db.profiles[idx],
       role: nextRole,
       is_active: nextActive,
-      name: input.name !== undefined ? input.name.trim() : db.profiles[idx].name,
+      name:
+        input.name !== undefined ? input.name.trim() : db.profiles[idx].name,
       phone:
         input.phone !== undefined
           ? input.phone.trim() || null
@@ -1050,9 +1051,15 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
           updated_at: r.updated_at.toISOString(),
         }));
         if (onlyActive) {
-          memCache.productsActive = { data: mapped, expiresAt: now + CACHE_TTL_MS };
+          memCache.productsActive = {
+            data: mapped,
+            expiresAt: now + CACHE_TTL_MS,
+          };
         } else {
-          memCache.productsAll = { data: mapped, expiresAt: now + CACHE_TTL_MS };
+          memCache.productsAll = {
+            data: mapped,
+            expiresAt: now + CACHE_TTL_MS,
+          };
         }
         return mapped;
       }
@@ -1071,9 +1078,15 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
       : p.customization_config,
   }));
   if (onlyActive) {
-    memCache.productsActive = { data: fallbackMapped, expiresAt: now + CACHE_TTL_MS };
+    memCache.productsActive = {
+      data: fallbackMapped,
+      expiresAt: now + CACHE_TTL_MS,
+    };
   } else {
-    memCache.productsAll = { data: fallbackMapped, expiresAt: now + CACHE_TTL_MS };
+    memCache.productsAll = {
+      data: fallbackMapped,
+      expiresAt: now + CACHE_TTL_MS,
+    };
   }
   return fallbackMapped;
 }
@@ -1151,7 +1164,8 @@ export async function updateProductCustomizationConfig(
         base_price: Number(updatedRow.base_price),
         status: updatedRow.status as "active" | "inactive" | "archived",
         stock: updatedRow.stock,
-        specifications: (updatedRow.specifications as Record<string, any>) || {},
+        specifications:
+          (updatedRow.specifications as Record<string, any>) || {},
         customization_config: isWallArtProductSlug(updatedRow.slug)
           ? normalizeWallArtCustomizationConfig(updatedRow.customization_config)
           : (updatedRow.customization_config as unknown as ProductCustomizationConfig),
@@ -1219,41 +1233,58 @@ export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
         advance_percentage:
           typeof rawPay.advance_percentage === "number"
             ? rawPay.advance_percentage
-            : DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.advance_percentage,
+            : DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG
+                .advance_percentage,
         yape: {
-          enabled: rawPay.yape?.enabled ?? DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.enabled,
-          phone: rawPay.yape?.phone || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.phone,
+          enabled:
+            rawPay.yape?.enabled ??
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.enabled,
+          phone:
+            rawPay.yape?.phone ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.phone,
           holder_name:
             rawPay.yape?.holder_name ||
             rawPay.bank_transfer?.holder_name ||
             DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.holder_name,
-          qr_url: rawPay.yape?.qr_url || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.qr_url,
+          qr_url:
+            rawPay.yape?.qr_url ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.yape.qr_url,
         },
         plin: {
-          enabled: rawPay.plin?.enabled ?? DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.enabled,
-          phone: rawPay.plin?.phone || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.phone,
+          enabled:
+            rawPay.plin?.enabled ??
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.enabled,
+          phone:
+            rawPay.plin?.phone ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.phone,
           holder_name:
             rawPay.plin?.holder_name ||
             rawPay.bank_transfer?.holder_name ||
             DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.holder_name,
-          qr_url: rawPay.plin?.qr_url || DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.qr_url,
+          qr_url:
+            rawPay.plin?.qr_url ||
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.plin.qr_url,
         },
         bank_transfer: {
           enabled:
             rawPay.bank_transfer?.enabled ??
-            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.enabled,
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer
+              .enabled,
           bank_name:
             rawPay.bank_transfer?.bank_name ||
-            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.bank_name,
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer
+              .bank_name,
           account_number:
             rawPay.bank_transfer?.account_number ||
-            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.account_number,
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer
+              .account_number,
           cci:
             rawPay.bank_transfer?.cci ||
             DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.cci,
           holder_name:
             rawPay.bank_transfer?.holder_name ||
-            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.holder_name,
+            DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer
+              .holder_name,
           ruc:
             rawPay.bank_transfer?.ruc ||
             DEFAULT_PLATFORM_SETTINGS.PAYMENT_METHODS_CONFIG.bank_transfer.ruc,
@@ -1263,14 +1294,16 @@ export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
         lima_metropolitana_pen:
           typeof rawShip.lima_metropolitana_pen === "number"
             ? rawShip.lima_metropolitana_pen
-            : DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.lima_metropolitana_pen,
+            : DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG
+                .lima_metropolitana_pen,
         provincias_pen:
           typeof rawShip.provincias_pen === "number"
             ? rawShip.provincias_pen
             : DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.provincias_pen,
         estimated_manufacturing_days:
           rawShip.estimated_manufacturing_days ||
-          DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG.estimated_manufacturing_days,
+          DEFAULT_PLATFORM_SETTINGS.SHIPPING_RATES_CONFIG
+            .estimated_manufacturing_days,
       },
       ADMIN_NOTIFICATION_EMAILS: {
         emails:
@@ -1363,7 +1396,11 @@ export async function enqueueEmail(input: {
   const safeData = {
     ...input.data,
     ...(input.data?.customizations
-      ? { customizations: stripHeavyFieldsForEmailData(input.data.customizations) }
+      ? {
+          customizations: stripHeavyFieldsForEmailData(
+            input.data.customizations,
+          ),
+        }
       : {}),
   };
 
@@ -1832,7 +1869,8 @@ export async function createOrderWithSplitPayment(input: {
   const validGenerationJobId = existingJob?.id || null;
   const finalPetPhotoUrl = cleanPetPhotoUrl || input.pet_photo_url || null;
   const finalGeneratedArtUrl = cleanGeneratedArtUrl || input.generated_art_url;
-  const finalProofImageUrl = cleanProofImageUrl || input.proof_image_url || null;
+  const finalProofImageUrl =
+    cleanProofImageUrl || input.proof_image_url || null;
   const finalCustomizations: OrderItemCustomizations = {
     ...input.customizations,
     ...(cleanMasterArtUrl ? { master_art_url: cleanMasterArtUrl } : {}),
@@ -2550,9 +2588,7 @@ export async function createOrderReview(input: {
 
   const order: OrderRecord = JSON.parse(JSON.stringify(existingOrder));
   const [validProductId, validBuyerId] = await Promise.all([
-    ensureValidProductIdInDatabase(
-      order.packages?.[0]?.items?.[0]?.product_id,
-    ),
+    ensureValidProductIdInDatabase(order.packages?.[0]?.items?.[0]?.product_id),
     ensureValidBuyerIdInDatabase(input.buyer_id, order.shipping),
   ]);
 

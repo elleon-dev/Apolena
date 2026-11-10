@@ -5,9 +5,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const isSupabaseAuthConfigured = Boolean(
   supabaseUrl &&
-    supabaseAnonKey &&
-    !supabaseUrl.includes("your-project") &&
-    !supabaseAnonKey.includes("your-"),
+  supabaseAnonKey &&
+  !supabaseUrl.includes("your-project") &&
+  !supabaseAnonKey.includes("your-"),
 );
 
 export const supabaseBrowser = isSupabaseAuthConfigured
@@ -19,4 +19,3 @@ export const supabaseBrowser = isSupabaseAuthConfigured
       },
     })
   : null;
-

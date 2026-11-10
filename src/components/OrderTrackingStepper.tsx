@@ -64,7 +64,8 @@ export function OrderTrackingStepper({
   };
 
   const currentStep = stepIndexMap[status] || 1;
-  const isAllCompleted = status === "completed" && paymentStatus === "paid_full";
+  const isAllCompleted =
+    status === "completed" && paymentStatus === "paid_full";
 
   const steps = [
     {

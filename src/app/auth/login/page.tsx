@@ -127,7 +127,9 @@ function LoginForm() {
           ? "/orders"
           : callbackUrl;
       const target =
-        safeCallbackUrl || data.redirectTo || (isAdmin ? "/dashboard" : "/orders");
+        safeCallbackUrl ||
+        data.redirectTo ||
+        (isAdmin ? "/dashboard" : "/orders");
       router.push(target);
       router.refresh();
     } catch {

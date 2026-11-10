@@ -36,18 +36,19 @@ export async function POST(req: NextRequest) {
 
         if (isSupabaseConfigured && supabase) {
           const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+          const objectPath = `pets/${fileName}`;
           const { data: uploadData, error: uploadError } =
             await supabase.storage
-              .from("pet-uploads")
-              .upload(fileName, buffer, {
+              .from("apolena-media")
+              .upload(objectPath, buffer, {
                 contentType: file.type,
                 upsert: true,
               });
 
           if (!uploadError && uploadData) {
             const { data: publicUrlData } = supabase.storage
-              .from("pet-uploads")
-              .getPublicUrl(uploadData.path);
+              .from("apolena-media")
+              .getPublicUrl(objectPath);
             petImageUrl = publicUrlData.publicUrl;
           }
         }

@@ -182,7 +182,7 @@ export default function CommonUserOrdersPage() {
                 </span>
               </div>
               <h1 className="font-serif text-2xl sm:text-4xl font-bold tracking-tight text-white">
-                Mis Pedidos y Estado en 3 Pasos
+                Mis Pedidos
               </h1>
               <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                 Visualiza el avance de tu cuadro personalizado en tiempo real:{" "}
@@ -451,11 +451,12 @@ export default function CommonUserOrdersPage() {
                       <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] flex flex-col sm:flex-row sm:items-center gap-4">
                         <img
                           src={
-                            (order.status === "completed" &&
+                            order.status === "completed" &&
                             isPaidFull &&
-                            item.customizations?.master_art_url)
+                            item.customizations?.master_art_url
                               ? item.customizations.master_art_url
-                              : item.generated_art_url || "/samples/cat-suit.jpg"
+                              : item.generated_art_url ||
+                                "/samples/cat-suit.jpg"
                           }
                           alt="Retrato Personalizado"
                           className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-[#c6a26c]/50 shrink-0 shadow-xs"
@@ -491,13 +492,17 @@ export default function CommonUserOrdersPage() {
                                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold shadow-xs transition-all"
                               >
                                 <Download className="w-3.5 h-3.5 text-[#c6a26c]" />
-                                <span>Descargar Recuerdo Digital HD (Sin Marca de Agua)</span>
+                                <span>
+                                  Descargar Recuerdo Digital HD (Sin Marca de
+                                  Agua)
+                                </span>
                               </a>
                             ) : (
                               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[11px] text-stone-600 font-medium">
                                 <Lock className="w-3 h-3 text-[#174B3D]" />
                                 <span>
-                                  Recuerdo Digital HD sin marca se desbloquea al completar la entrega (100%)
+                                  Recuerdo Digital HD sin marca se desbloquea al
+                                  completar la entrega (100%)
                                 </span>
                               </div>
                             )}
@@ -520,7 +525,9 @@ export default function CommonUserOrdersPage() {
                         <div className="w-full h-2 rounded-full bg-[#E8DEC8] overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              isPaidFull ? "w-full bg-[#174B3D]" : "w-1/2 bg-[#c6a26c]"
+                              isPaidFull
+                                ? "w-full bg-[#174B3D]"
+                                : "w-1/2 bg-[#c6a26c]"
                             }`}
                           />
                         </div>
@@ -652,4 +659,3 @@ export default function CommonUserOrdersPage() {
     </div>
   );
 }
-

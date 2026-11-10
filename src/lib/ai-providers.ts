@@ -976,21 +976,12 @@ async function runFalMultiImageFusion(
   character: FamousCharacter,
   falKey: string,
 ): Promise<{ imageUrl: string; hdImageUrl: string; modelUsed: string }> {
-  const {
-    petImageUrl,
-    secondPetImageUrl,
-    customPrompt,
-    onProgress,
-  } = input;
+  const { petImageUrl, secondPetImageUrl, customPrompt, onProgress } = input;
   const hasSecondPet = Boolean(secondPetImageUrl);
 
   fal.config({ credentials: falKey });
 
-  onProgress?.(
-    20,
-    "Subiendo fotos de mascotas a fal.ai CDN...",
-    "analyzing",
-  );
+  onProgress?.(20, "Subiendo fotos de mascotas a fal.ai CDN...", "analyzing");
 
   const pet1Data = await resolveImageData(petImageUrl);
   const pet2Data = secondPetImageUrl
@@ -1003,11 +994,7 @@ async function runFalMultiImageFusion(
   ]);
 
   const imageUrls = [pet1Cdn, ...(pet2Cdn ? [pet2Cdn] : [])];
-  const fusionPrompt = buildFusionPrompt(
-    character,
-    hasSecondPet,
-    customPrompt,
-  );
+  const fusionPrompt = buildFusionPrompt(character, hasSecondPet, customPrompt);
 
   let fusedUrl = "";
   let modelUsed = "FLUX.1 Kontext Pro";

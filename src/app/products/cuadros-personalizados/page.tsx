@@ -67,8 +67,9 @@ export default function personalizedWallArt() {
   const [wallArtProductId, setWallArtProductId] = useState<string>(
     "00000000-0000-4000-8000-000000000101",
   );
-  const [catalogCharacters, setCatalogCharacters] =
-    useState<FamousCharacter[]>(FAMOUS_CHARACTERS);
+  const [catalogCharacters, setCatalogCharacters] = useState<FamousCharacter[]>(
+    () => FAMOUS_CHARACTERS.filter((c) => c.isAvailable !== false),
+  );
   const [catalogSizes, setCatalogSizes] =
     useState<PrintPreset[]>(PRINT_PRESETS);
   const [catalogFrames, setCatalogFrames] =
@@ -185,8 +186,12 @@ export default function personalizedWallArt() {
       .then((data) => {
         const productsList: ProductRecord[] = data?.products || [];
         const wallArt =
-          productsList.find((p) => p.slug === "cuadros-personalizados") ||
-          productsList[0];
+          productsList.find(
+            (p) =>
+              p.slug === "cuadros-personalizados" ||
+              p.slug === "personalized-wall-art" ||
+              p.category === "wall_art",
+          ) || productsList[0];
         if (!wallArt) return;
 
         setWallArtProductId(wallArt.id);
@@ -572,7 +577,9 @@ export default function personalizedWallArt() {
             <div className="bg-white border border-cream-200 rounded-3xl p-8 shadow-soft space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 text-stone-700 text-xs font-medium">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-terracotta-500" />
-                <span>Atelier Apolena · Elaborando 2 propuestas artísticas</span>
+                <span>
+                  Atelier Apolena · Elaborando 2 propuestas artísticas
+                </span>
               </div>
               <h2 className="font-serif text-2xl font-semibold text-stone-900">
                 Revelando tu Retrato Personalizado
@@ -968,9 +975,7 @@ export default function personalizedWallArt() {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
-                  <span>
-                    2 propuestas artísticas listas para tu elección
-                  </span>
+                  <span>2 propuestas artísticas listas para tu elección</span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
                   {secondPetImage ? "Retrato Doble" : "Retrato"} ·{" "}
@@ -1070,7 +1075,9 @@ export default function personalizedWallArt() {
                           <span>Elige tu propuesta artística favorita</span>
                         </h3>
                         <p className="text-xs text-stone-500">
-                          Hemos preparado 2 propuestas de retrato para tu mascota. Selecciona la que más te guste para tu cuadro:
+                          Hemos preparado 2 propuestas de retrato para tu
+                          mascota. Selecciona la que más te guste para tu
+                          cuadro:
                         </p>
                       </div>
                       <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-cream-100 text-stone-700 self-start sm:self-auto">
@@ -1107,7 +1114,7 @@ export default function personalizedWallArt() {
                                 : "bg-white border-cream-200 hover:border-stone-300 hover:bg-cream-50/40 shadow-soft"
                             }`}
                           >
-                             <div
+                            <div
                               onContextMenu={(e) => e.preventDefault()}
                               className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden border border-cream-200 bg-stone-900 flex-shrink-0 select-none"
                             >
@@ -1517,14 +1524,16 @@ export default function personalizedWallArt() {
                     ) : (
                       <>
                         <Download className="w-4 h-4" />
-                        <span>
-                          Descargar Muestra con Marca de Agua
-                        </span>
+                        <span>Descargar Muestra con Marca de Agua</span>
                       </>
                     )}
                   </button>
                   <p className="text-[11px] text-stone-500 text-center leading-relaxed">
-                    La muestra descargable incluye marca de agua protectora en resolución web. Tu cuadro físico se imprime sin marcas a 300 DPI y al completarse la entrega se desbloquea tu <strong>Recuerdo Digital HD sin marca</strong> en <em>Mis Órdenes</em>.
+                    La muestra descargable incluye marca de agua protectora en
+                    resolución web. Tu cuadro físico se imprime sin marcas a 300
+                    DPI y al completarse la entrega se desbloquea tu{" "}
+                    <strong>Recuerdo Digital HD sin marca</strong> en{" "}
+                    <em>Mis Órdenes</em>.
                   </p>
                 </div>
               </div>

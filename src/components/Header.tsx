@@ -213,8 +213,8 @@ export function Header(_props: HeaderProps = {}) {
                       {sessionUser.role === "super_admin"
                         ? "Super Admin"
                         : sessionUser.role === "admin"
-                        ? "Admin"
-                        : "En línea"}
+                          ? "Admin"
+                          : "En línea"}
                     </span>
                   </div>
                   <ChevronDown

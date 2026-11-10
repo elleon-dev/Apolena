@@ -4,16 +4,16 @@
 
 :root {
   /* Paleta Oficial Apolena */
-  --color-primary: #174B3D;    /* Primary: Verde Bosque */
-  --color-secondary: #c6a26c;  /* Secondary: Dorado */
-  --color-tertiary: #FFFBF2;   /* Tertiary: Crema Fondo */
+  --color-primary: #174b3d; /* Primary: Verde Bosque */
+  --color-secondary: #c6a26c; /* Secondary: Dorado */
+  --color-tertiary: #fffbf2; /* Tertiary: Crema Fondo */
 
-  --bg-primary: #FFFBF2;       /* Tertiary: Fondo general */
-  --bg-secondary: #F6EFE0;     /* Crema sutil para superficies secundarias */
-  --color-accent: #c6a26c;     /* Dorado Accento */
-  --text-main: #141414;        /* Negro / Carbón para textos sobre fondos claros */
-  --text-muted: #4A5550;       /* Gris verdoso para textos secundarios */
-  --border-color: #E8DEC8;     /* Borde neutro cálido */
+  --bg-primary: #fffbf2; /* Tertiary: Fondo general */
+  --bg-secondary: #f6efe0; /* Crema sutil para superficies secundarias */
+  --color-accent: #c6a26c; /* Dorado Accento */
+  --text-main: #141414; /* Negro / Carbón para textos sobre fondos claros */
+  --text-muted: #4a5550; /* Gris verdoso para textos secundarios */
+  --border-color: #e8dec8; /* Borde neutro cálido */
 
   --font-sans: "Plus Jakarta Sans", sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
@@ -34,10 +34,10 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #FFFBF2;
+  background: #fffbf2;
 }
 ::-webkit-scrollbar-thumb {
-  background: #174B3D;
+  background: #174b3d;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -45,35 +45,187 @@ body {
 }
 
 /* Animaciones personalizadas del Banner Carousel */
-@keyframes ap-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
-@keyframes ap-word { from { opacity: 0; transform: translateY(22px); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@keyframes ap-pop { 0% { opacity: 0; transform: scale(.8); } 60% { opacity: 1; transform: scale(1.07); } 100% { opacity: 1; transform: scale(1); } }
-@keyframes ap-draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
-@keyframes ap-card-in { from { opacity: 0; transform: perspective(900px) translateX(40px) rotateY(-14deg) scale(.96); } to { opacity: 1; transform: none; } }
-@keyframes ap-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes ap-kenburns { from { transform: scale(1); } to { transform: scale(1.09); } }
-@keyframes ap-blob-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(70px, -40px) scale(1.18); } }
-@keyframes ap-blob-b { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-60px, 50px) scale(1.15); } }
-@keyframes ap-aurora { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
-@keyframes ap-particle { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .85; } 100% { transform: translateY(-560px); opacity: 0; } }
-@keyframes ap-num { from { transform: translateY(100%); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes ap-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ap-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ap-word {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes ap-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes ap-draw {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ap-card-in {
+  from {
+    opacity: 0;
+    transform: perspective(900px) translateX(40px) rotateY(-14deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ap-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes ap-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.09);
+  }
+}
+@keyframes ap-blob-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(70px, -40px) scale(1.18);
+  }
+}
+@keyframes ap-blob-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-60px, 50px) scale(1.15);
+  }
+}
+@keyframes ap-aurora {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+@keyframes ap-particle {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-560px);
+    opacity: 0;
+  }
+}
+@keyframes ap-num {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes ap-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
 
-.ap-rise { animation: ap-rise .7s cubic-bezier(.22,1,.36,1) both; }
-.ap-word { animation: ap-word .8s cubic-bezier(.22,1,.36,1) both; }
-.ap-pop { animation: ap-pop .6s cubic-bezier(.34,1.56,.64,1) both; }
-.ap-draw { animation: ap-draw .7s ease-out both; }
-.ap-card-in { animation: ap-card-in 1s cubic-bezier(.22,1,.36,1) both; animation-delay: .15s; }
-.ap-float { animation: ap-float 6s ease-in-out infinite; }
-.ap-kenburns { animation: ap-kenburns 8000ms linear both; }
-.ap-blob-a { animation: ap-blob-a 16s ease-in-out infinite; }
-.ap-blob-b { animation: ap-blob-b 20s ease-in-out infinite; }
-.ap-aurora { background-size: 200% 200%; animation: ap-aurora 18s ease-in-out infinite alternate; }
-.ap-particle { animation: ap-particle linear infinite; }
-.ap-num { animation: ap-num .5s cubic-bezier(.22,1,.36,1) both; }
-.ap-progress { transform-origin: left; animation-name: ap-progress; animation-timing-function: linear; animation-fill-mode: both; }
+.ap-rise {
+  animation: ap-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ap-word {
+  animation: ap-word 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ap-pop {
+  animation: ap-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.ap-draw {
+  animation: ap-draw 0.7s ease-out both;
+}
+.ap-card-in {
+  animation: ap-card-in 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.15s;
+}
+.ap-float {
+  animation: ap-float 6s ease-in-out infinite;
+}
+.ap-kenburns {
+  animation: ap-kenburns 8000ms linear both;
+}
+.ap-blob-a {
+  animation: ap-blob-a 16s ease-in-out infinite;
+}
+.ap-blob-b {
+  animation: ap-blob-b 20s ease-in-out infinite;
+}
+.ap-aurora {
+  background-size: 200% 200%;
+  animation: ap-aurora 18s ease-in-out infinite alternate;
+}
+.ap-particle {
+  animation: ap-particle linear infinite;
+}
+.ap-num {
+  animation: ap-num 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ap-progress {
+  transform-origin: left;
+  animation-name: ap-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ap-m { animation: none !important; }
-  .ap-particle { display: none; }
+  .ap-m {
+    animation: none !important;
+  }
+  .ap-particle {
+    display: none;
+  }
 }

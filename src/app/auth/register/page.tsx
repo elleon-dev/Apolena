@@ -124,8 +124,8 @@ export default function RegisterPage() {
               Crea tu cuenta en Apolena
             </h1>
             <p className="text-xs text-[#141414]/70">
-              Guarda tus retratos generados y haz seguimiento de tus
-              cuadros personalizados.
+              Guarda tus retratos generados y haz seguimiento de tus cuadros
+              personalizados.
             </p>
           </div>
 

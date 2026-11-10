@@ -2,11 +2,26 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
+import { supabase, isSupabaseConfigured } from "./supabase";
+
+export const SUPABASE_MEDIA_BUCKET = "apolena-media";
+
+export type StorageSubdir =
+  | "artworks"
+  | "previews"
+  | "pets"
+  | "proofs"
+  | "characters"
+  | "products"
+  | string;
 
 const PUBLIC_UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
 
+// In-memory set to prevent redundant re-uploads of the same image hash in the same session
+const uploadedHashes = new Set<string>();
+
 /**
- * Ensures the target subdirectory inside `public/uploads/` exists.
+ * Ensures the target subdirectory inside `public/uploads/` exists (used for local offline fallback).
  */
 function ensureUploadsSubdir(subdir: string): string {
   const fullDir = path.join(PUBLIC_UPLOADS_DIR, subdir);
@@ -17,15 +32,63 @@ function ensureUploadsSubdir(subdir: string): string {
 }
 
 /**
- * Converts a base64 `data:image/...` string into a compressed file on disk
- * inside `public/uploads/<subdir>/` and returns its lightweight public URL
- * (e.g. `/uploads/artworks/a1b2c3d4.jpg`).
+ * Uploads a raw buffer directly to Supabase Storage with automatic fallback to local disk.
+ * Returns the public URL of the uploaded asset.
+ */
+export async function uploadBufferToStorage(
+  buffer: Buffer,
+  subdir: StorageSubdir,
+  fileName: string,
+  contentType = "image/jpeg",
+): Promise<string> {
+  const objectPath = `${subdir}/${fileName}`;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.storage
+        .from(SUPABASE_MEDIA_BUCKET)
+        .upload(objectPath, buffer, {
+          contentType,
+          upsert: true,
+        });
+
+      if (!error) {
+        const { data } = supabase.storage
+          .from(SUPABASE_MEDIA_BUCKET)
+          .getPublicUrl(objectPath);
+        if (data?.publicUrl) {
+          uploadedHashes.add(`${subdir}/${fileName}`);
+          return data.publicUrl;
+        }
+      } else {
+        console.warn(
+          "[uploadBufferToStorage Supabase warning]:",
+          error.message,
+        );
+      }
+    } catch (e) {
+      console.warn("[uploadBufferToStorage Supabase error]:", e);
+    }
+  }
+
+  // Fallback to local public/uploads for offline development
+  const targetDir = ensureUploadsSubdir(subdir);
+  const fullPath = path.join(targetDir, fileName);
+  fs.writeFileSync(fullPath, buffer);
+  return `/uploads/${subdir}/${fileName}`;
+}
+
+/**
+ * Converts a base64 `data:image/...` string into a compressed image,
+ * uploads it to Supabase Storage (`apolena-media/<subdir>/<hash>.jpg`)
+ * and returns its public CDN URL.
  *
- * If the input is already a short URL or null/undefined, returns it unchanged.
+ * If the input is already a URL (http/https or relative path) or null/undefined,
+ * returns it unchanged.
  */
 export async function externalizeBase64Image(
   inputUrl: string | null | undefined,
-  subdir: "artworks" | "previews" | "pets" | "proofs" | "characters" = "artworks",
+  subdir: StorageSubdir = "artworks",
   options?: { maxDimension?: number; quality?: number },
 ): Promise<string | null> {
   if (!inputUrl) return null;
@@ -40,7 +103,7 @@ export async function externalizeBase64Image(
     const b64Data = inputUrl.substring(commaIdx + 1);
     const rawBuffer = Buffer.from(b64Data, "base64");
 
-    // Deterministic content hash so identical images are deduplicated on disk
+    // Deterministic content hash so identical images are deduplicated
     const hash = crypto
       .createHash("sha1")
       .update(rawBuffer)
@@ -48,19 +111,22 @@ export async function externalizeBase64Image(
       .slice(0, 20);
 
     const fileName = `${hash}.jpg`;
-    const relUrl = `/uploads/${subdir}/${fileName}`;
-    const targetDir = ensureUploadsSubdir(subdir);
-    const fullPath = path.join(targetDir, fileName);
+    const objectKey = `${subdir}/${fileName}`;
 
-    if (fs.existsSync(fullPath)) {
-      return relUrl;
+    // If already uploaded in this session to Supabase, return its public URL immediately
+    if (uploadedHashes.has(objectKey) && isSupabaseConfigured && supabase) {
+      const { data } = supabase.storage
+        .from(SUPABASE_MEDIA_BUCKET)
+        .getPublicUrl(objectKey);
+      if (data?.publicUrl) {
+        return data.publicUrl;
+      }
     }
 
     const maxDim =
       options?.maxDimension ??
       (subdir === "artworks" ? 2048 : subdir === "characters" ? 900 : 1200);
-    const quality =
-      options?.quality ?? (subdir === "artworks" ? 88 : 82);
+    const quality = options?.quality ?? (subdir === "artworks" ? 88 : 82);
 
     const optimizedBuffer = await sharp(rawBuffer)
       .resize(maxDim, maxDim, {
@@ -70,8 +136,12 @@ export async function externalizeBase64Image(
       .jpeg({ quality, mozjpeg: true })
       .toBuffer();
 
-    fs.writeFileSync(fullPath, optimizedBuffer);
-    return relUrl;
+    return await uploadBufferToStorage(
+      optimizedBuffer,
+      subdir,
+      fileName,
+      "image/jpeg",
+    );
   } catch (err) {
     console.warn("[externalizeBase64Image warning]:", err);
     return inputUrl;

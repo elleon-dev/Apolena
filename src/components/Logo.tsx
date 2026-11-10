@@ -15,8 +15,8 @@ export default function Logo({
     tone === "gold"
       ? "/logo-gold.png"
       : tone === "light"
-      ? "/logo-light.png"
-      : "/logo.png";
+        ? "/logo-light.png"
+        : "/logo.png";
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

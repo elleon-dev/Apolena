@@ -16,38 +16,21 @@ export interface FamousCharacter {
 
 export const FAMOUS_CHARACTERS: FamousCharacter[] = [
   {
-    id: "inca-empire",
-    name: "Realeza del Imperio Inca",
-    characterTitle: "Sapa Inca & Coya en Machu Picchu",
-    universe: "Colección Andina",
-    description:
-      "Diadema solar de oro, collares reales con Chakana y turquesas, mantos tejidos tradicionales frente a Machu Picchu al atardecer.",
-    characterImageUrl: "/characters/inca-empire.jpg",
-    maskUrl: "/masks/default-mask.png",
-    fusionSampleUrl: "/fusions/inca-empire-cats.jpg",
-    accentColor: "bg-terracotta-500",
-    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
-    prompt:
-      "Ultra-realistic cinematic photograph of the uploaded pet(s) dressed as Inca Empire royalty at Machu Picchu during golden hour sunset. Preserve 100% of each pet’s exact species, breed, facial identity, fur color, coat markings, snout/muzzle structure, ear shape, nose color, and eye color from the uploaded pet photo(s). Dress the uploaded pet in ornate handwoven Andean royal textiles (crimson red and deep turquoise unku ponchos/mantles with intricate geometric Inca tokapu embroidery), wearing a golden Inti Sun God headpiece/diadem with dangling gold and turquoise ear ornaments, and multi-strand gold bead necklaces with a central golden Chakana cross pendant inlaid with turquoise. Stone Inca terrace in foreground with cantuta flowers in a gold vase, majestic Huayna Picchu mountain peak and misty Andes in the warm sunset background, shallow depth of field, 85mm f/1.8 lens, photorealistic fur and gold textures, 8k masterpiece.",
-    negativePrompt:
-      "human face, human hands, cartoon, 3d render, illustration, anime, blurry, plastic, deformed eyes, bad anatomy, low resolution",
-  },
-  {
     id: "jack-sparrow",
-    name: "Capitán del Caribe",
-    characterTitle: "Época de Navegación",
-    universe: "Colección Histórica",
+    name: "Capitán Jack Sparrow",
+    characterTitle: "Legendario Capitán de la Perla Negra",
+    universe: "Colección Piratas & Aventuras",
     description:
-      "Sombrero tricornio de cuero envejecido, pañuelo carmesí, abalorios de época y casaca de capitán en cubierta.",
+      "El personaje luce su icónico sombrero tricornio de cuero desgastado sobre una bandana roja, con una melena de rastas adornada con abalorios y cuentas. Viste una casaca de época con correajes de cuero, múltiples pistolas de chispa y sostiene una espada, todo bajo una atmósfera sombría con chispas flotantes e iluminación dramática.",
     characterImageUrl: "/characters/jack-sparrow.webp",
     maskUrl: "/masks/jack-sparrow-mask.png",
     fusionSampleUrl: "/fusions/jack-sparrow-dog.jpg",
     accentColor: "bg-terracotta-500",
     tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
-    prompt:
-      "Masterpiece photorealistic portrait of the uploaded pet(s) realistically fused as Captain Jack Sparrow from Pirates of the Caribbean. Preserve 100% of the pet’s authentic facial anatomy, exact fur color markings, expressive eyes, and muzzle from the reference pet photo. Wearing Jack Sparrow’s weathered leather tricorn hat, red bandana headband, braided dreadlocks with pirate beads and trinkets, ruffled linen pirate shirt, leather belts and weathered frock coat, dramatic Caribbean ship deck background at golden hour, ultra-detailed fur texture, 8k cinematic film still.",
+    prompt: "",
     negativePrompt:
-      "human face, uncanny valley, cartoon, anime, blurry, deformed eyes, low quality",
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
   },
   {
     id: "joker",
@@ -61,10 +44,67 @@ export const FAMOUS_CHARACTERS: FamousCharacter[] = [
     fusionSampleUrl: "/fusions/joker-dog.jpg",
     accentColor: "bg-terracotta-500",
     tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
-    prompt:
-      "Masterpiece photorealistic portrait of the uploaded pet(s) dressed as The Joker (Arthur Fleck) in his iconic crimson red tailored suit, mustard gold waistcoat, and green patterned shirt. Preserve 100% of the pet’s real facial structure, fur pattern, eyes, and muzzle from the reference photo, adding subtle artistic Joker face paint accents blended naturally into the fur and green-tinted hair tuft on top, moody Gotham city steps cinematic lighting, 8k resolution, realistic movie still.",
+    prompt: "",
     negativePrompt:
       "human face, deformed mouth, cartoon, plastic, blurry, oversaturated, bad anatomy",
+    isAvailable: true,
+  },
+  {
+    id: "sapa-inca-imperial",
+    name: "Sapa Inca Imperial",
+    characterTitle: "Soberano del Tahuantinsuyo",
+    universe: "Imperio Inca · Machu Picchu",
+    description:
+      "Un retrato majestuoso que captura la esencia divina del Sapa Inca, ataviado con un unku de fina lana de alpaca en tonos carmesí y oro. El soberano luce una corona solar de oro puro y pectorales ceremoniales con incrustaciones de turquesa, evocando la grandeza eterna de la civilización andina.",
+    characterImageUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/ad8621f8d8c8633a264c.jpg",
+    maskUrl: "/masks/default-mask.png",
+    fusionSampleUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/ad8621f8d8c8633a264c.jpg",
+    accentColor: "bg-terracotta-500",
+    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+    prompt: "",
+    negativePrompt:
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
+  },
+  {
+    id: "faraon-de-las-arenas-eternas",
+    name: "Faraón de las Arenas Eternas",
+    characterTitle: "Soberano Divino del Antiguo Egipto",
+    universe: "Antiguo Egipto · Dinastía de los Dioses",
+    description:
+      "Un retrato majestuoso donde tu mascota aparece ataviado con el nemes real de oro y lapislázuli, adornado con un pectoral sagrado que porta el ankh de la vida eterna. La atmósfera evoca la gloria de las pirámides bajo un atardecer dorado, donde la realeza es venerada como una deidad.",
+    characterImageUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/38b029432101609dcec0.jpg",
+    maskUrl: "/masks/default-mask.png",
+    fusionSampleUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/38b029432101609dcec0.jpg",
+    accentColor: "bg-terracotta-500",
+    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+    prompt: "",
+    negativePrompt:
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
+  },
+  {
+    id: "sapa-inca-imperial-1",
+    name: "Sapa Inca Imperial",
+    characterTitle: "Soberano del Tahuantinsuyo",
+    universe: "Imperio Inca · Machu Picchu",
+    description:
+      "Una majestuosa representación del monarca andino, adornado con una corona solar de oro puro y un pectoral ceremonial incrustado con turquesas. Viste un unku de fina lana de alpaca con intrincados patrones tocapus, evocando la grandeza eterna de los Andes bajo la luz del atardecer.",
+    characterImageUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/79d1289a07b0248dc918.jpg",
+    maskUrl: "/masks/default-mask.png",
+    fusionSampleUrl:
+      "https://nxpiqaaaezshkpqmyicn.supabase.co/storage/v1/object/public/apolena-media/characters/79d1289a07b0248dc918.jpg",
+    accentColor: "bg-terracotta-500",
+    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+    prompt: "",
+    negativePrompt:
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
   },
   {
     id: "godfather",
@@ -78,10 +118,10 @@ export const FAMOUS_CHARACTERS: FamousCharacter[] = [
     fusionSampleUrl: "/fusions/godfather-dog.jpg",
     accentColor: "bg-terracotta-500",
     tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
-    prompt:
-      "Masterpiece photorealistic portrait of the uploaded pet(s) dressed as Don Vito Corleone from The Godfather. Preserve 100% of the pet’s authentic facial features, dignified gaze, eye color, and fur markings from the reference photo. Wearing a tailored black wool tuxedo with crisp white pleated shirt, black silk bow tie, and a fresh red rose boutonniere on the satin lapel. Dramatic chiaroscuro Rembrandt film noir lighting in a dark mahogany Italian study with warm venetian blind shadows, 8k photorealistic texture.",
+    prompt: "",
     negativePrompt:
       "human skin, cartoon, blurry, distorted, cheap costume, low resolution",
+    isAvailable: false,
   },
 ];
 

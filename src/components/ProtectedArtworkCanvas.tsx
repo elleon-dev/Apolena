@@ -125,4 +125,3 @@ export function ProtectedArtworkCanvas({
 }
 
 export default ProtectedArtworkCanvas;
-

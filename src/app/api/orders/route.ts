@@ -48,7 +48,9 @@ export async function GET() {
   }
   const isAdmin = user.role === "admin" || user.role === "super_admin";
   const orders = await getOrdersByBuyer(user.id, user.email);
-  const safeOrders = orders.map((o) => sanitizeOrderArtworkForBuyer(o, isAdmin));
+  const safeOrders = orders.map((o) =>
+    sanitizeOrderArtworkForBuyer(o, isAdmin),
+  );
   return NextResponse.json({ orders: safeOrders });
 }
 

@@ -126,7 +126,7 @@ export async function refreshSessionUser(options?: {
   if (
     !force &&
     memoryUser !== undefined &&
-     lastFetchedAt > 0 &&
+    lastFetchedAt > 0 &&
     now - lastFetchedAt < REVALIDATE_INTERVAL_MS
   ) {
     return memoryUser;
