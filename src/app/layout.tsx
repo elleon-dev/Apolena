@@ -4,11 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Apolena — Estudio de Retratos Personalizados para Mascotas",
   description:
-    "Estudio fotográfico digital para crear retratos realistas de tus perros y gatos en escenarios históricos y artísticos.",
+    "Estudio fotográfico digital para crear retratos realistas de todo tipo de mascotas en escenarios históricos y artísticos.",
   keywords: [
     "Apolena",
     "retratos de mascotas",
-    "cuadros de perros y gatos",
+    "cuadros personalizados de mascotas",
     "fotografía de mascotas",
   ],
   icons: {

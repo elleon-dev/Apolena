@@ -52,10 +52,10 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: "police-officer",
-    name: "Oficial de Policía K-9",
+    name: "Oficial de Policía",
     subtitle: "Uniforme Táctico & Insignia de Servicio",
     description:
-      "Uniforme azul policial con placa dorada brillante, parches de hombro, chaleco táctico y gorra de oficial. Diseñado para perros guardianes y gatos con carácter.",
+      "Uniforme azul policial con placa dorada brillante, parches de hombro, chaleco táctico y gorra de oficial. Diseñado para mascotas guardianas y con gran carácter.",
     category: "Heroico & Servicio",
     species: "both",
     lighting: "dramatic_direct",
@@ -190,7 +190,7 @@ export const TEMPLATES: Template[] = [
     description:
       "Atuendo vaquero con chaleco desgastado por el sol, estrella de comisario en el pecho, pañuelo bandolero rojo y luz dorada del atardecer del cañón.",
     category: "Aventura & Western",
-    species: "dog",
+    species: "both",
     lighting: "golden_hour_dusty",
     lightingDisplay: "Hora Dorada del Desierto",
     prompt:

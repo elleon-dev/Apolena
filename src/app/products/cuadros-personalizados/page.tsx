@@ -608,7 +608,7 @@ export default function personalizedWallArt() {
               </h1>
               <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
                 Selecciona una fotografía clara donde se aprecie bien el rostro,
-                los ojos y el pelaje de tu perro o gato.
+                los ojos y los rasgos de tu mascota.
               </p>
             </div>
 
@@ -720,16 +720,16 @@ export default function personalizedWallArt() {
                   onClick={loadDemoDog}
                   className="px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:border-stone-400 hover:text-stone-900 font-medium flex items-center gap-2 transition-colors shadow-soft"
                 >
-                  <Dog className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Perro (Golden Retriever)</span>
+                  <PawPrint className="w-3.5 h-3.5 text-stone-500" />
+                  <span>Mascota de Muestra 1</span>
                 </button>
                 <button
                   type="button"
                   onClick={loadDemoCat}
                   className="px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:border-stone-400 hover:text-stone-900 font-medium flex items-center gap-2 transition-colors shadow-soft"
                 >
-                  <Cat className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Gato (Atigrado)</span>
+                  <PawPrint className="w-3.5 h-3.5 text-stone-500" />
+                  <span>Mascota de Muestra 2</span>
                 </button>
               </div>
             </div>

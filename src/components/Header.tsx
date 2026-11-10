@@ -43,7 +43,6 @@ function getInitials(name?: string | null, email?: string | null): string {
 
 const NAV_ITEMS = [
   { label: "INICIO", href: "/" },
-  { label: "RETRATOS", href: "/products/cuadros-personalizados" },
   { label: "CÓMO FUNCIONA", href: "/#como-funciona" },
   { label: "QUIÉNES SOMOS", href: "/#quienes-somos" },
   { label: "TRACKING", href: "/track" },
@@ -133,18 +132,18 @@ export function Header(_props: HeaderProps = {}) {
   return (
     <header className="sticky top-0 z-50 bg-[#174B3D] text-white border-b border-[#c6a26c]/25 shadow-md transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 gap-4">
+        <div className="flex items-center justify-between h-24 sm:h-28 gap-4">
           {/* 1. Logotipo Oficial Apolena (Variación Gold sobre fondo Primary #174B3D) */}
           <Link
             href="/"
-            className="flex items-center gap-3 group py-1.5 shrink-0"
+            className="flex items-center gap-3 group py-1 shrink-0"
           >
-            <div className="relative w-24 h-16 sm:w-28 sm:h-20 transition-transform duration-300 group-hover:scale-105">
+            <div className="relative w-32 h-20 sm:w-40 sm:h-24 transition-transform duration-300 group-hover:scale-105">
               <Image
                 src="/logo-gold.png"
                 alt="Apolena — Retratos Personalizados de Mascotas"
                 fill
-                sizes="(min-width: 640px) 112px, 96px"
+                sizes="(min-width: 640px) 160px, 128px"
                 className="object-contain object-left"
                 priority
               />
@@ -154,20 +153,20 @@ export function Header(_props: HeaderProps = {}) {
           {/* 2. Navegación Central Desktop con separadores de punto (estilo editorial) */}
           <nav
             aria-label="Navegación principal"
-            className="hidden xl:flex items-center justify-center gap-3"
+            className="hidden xl:flex items-center justify-center gap-1"
           >
             {NAV_ITEMS.map((item, idx) => (
               <React.Fragment key={item.label}>
                 <Link
                   href={item.href}
-                  className="px-2 py-1.5 text-xs font-bold tracking-[0.14em] text-white hover:text-[#c6a26c] transition-colors uppercase whitespace-nowrap"
+                  className="px-2 py-1.5 text-base font-semibold tracking-[0.03em] text-white hover:text-[#c6a26c] transition-colors uppercase whitespace-nowrap"
                 >
                   {item.label}
                 </Link>
                 {idx < NAV_ITEMS.length - 1 && (
                   <span
                     aria-hidden="true"
-                    className="text-[#c6a26c] font-bold select-none"
+                    className="text-[#c6a26c] text-lg font-bold select-none"
                   >
                     ·
                   </span>
@@ -298,7 +297,7 @@ export function Header(_props: HeaderProps = {}) {
             {/* Botón CREAR estilo imagen de referencia */}
             <Link
               href="/products/cuadros-personalizados"
-              className="bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm tracking-[0.12em] uppercase transition-all shadow-md hover:shadow-lg active:scale-95"
+              className="bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] px-6 py-2.5 rounded-xl font-extrabold text-sm sm:text-base tracking-[0.04em] uppercase transition-all shadow-md hover:shadow-lg active:scale-95"
             >
               CREAR
             </Link>
@@ -353,7 +352,7 @@ export function Header(_props: HeaderProps = {}) {
       {/* Menú Mobile tipo Drawer Vertical */}
       {isDrawerOpen && (
         <div
-          className="xl:hidden fixed inset-0 top-20 sm:top-24 bg-black/50 backdrop-blur-sm z-40"
+          className="xl:hidden fixed inset-0 top-24 sm:top-28 bg-black/50 backdrop-blur-sm z-40"
           onClick={toggleDrawer}
         >
           <div
@@ -393,7 +392,7 @@ export function Header(_props: HeaderProps = {}) {
                   key={item.label}
                   href={item.href}
                   onClick={toggleDrawer}
-                  className="px-4 py-2.5 rounded-xl font-bold text-sm tracking-widest uppercase text-white hover:bg-white/10 hover:text-[#c6a26c] transition-colors"
+                  className="px-4 py-2.5 rounded-xl font-bold text-base tracking-[0.03em] uppercase text-white hover:bg-white/10 hover:text-[#c6a26c] transition-colors"
                 >
                   {item.label}
                 </Link>

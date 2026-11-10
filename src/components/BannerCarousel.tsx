@@ -78,7 +78,7 @@ const BANNERS: BannerSlide[] = [
     secondaryCtaText: "Rastrear Pedido",
     secondaryCtaLink: "/track",
     imageSrc: "/fusions/inca-empire-cats.jpg",
-    imageAlt: "Retrato personalizado de gato en traje imperial inca",
+    imageAlt: "Retrato personalizado de mascota en traje imperial inca",
     badge: {
       title: "Modalidad 50% / 50%",
       subtitle: "Pagas el saldo al recibir tu cuadro",

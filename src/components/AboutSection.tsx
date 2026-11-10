@@ -83,7 +83,7 @@ export default function AboutSection() {
           <div className="lg:col-span-7 space-y-6 text-left">
             <p className="text-white/90 text-sm sm:text-base leading-relaxed">
               <strong className="text-[#c6a26c]">Apolena</strong> es un atelier
-              digital dedicado a celebrar el amor por perros y gatos.
+              digital dedicado a celebrar el amor por todo tipo de mascotas.
               Transformamos fotografías cotidianas en retratos de calidad museo
               a 300 DPI, envolviendo el bastidor en formato continuo para un
               acabado elegante sin necesidad de marcos tradicionales.

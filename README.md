@@ -1,6 +1,6 @@
 # Apolena — Plataforma de Retratos Artísticos Personalizados de Mascotas con IA
 
-Plataforma integral para generar retratos al óleo y fotografías de estudio de alta fidelidad para mascotas (perros y gatos), fusionando su rostro con atuendos predefinidos mediante **FLUX.1 [dev] Inpainting** y escalando los resultados a **4K a 300 DPI** con **Clarity Upscaler** para impresión profesional sobre lienzo o cuadro.
+Plataforma integral para generar retratos al óleo y fotografías de estudio de alta fidelidad para todo tipo de mascotas, fusionando su rostro con atuendos predefinidos mediante **FLUX.1 [dev] Inpainting** y escalando los resultados a **4K a 300 DPI** con **Clarity Upscaler** para impresión profesional sobre lienzo o cuadro.
 
 ---
 

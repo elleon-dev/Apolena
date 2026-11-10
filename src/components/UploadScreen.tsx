@@ -305,7 +305,7 @@ export function UploadScreen({
                 className="text-amber-400 hover:text-amber-300 font-bold underline flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Cargar Mascota Demo (Gato Atigrado)</span>
+                <span>Cargar Mascota Demo</span>
               </button>
             </div>
           </div>
@@ -336,13 +336,13 @@ export function UploadScreen({
             {/* Species Selector */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300">
-                Especie
+                Tipo de Mascota
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setSpecies("dog")}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
                     species === "dog"
                       ? "bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20"
                       : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700"
@@ -354,7 +354,7 @@ export function UploadScreen({
                 <button
                   type="button"
                   onClick={() => setSpecies("cat")}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
                     species === "cat"
                       ? "bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20"
                       : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700"
@@ -362,6 +362,18 @@ export function UploadScreen({
                 >
                   <Cat className="w-4 h-4" />
                   <span>Gato</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpecies("both")}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all ${
+                    species === "both"
+                      ? "bg-amber-500 text-navy-950 border-amber-500 shadow-md shadow-amber-500/20"
+                      : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Otra</span>
                 </button>
               </div>
             </div>

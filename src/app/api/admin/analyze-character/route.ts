@@ -168,15 +168,15 @@ Examina la imagen de referencia con atención minuciosa al personaje específico
   * Si es Arthur Fleck / Joker, identifícalo como 'Arthur Fleck (Gala)' con traje bermellón y chaleco mostaza.
   * Si es faraón egipcio, samurái, vikingo, noble renacentista, astronauta, etc., identifícalo con total precisión visual e histórica.
 - NUNCA inventes elementos que no estén en la imagen (por ejemplo, NO digas "gorguera de encaje holandés" si la imagen no tiene encaje holandés; describe exactamente lo que se ve en la fotografía).
-- REGLA CRÍTICA DE NEUTRALIDAD DE ESPECIE: Aunque la imagen de referencia muestre un gato, un perro o una persona vistiendo el traje, NUNCA escribas "cat", "tabby cat", "dog", "feline", "canine", "gato", "felino", "perro" ni "canino" en los campos "description" ni "prompt". El prompt en inglés DEBE referirse siempre de forma neutra a "the uploaded pet from the reference photo", porque cualquier cliente podrá subir un perro o un gato para usar este vestuario.
+- REGLA CRÍTICA DE NEUTRALIDAD DE ESPECIE: Aunque la imagen de referencia muestre un animal específico o una persona vistiendo el traje, NUNCA escribas especies específicas ("cat", "tabby cat", "dog", "feline", "canine", "gato", "felino", "perro", "canino", etc.) en los campos "description" ni "prompt". El prompt en inglés DEBE referirse siempre de forma neutra a "the uploaded pet from the reference photo", porque cualquier cliente podrá subir cualquier tipo de mascota para usar este vestuario.
 
 Devuelve EXCLUSIVAMENTE un objeto JSON válido con estas claves:
 {
   "name": "Nombre conciso y reconocible en español (ej. 'Capitán Jack Sparrow', 'Sapa Inca Imperial', 'Arthur Fleck (Gala)')",
   "characterTitle": "Subtítulo o rango en español (ej. 'Legendario Capitán de la Perla Negra', 'Soberano del Tahuantinsuyo')",
   "universe": "Universo o colección en español (ej. 'Colección Piratas & Aventuras', 'Imperio Inca · Machu Picchu')",
-  "description": "1 o 2 oraciones atractivas y precisas en español describiendo el vestuario, prendas, accesorios y atmósfera exacta de la imagen para el cliente (sin mencionar gato ni perro).",
-  "prompt": "Master synthesis prompt in English for image generation AI, always starting with 'A majestic portrait of the uploaded pet from the reference photo dressed as...' and describing the exact attire, fabrics, headwear, accessories, pose, background, and studio lighting with 8k photorealistic fine art quality (never mention 'cat' or 'dog').",
+  "description": "1 o 2 oraciones atractivas y precisas en español describiendo el vestuario, prendas, accesorios y atmósfera exacta de la imagen para el cliente (sin mencionar una especie específica).",
+  "prompt": "Master synthesis prompt in English for image generation AI, always starting with 'A majestic portrait of the uploaded pet from the reference photo dressed as...' and describing the exact attire, fabrics, headwear, accessories, pose, background, and studio lighting with 8k photorealistic fine art quality (never mention a specific species).",
   "negativePrompt": "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality"
 }
 Devuelve SOLO el JSON sin explicaciones adicionales.`;

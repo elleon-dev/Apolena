@@ -18,7 +18,7 @@ const STEPS: StepItem[] = [
     badgeText: "Paso Inicial",
     title: "Sube una foto de tu mascota",
     description:
-      "Elige tu estilo artístico favorito. Sube una foto clara de tu perro o gato y realiza tu pedido en minutos.",
+      "Elige tu estilo artístico favorito. Sube una foto clara de tu mascota y realiza tu pedido en minutos.",
     icon: (
       <Upload className="w-8 h-8 text-[#174B3D] group-hover:scale-110 transition-transform duration-300" />
     ),

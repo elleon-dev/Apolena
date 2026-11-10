@@ -23,8 +23,8 @@ export function HeroSection() {
             Convierte a tu mascota en una obra de arte
           </h1>
           <p className="text-xs sm:text-base text-[#141414]/75 max-w-xl mx-auto">
-            Sube una foto clara de tu perro o gato y selecciona la celebridad o
-            personaje histórico en el que deseas transformarlo.
+            Sube una foto clara de tu mascota y selecciona la celebridad o
+            personaje histórico en el que deseas transformarla.
           </p>
         </div>
 

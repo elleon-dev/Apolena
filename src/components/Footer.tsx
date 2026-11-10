@@ -29,9 +29,9 @@ export function Footer() {
               Retratos Personalizados de Mascotas
             </span>
             <p className="text-xs text-white/80 leading-relaxed max-w-sm">
-              Transformamos las fotografías de tu perro o gato en obras de arte
-              en lienzo 100% algodón a 300 DPI, tensadas sobre bastidor de madera
-              y listas para colgar.
+              Transformamos las fotografías de tu mascota en obras de arte en
+              lienzo 100% algodón a 300 DPI, tensadas sobre bastidor de madera y
+              listas para colgar.
             </p>
           </div>
 

@@ -16,7 +16,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
     clientName: "Andrea M.",
-    petName: "Max (Golden Retriever)",
+    petName: "Mascota: Max",
     rating: 5,
     comment:
       "Quedé impresionada con los detalles del cuadro. Capturaron la mirada de Max tal cual es.",
@@ -25,7 +25,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 2,
     clientName: "Carlos G.",
-    petName: "Luna (Gato Persa)",
+    petName: "Mascota: Luna",
     rating: 5,
     comment:
       "El paquete llegó súper rápido a Lima y la calidad del bastidor superó totalmente mis expectativas.",
@@ -34,7 +34,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 3,
     clientName: "Valeria R.",
-    petName: "Toby (French Poodle)",
+    petName: "Mascota: Toby",
     rating: 5,
     comment:
       "Un regalo hermoso para la casa. La atención por WhatsApp para elegir el diseño fue un 10/10.",
@@ -43,7 +43,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 4,
     clientName: "Mateo S.",
-    petName: "Simba (Beagle)",
+    petName: "Mascota: Simba",
     rating: 5,
     comment:
       "Increíble trabajo con la pintura digital. Mis amigos siempre me preguntan dónde lo mandé a hacer.",
@@ -52,7 +52,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     id: 5,
     clientName: "Lucía P.",
-    petName: "Mimi (Siamés)",
+    petName: "Mascota: Mimi",
     rating: 5,
     comment:
       "Superó lo que esperaba. Recomendadísimos si quieren inmortalizar a sus mascotas.",

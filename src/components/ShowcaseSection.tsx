@@ -27,19 +27,19 @@ interface TransformationCase {
 const CASES: TransformationCase[] = [
   {
     id: "case-dog-pirate",
-    petName: "Max (Golden Retriever)",
-    speciesLabel: "Perro · Retrato Individual",
+    petName: "Max",
+    speciesLabel: "Retrato Individual",
     characterName: "Capitán Jack Sparrow",
     collectionName: "Colección Cine & Leyendas",
     beforeImage: "/samples/dog-sample.jpg",
     afterImage: "/fusions/jack-sparrow-dog.jpg",
     description:
-      "Conservamos la expresión noble, el pelaje dorado y la mirada original de Max, integrándolo en el atuendo de capitán con iluminación de galería.",
+      "Conservamos la expresión noble, los rasgos y la mirada original de Max, integrándolo en el atuendo de capitán con iluminación de galería.",
   },
   {
     id: "case-cat-inca",
     petName: "Inti & Killa",
-    speciesLabel: "Gatos · Retrato Imperial",
+    speciesLabel: "Retrato Dúo Imperial",
     characterName: "Sapa Inca Imperial",
     collectionName: "Colección Historia Andina",
     beforeImage: "/samples/cat-sample.jpg",
@@ -49,8 +49,8 @@ const CASES: TransformationCase[] = [
   },
   {
     id: "case-dog-gala",
-    petName: "Bruno (Sastre de Gala)",
-    speciesLabel: "Perro · Retrato de Época",
+    petName: "Bruno",
+    speciesLabel: "Retrato de Época",
     characterName: "Don Vito Corleone",
     collectionName: "Colección Cine Clásico",
     beforeImage: "/samples/dog-sample.jpg",
@@ -148,8 +148,8 @@ export default function ShowcaseSection() {
           </h2>
           <p className="text-[#141414]/75 text-sm sm:text-base leading-relaxed">
             Los personajes son guías de vestuario y atmósfera: respetamos
-            rigurosamente la especie, rostro, pelaje y expresión única de tu
-            perro o gato.
+            rigurosamente la especie, rostro, rasgos y expresión única de tu
+            mascota.
           </p>
         </div>
 

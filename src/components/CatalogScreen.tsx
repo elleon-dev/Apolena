@@ -114,29 +114,7 @@ export function CatalogScreen({
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            Todos ({TEMPLATES.length})
-          </button>
-          <button
-            onClick={() => setSpeciesFilter("dog")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              speciesFilter === "dog"
-                ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Dog className="w-3.5 h-3.5" />
-            <span>Perros</span>
-          </button>
-          <button
-            onClick={() => setSpeciesFilter("cat")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              speciesFilter === "cat"
-                ? "bg-amber-500 text-navy-950 shadow-md shadow-amber-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Cat className="w-3.5 h-3.5" />
-            <span>Gatos</span>
+            Todas las Mascotas ({TEMPLATES.length})
           </button>
         </div>
 
