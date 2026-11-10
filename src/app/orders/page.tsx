@@ -163,30 +163,30 @@ export default function CommonUserOrdersPage() {
     orders.filter((o) => o.status === st).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream-100 text-secondary">
+    <div className="min-h-screen flex flex-col bg-[#FFFBF2] text-[#141414]">
       <Header />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-8 py-10 w-full space-y-8">
         {/* Top Hero & Welcome Banner */}
-        <div className="bg-secondary text-white rounded-3xl p-6 sm:p-8 shadow-card relative overflow-hidden">
+        <div className="bg-[#174B3D] text-white rounded-3xl p-6 sm:p-8 shadow-card border border-[#c6a26c]/35 relative overflow-hidden">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-primary text-xs font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#c6a26c] text-xs font-semibold border border-[#c6a26c]/30">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>
                   Seguimiento de Órdenes en Vivo ·{" "}
                   {user ? `Hola, ${user.name}` : "Consulta de Pedido"}
                 </span>
               </div>
-              <h1 className="font-serif text-2xl sm:text-4xl font-bold tracking-tight">
+              <h1 className="font-serif text-2xl sm:text-4xl font-bold tracking-tight text-white">
                 Mis Pedidos y Estado en 3 Pasos
               </h1>
-              <p className="text-xs sm:text-sm text-secondary-100 leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                 Visualiza el avance de tu cuadro personalizado en tiempo real:{" "}
                 <strong className="text-white">1. En Fabricación</strong> →{" "}
                 <strong className="text-white">2. En Camino</strong> →{" "}
                 <strong className="text-white">3. Entregado</strong> y cierre{" "}
-                <strong className="text-primary">Exitoso</strong> tras el 50%
+                <strong className="text-[#c6a26c]">Exitoso</strong> tras el 50%
                 contraentrega.
               </p>
             </div>
@@ -195,16 +195,16 @@ export default function CommonUserOrdersPage() {
               {isAdmin && (
                 <Link
                   href="/dashboard"
-                  className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold inline-flex items-center gap-2 transition-all"
+                  className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-[#c6a26c]/40 text-white text-xs font-bold inline-flex items-center gap-2 transition-all"
                 >
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  <ShieldCheck className="w-4 h-4 text-[#c6a26c]" />
                   <span>Ir al Dashboard Admin</span>
                 </Link>
               )}
 
               <Link
                 href="/products/cuadros-personalizados"
-                className="px-5 py-3 rounded-full bg-primary hover:bg-primary-600 text-white text-xs font-bold inline-flex items-center gap-2 shadow-md transition-all"
+                className="px-5 py-3 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-2 shadow-md transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Crear Nuevo Cuadro</span>
@@ -214,13 +214,13 @@ export default function CommonUserOrdersPage() {
         </div>
 
         {/* Buscador de Orden / Tracking ID + Filtros de Etapa */}
-        <div className="bg-white border border-secondary/10 rounded-3xl p-5 sm:p-6 shadow-soft space-y-4">
+        <div className="bg-white border border-[#E8DEC8] rounded-3xl p-5 sm:p-6 shadow-soft space-y-4">
           <form
             onSubmit={handleLookupByTrackingId}
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
           >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-secondary/40 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
@@ -229,13 +229,13 @@ export default function CommonUserOrdersPage() {
                   setTrackingLookupError(null);
                 }}
                 placeholder="Buscar por Tracking ID (ej. APO-TRK-2026-9001) o código de orden..."
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-cream-50 border border-secondary/15 text-xs sm:text-sm text-secondary placeholder:text-secondary/45 focus:border-primary focus:bg-white focus:outline-none transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs sm:text-sm text-[#141414] placeholder:text-stone-400 focus:border-[#174B3D] focus:bg-white focus:outline-none transition-all"
               />
             </div>
             <button
               type="submit"
               disabled={isSearchingTracking}
-              className="px-6 py-3 rounded-2xl bg-secondary hover:bg-secondary-800 disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shrink-0"
+              className="px-6 py-3 rounded-2xl bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shrink-0"
             >
               {isSearchingTracking ? (
                 <>
@@ -244,7 +244,7 @@ export default function CommonUserOrdersPage() {
                 </>
               ) : (
                 <>
-                  <Search className="w-4 h-4 text-primary" />
+                  <Search className="w-4 h-4 text-[#c6a26c]" />
                   <span>Rastrear Tracking ID</span>
                 </>
               )}
@@ -265,8 +265,8 @@ export default function CommonUserOrdersPage() {
               onClick={() => setStatusFilter("all")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "all"
-                  ? "bg-secondary text-white shadow-xs"
-                  : "bg-cream-100 text-secondary/75 hover:bg-cream-200"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
               }`}
             >
               <Package className="w-3.5 h-3.5" />
@@ -278,8 +278,8 @@ export default function CommonUserOrdersPage() {
               onClick={() => setStatusFilter("manufacturing")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "manufacturing"
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-cream-100 text-secondary/75 hover:bg-cream-200"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
               }`}
             >
               <Hammer className="w-3.5 h-3.5" />
@@ -291,8 +291,8 @@ export default function CommonUserOrdersPage() {
               onClick={() => setStatusFilter("in_transit")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "in_transit"
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-cream-100 text-secondary/75 hover:bg-cream-200"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
@@ -304,8 +304,8 @@ export default function CommonUserOrdersPage() {
               onClick={() => setStatusFilter("delivered")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "delivered"
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-cream-100 text-secondary/75 hover:bg-cream-200"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
               }`}
             >
               <PackageCheck className="w-3.5 h-3.5" />
@@ -317,8 +317,8 @@ export default function CommonUserOrdersPage() {
               onClick={() => setStatusFilter("completed")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "completed"
-                  ? "bg-sage-600 text-white shadow-xs"
-                  : "bg-cream-100 text-secondary/75 hover:bg-cream-200"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -329,23 +329,23 @@ export default function CommonUserOrdersPage() {
 
         {/* Orders List with Interactive 3-Step Stepper */}
         {isLoading ? (
-          <div className="bg-white border border-secondary/10 rounded-3xl p-12 text-center space-y-3 shadow-soft">
-            <Loader2 className="w-7 h-7 animate-spin text-primary mx-auto" />
-            <p className="text-xs font-medium text-secondary/60">
+          <div className="bg-white border border-[#E8DEC8] rounded-3xl p-12 text-center space-y-3 shadow-soft">
+            <Loader2 className="w-7 h-7 animate-spin text-[#174B3D] mx-auto" />
+            <p className="text-xs font-medium text-stone-500">
               Cargando tus órdenes y estados en tiempo real...
             </p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="bg-white border border-secondary/10 rounded-3xl p-12 text-center space-y-4 shadow-soft">
-            <div className="w-16 h-16 rounded-2xl bg-primary-50 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+          <div className="bg-white border border-[#E8DEC8] rounded-3xl p-12 text-center space-y-4 shadow-soft">
+            <div className="w-16 h-16 rounded-2xl bg-[#174B3D]/10 border border-[#174B3D]/20 text-[#174B3D] flex items-center justify-center mx-auto">
               <Package className="w-8 h-8" />
             </div>
-            <h2 className="font-serif text-2xl font-bold text-secondary">
+            <h2 className="font-serif text-2xl font-bold text-[#174B3D]">
               {orders.length === 0
                 ? "Aún no tienes órdenes registradas"
                 : "No hay órdenes que coincidan con tu filtro"}
             </h2>
-            <p className="text-xs sm:text-sm text-secondary/65 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
               {orders.length === 0
                 ? "Sube la foto de tu mascota, elige un personaje artístico y encarga tu cuadro personalizado con el 50% de adelanto."
                 : "Prueba seleccionando la pestaña 'Todas' o ingresa un Tracking ID diferente arriba."}
@@ -353,7 +353,7 @@ export default function CommonUserOrdersPage() {
             <div className="pt-1">
               <Link
                 href="/products/cuadros-personalizados"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-primary hover:bg-primary-600 text-white text-xs sm:text-sm font-bold shadow-md transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs sm:text-sm font-extrabold uppercase tracking-wider shadow-md transition-all"
               >
                 <Frame className="w-4 h-4" />
                 <span>Personalizar el Cuadro de mi Mascota</span>
@@ -374,43 +374,43 @@ export default function CommonUserOrdersPage() {
               return (
                 <div
                   key={order.id}
-                  className="bg-white border border-secondary/10 rounded-3xl p-6 sm:p-8 shadow-soft space-y-6 transition-all hover:shadow-card"
+                  className="bg-white border border-[#E8DEC8] rounded-3xl p-6 sm:p-8 shadow-soft space-y-6 transition-all hover:shadow-card"
                 >
                   {/* Order Top Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-secondary/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#E8DEC8]">
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <span className="text-sm font-extrabold text-secondary">
+                        <span className="text-sm font-extrabold text-[#174B3D]">
                           Orden #{order.order_code}
                         </span>
 
                         <button
                           type="button"
                           onClick={() => handleCopyTracking(order.tracking_id)}
-                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full bg-primary-50 hover:bg-primary-100 text-primary-800 border border-primary/30 font-mono font-bold transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full bg-[#174B3D]/10 hover:bg-[#174B3D]/15 text-[#174B3D] border border-[#174B3D]/25 font-mono font-bold transition-colors"
                           title="Copiar Tracking ID"
                         >
                           <span>Tracking: {order.tracking_id}</span>
                           {copiedTrackingId === order.tracking_id ? (
-                            <Check className="w-3.5 h-3.5 text-sage-600" />
+                            <Check className="w-3.5 h-3.5 text-[#174B3D]" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5 text-primary" />
+                            <Copy className="w-3.5 h-3.5 text-[#174B3D]" />
                           )}
                         </button>
 
                         {order.status === "completed" ? (
-                          <span className="text-xs px-3 py-1 rounded-full bg-sage-600 text-white font-bold flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="text-xs px-3 py-1 rounded-full bg-[#174B3D] text-white font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#c6a26c]" />
                             <span>Exitoso · 100% Pagado</span>
                           </span>
                         ) : (
-                          <span className="text-xs px-3 py-1 rounded-full bg-secondary-50 text-secondary font-semibold border border-secondary/15">
+                          <span className="text-xs px-3 py-1 rounded-full bg-[#c6a26c]/20 text-[#174B3D] font-semibold border border-[#c6a26c]/40">
                             50% Adelanto · 50% Contraentrega
                           </span>
                         )}
                       </div>
 
-                      <p className="text-xs text-secondary/60">
+                      <p className="text-xs text-stone-500">
                         Registrada el{" "}
                         {new Date(order.created_at).toLocaleDateString(
                           "es-PE",
@@ -425,7 +425,7 @@ export default function CommonUserOrdersPage() {
 
                     <Link
                       href={`/track/${order.tracking_id}`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-cream-100 hover:bg-secondary hover:text-white border border-secondary/15 text-xs font-bold text-secondary transition-all self-start sm:self-auto"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#FFFBF2] hover:bg-[#174B3D] hover:text-white border border-[#E8DEC8] text-xs font-bold text-[#174B3D] transition-all self-start sm:self-auto"
                     >
                       <span>Abrir Hoja de Seguimiento</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -445,7 +445,7 @@ export default function CommonUserOrdersPage() {
                   {/* Artwork & 50/50 Payment Breakdown */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
                     {item && (
-                      <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-cream-50 border border-secondary/10 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] flex flex-col sm:flex-row sm:items-center gap-4">
                         <img
                           src={
                             (order.status === "completed" &&
@@ -455,23 +455,23 @@ export default function CommonUserOrdersPage() {
                               : item.generated_art_url || "/samples/cat-suit.jpg"
                           }
                           alt="Retrato Personalizado"
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-primary/30 shrink-0 shadow-xs"
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-[#c6a26c]/50 shrink-0 shadow-xs"
                         />
                         <div className="text-xs space-y-1.5 flex-1">
-                          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-50 px-2.5 py-0.5 rounded-full border border-primary/20">
+                          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#174B3D] bg-[#c6a26c]/25 px-2.5 py-0.5 rounded-full border border-[#c6a26c]/45">
                             {item.customizations?.theme_name ||
                               "Arte Personalizado"}
                           </span>
-                          <h3 className="font-serif text-lg font-bold text-secondary">
+                          <h3 className="font-serif text-lg font-bold text-[#174B3D]">
                             Cuadro Artístico Fine Art 300 DPI
                           </h3>
-                          <p className="text-secondary/80">
+                          <p className="text-[#141414]/85">
                             Medida:{" "}
                             <strong>{item.customizations?.size_label}</strong> ·
                             Marco:{" "}
                             <strong>{item.customizations?.frame_name}</strong>
                           </p>
-                          <p className="text-secondary/60">
+                          <p className="text-stone-500">
                             Acabado: {item.customizations?.finish_label}
                           </p>
 
@@ -485,14 +485,14 @@ export default function CommonUserOrdersPage() {
                                   "/samples/cat-suit.jpg"
                                 }
                                 download={`Apolena-Recuerdo-Digital-HD-${order.order_code}.png`}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[11px] font-bold shadow-xs transition-all"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold shadow-xs transition-all"
                               >
-                                <Download className="w-3.5 h-3.5" />
+                                <Download className="w-3.5 h-3.5 text-[#c6a26c]" />
                                 <span>Descargar Recuerdo Digital HD (Sin Marca de Agua)</span>
                               </a>
                             ) : (
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-secondary/15 text-[11px] text-secondary/70 font-medium">
-                                <Lock className="w-3 h-3 text-primary" />
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[11px] text-stone-600 font-medium">
+                                <Lock className="w-3 h-3 text-[#174B3D]" />
                                 <span>
                                   Recuerdo Digital HD sin marca se desbloquea al completar la entrega (100%)
                                 </span>
@@ -503,26 +503,26 @@ export default function CommonUserOrdersPage() {
                       </div>
                     )}
 
-                    <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-cream-50 border border-secondary/10 space-y-3 text-xs flex flex-col justify-between">
+                    <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] space-y-3 text-xs flex flex-col justify-between">
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between font-bold text-secondary text-sm">
+                        <div className="flex items-center justify-between font-bold text-[#174B3D] text-sm">
                           <span className="flex items-center gap-1.5">
-                            <CreditCard className="w-4 h-4 text-primary" />
+                            <CreditCard className="w-4 h-4 text-[#c6a26c]" />
                             <span>Total del Pedido:</span>
                           </span>
                           <span>S/ {order.total_amount.toFixed(2)}</span>
                         </div>
 
                         {/* Barra de progreso de pago 50% / 100% */}
-                        <div className="w-full h-2 rounded-full bg-secondary/10 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-[#E8DEC8] overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              isPaidFull ? "w-full bg-sage-600" : "w-1/2 bg-primary"
+                              isPaidFull ? "w-full bg-[#174B3D]" : "w-1/2 bg-[#c6a26c]"
                             }`}
                           />
                         </div>
 
-                        <div className="flex justify-between text-sage-700 font-semibold">
+                        <div className="flex justify-between text-[#174B3D] font-semibold">
                           <span>
                             1er 50% Adelanto (
                             {order.payment_method.toUpperCase()}):
@@ -530,11 +530,11 @@ export default function CommonUserOrdersPage() {
                           <span>S/ {order.advance_amount.toFixed(2)}</span>
                         </div>
 
-                        <div className="flex justify-between text-secondary/80 font-semibold">
+                        <div className="flex justify-between text-[#141414]/80 font-semibold">
                           <span>2do 50% Contraentrega:</span>
                           <span
                             className={
-                              isPaidFull ? "text-sage-700" : "text-primary-700"
+                              isPaidFull ? "text-[#174B3D]" : "text-[#94713F]"
                             }
                           >
                             S/ {order.remaining_amount.toFixed(2)} (
@@ -543,8 +543,8 @@ export default function CommonUserOrdersPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2.5 border-t border-secondary/10 flex items-center gap-1.5 text-secondary/65 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <div className="pt-2.5 border-t border-[#E8DEC8] flex items-center gap-1.5 text-stone-600 text-[11px]">
+                        <MapPin className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
                         <span className="truncate">
                           {order.shipping?.address}, {order.shipping?.district}
                         </span>
@@ -554,8 +554,8 @@ export default function CommonUserOrdersPage() {
 
                   {/* Reseña del Cliente */}
                   {existingReview && (
-                    <div className="p-4 rounded-2xl bg-sage-50/70 border border-sage-100 text-xs space-y-1">
-                      <div className="flex items-center gap-1 text-primary">
+                    <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/40 text-xs space-y-1">
+                      <div className="flex items-center gap-1 text-[#c6a26c]">
                         {Array.from({ length: existingReview.rating }).map(
                           (_, i) => (
                             <Star
@@ -564,22 +564,22 @@ export default function CommonUserOrdersPage() {
                             />
                           ),
                         )}
-                        <span className="text-secondary font-bold ml-1.5">
+                        <span className="text-[#174B3D] font-bold ml-1.5">
                           Tu reseña verificada
                         </span>
                       </div>
-                      <p className="text-secondary/80 italic">
+                      <p className="text-[#141414]/80 italic">
                         &ldquo;{existingReview.comment}&rdquo;
                       </p>
                     </div>
                   )}
 
                   {canReview && (
-                    <div className="pt-2 border-t border-secondary/10">
+                    <div className="pt-2 border-t border-[#E8DEC8]">
                       {activeReviewOrderId === order.id ? (
-                        <div className="p-4 rounded-2xl bg-cream-50 border border-secondary/15 space-y-3 text-xs">
+                        <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] space-y-3 text-xs">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-secondary">
+                            <span className="font-bold text-[#174B3D]">
                               Califica tu cuadro personalizado Apolena
                             </span>
                             <div className="flex items-center gap-1">
@@ -588,7 +588,7 @@ export default function CommonUserOrdersPage() {
                                   key={num}
                                   type="button"
                                   onClick={() => setReviewRating(num)}
-                                  className="p-1 text-primary"
+                                  className="p-1 text-[#c6a26c]"
                                 >
                                   <Star
                                     className={`w-4 h-4 ${
@@ -604,13 +604,13 @@ export default function CommonUserOrdersPage() {
                             value={reviewComment}
                             onChange={(e) => setReviewComment(e.target.value)}
                             placeholder="¿Qué te pareció la calidad del lienzo y el retrato de tu mascota?"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-secondary/15 text-secondary focus:border-primary focus:outline-none"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E8DEC8] text-[#141414] focus:border-[#174B3D] focus:outline-none"
                           />
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => setActiveReviewOrderId(null)}
-                              className="px-4 py-2 rounded-full border border-secondary/20 text-secondary/70 font-semibold"
+                              className="px-4 py-2 rounded-full border border-[#E8DEC8] text-stone-600 font-semibold"
                             >
                               Cancelar
                             </button>
@@ -618,7 +618,7 @@ export default function CommonUserOrdersPage() {
                               type="button"
                               disabled={isSavingReview}
                               onClick={() => handleSubmitReview(order.id)}
-                              className="px-5 py-2 rounded-full bg-primary hover:bg-primary-600 text-white font-bold"
+                              className="px-5 py-2 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white font-bold"
                             >
                               {isSavingReview
                                 ? "Guardando..."
@@ -630,9 +630,9 @@ export default function CommonUserOrdersPage() {
                         <button
                           type="button"
                           onClick={() => setActiveReviewOrderId(order.id)}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#174B3D] hover:underline"
                         >
-                          <Star className="w-3.5 h-3.5" />
+                          <Star className="w-3.5 h-3.5 text-[#c6a26c]" />
                           <span>Dejar una reseña sobre mi pedido</span>
                         </button>
                       )}

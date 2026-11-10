@@ -3,14 +3,17 @@
 @tailwind utilities;
 
 :root {
-  /* Paleta Oficial Apolena (Reajustada para alto contraste) */
-  --bg-primary: #F5EDE0;       /* Marfil: Fondo general */
-  --bg-secondary: #EFE7DA;     /* Marfil sutil para tarjetas */
-  --color-primary: #174B3D;    /* Verde Bosque Primario */
-  --color-accent: #E9A17B;     /* Salmón Accento */
-  --text-main: #174B3D;        /* Verde Bosque para tipografía principal */
-  --text-muted: #4A6B60;       /* Verde suavizado para textos secundarios */
-  --border-color: #D4C5B3;     /* Borde neutro */
+  /* Paleta Oficial Apolena */
+  --color-primary: #174B3D;    /* Primary: Verde Bosque */
+  --color-secondary: #c6a26c;  /* Secondary: Dorado */
+  --color-tertiary: #FFFBF2;   /* Tertiary: Crema Fondo */
+
+  --bg-primary: #FFFBF2;       /* Tertiary: Fondo general */
+  --bg-secondary: #F6EFE0;     /* Crema sutil para superficies secundarias */
+  --color-accent: #c6a26c;     /* Dorado Accento */
+  --text-main: #141414;        /* Negro / Carbón para textos sobre fondos claros */
+  --text-muted: #4A5550;       /* Gris verdoso para textos secundarios */
+  --border-color: #E8DEC8;     /* Borde neutro cálido */
 
   --font-sans: "Plus Jakarta Sans", sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
@@ -25,26 +28,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Forzar que todos los títulos hereden Verde Bosque intenso en lugar de Salmón */
-h1, h2, h3, h4, h5, h6 {
-  color: #174B3D !important;
-}
-
 /* Scrollbar personalizado */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #F5EDE0;
+  background: #FFFBF2;
 }
 ::-webkit-scrollbar-thumb {
   background: #174B3D;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0f3229;
+  background: #c6a26c;
 }
+
 /* Animaciones personalizadas del Banner Carousel */
 @keyframes ap-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 @keyframes ap-word { from { opacity: 0; transform: translateY(22px); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }

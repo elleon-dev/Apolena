@@ -140,22 +140,22 @@ function LoginForm() {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto bg-white border border-cream-200 rounded-3xl p-8 shadow-soft space-y-6">
+    <div className="max-w-md w-full mx-auto bg-white border border-[#c6a26c]/40 rounded-3xl p-8 shadow-soft space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-terracotta-50 border border-terracotta-100 text-terracotta-600 flex items-center justify-center mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-[#174B3D]/10 border border-[#174B3D]/20 text-[#174B3D] flex items-center justify-center mx-auto">
           <Lock className="w-5 h-5" />
         </div>
-        <h1 className="font-serif text-3xl font-semibold text-stone-900">
+        <h1 className="font-serif text-3xl font-bold text-[#174B3D]">
           Bienvenido a Apolena
         </h1>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-[#141414]/70">
           Ingresa a tu cuenta para ver tus retratos, órdenes y seguimiento en
           vivo.
         </p>
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-100 text-terracotta-700 text-xs flex items-center gap-2.5">
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -166,11 +166,11 @@ function LoginForm() {
         type="button"
         onClick={handleGoogleLogin}
         disabled={isGoogleLoading || isLoading}
-        className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-stone-50 border border-stone-200 disabled:opacity-60 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all"
+        className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-[#FFFBF2] border border-[#E8DEC8] disabled:opacity-60 text-[#141414] text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all"
       >
         {isGoogleLoading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin text-stone-600" />
+            <Loader2 className="w-4 h-4 animate-spin text-[#174B3D]" />
             <span>Redirigiendo a Google...</span>
           </>
         ) : (
@@ -182,16 +182,16 @@ function LoginForm() {
       </button>
 
       <div className="relative flex items-center justify-center">
-        <div className="border-t border-cream-200 w-full" />
+        <div className="border-t border-[#E8DEC8] w-full" />
         <span className="bg-white px-3 text-[11px] font-medium text-stone-400 uppercase tracking-wider shrink-0">
           o ingresa con tu correo
         </span>
-        <div className="border-t border-cream-200 w-full" />
+        <div className="border-t border-[#E8DEC8] w-full" />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-stone-800 block">
+          <label className="text-xs font-semibold text-[#174B3D] block">
             Correo electrónico
           </label>
           <div className="relative">
@@ -202,13 +202,13 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.com"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:border-terracotta-500 focus:bg-white focus:outline-none"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-stone-800 block">
+          <label className="text-xs font-semibold text-[#174B3D] block">
             Contraseña
           </label>
           <div className="relative">
@@ -219,7 +219,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:border-terracotta-500 focus:bg-white focus:outline-none"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
             />
           </div>
         </div>
@@ -227,7 +227,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3.5 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-60 text-white text-xs font-medium flex items-center justify-center gap-2 shadow-soft transition-all"
+          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
         >
           {isLoading ? (
             <>
@@ -237,7 +237,7 @@ function LoginForm() {
           ) : (
             <>
               <span>Iniciar Sesión</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
             </>
           )}
         </button>

@@ -27,23 +27,23 @@ export function renderEmailHtml(
   if (template === "order_created_buyer") {
     const trackingUrl = `${appUrl}/track/${data.tracking_id || ""}`;
     return `
-      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #F7F2EB; padding: 32px; border-radius: 20px; color: #102854; border: 1px solid #E6EDF5;">
-        <h1 style="font-size: 24px; margin-bottom: 8px; color: #102854;">¡Gracias por tu compra en Apolena, ${data.buyer_name || ""}!</h1>
-        <p style="font-family: sans-serif; font-size: 14px; color: #475569; line-height: 1.6;">
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 32px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
+        <h1 style="font-size: 24px; margin-bottom: 8px; color: #174B3D;">¡Gracias por tu compra en Apolena, ${data.buyer_name || ""}!</h1>
+        <p style="font-family: sans-serif; font-size: 14px; color: #3E3C37; line-height: 1.6;">
           Hemos recibido tu orden <strong>#${data.order_code}</strong> y tu adelanto del 50%. Nuestro taller ya inició el <strong>Paso 1: Fabricación</strong> de tu cuadro personalizado.
         </p>
-        <div style="background: #FFFFFF; border: 1px solid #E6EDF5; border-radius: 16px; padding: 20px; margin: 20px 0; font-family: sans-serif;">
-          <p style="font-size: 11px; text-transform: uppercase; color: #64748B; margin: 0 0 6px;">Tu Tracking ID de Seguimiento (3 Pasos)</p>
-          <p style="font-family: monospace; font-size: 24px; font-weight: bold; color: #FD9414; margin: 0 0 12px;">${data.tracking_id}</p>
-          <a href="${trackingUrl}" style="display: inline-block; background: #FD9414; color: #FFFFFF; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 600;">
+        <div style="background: #FFFFFF; border: 1px solid #E8DEC8; border-radius: 16px; padding: 20px; margin: 20px 0; font-family: sans-serif;">
+          <p style="font-size: 11px; text-transform: uppercase; color: #5C5850; margin: 0 0 6px;">Tu Tracking ID de Seguimiento (3 Pasos)</p>
+          <p style="font-family: monospace; font-size: 24px; font-weight: bold; color: #174B3D; margin: 0 0 12px;">${data.tracking_id}</p>
+          <a href="${trackingUrl}" style="display: inline-block; background: #c6a26c; color: #174B3D; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 700;">
             Rastrear mi Orden en Vivo
           </a>
         </div>
-        <div style="background: #FFFFFF; border: 1px solid #E6EDF5; border-radius: 16px; padding: 16px; font-family: sans-serif; font-size: 13px; color: #102854;">
+        <div style="background: #FFFFFF; border: 1px solid #E8DEC8; border-radius: 16px; padding: 16px; font-family: sans-serif; font-size: 13px; color: #141414;">
           <p style="margin: 4px 0;"><strong>Medida:</strong> ${data.customizations?.size_label || "Estándar"}</p>
           <p style="margin: 4px 0;"><strong>Marco:</strong> ${data.customizations?.frame_name || "Bastidor de Galería"}</p>
           <p style="margin: 4px 0;"><strong>Total de la Orden:</strong> S/ ${Number(data.total_amount || 0).toFixed(2)}</p>
-          <p style="margin: 4px 0; color: #3B6E52;"><strong>1er 50% Abonado (${String(data.payment_method || "").toUpperCase()}):</strong> S/ ${Number(data.advance_amount || 0).toFixed(2)}</p>
+          <p style="margin: 4px 0; color: #174B3D;"><strong>1er 50% Abonado (${String(data.payment_method || "").toUpperCase()}):</strong> S/ ${Number(data.advance_amount || 0).toFixed(2)}</p>
           <p style="margin: 4px 0;"><strong>2do 50% Contraentrega (al recibir):</strong> S/ ${Number(data.remaining_amount || 0).toFixed(2)}</p>
         </div>
       </div>
@@ -53,10 +53,10 @@ export function renderEmailHtml(
   if (template === "order_created_admin") {
     const adminUrl = `${appUrl}/admin`;
     return `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #102854; padding: 28px; border-radius: 20px; color: #FCFDFA;">
-        <h2 style="margin-top: 0; color: #FD9414;">[NUEVA ORDEN APOLENA] ${data.order_code}</h2>
-        <p style="font-size: 14px; color: #E6EDF5;">Se ha registrado un nuevo pedido con adelanto del 50%.</p>
-        <div style="background: #15346E; padding: 16px; border-radius: 12px; font-size: 13px; line-height: 1.6;">
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #174B3D; padding: 28px; border-radius: 20px; color: #FFFFFF;">
+        <h2 style="margin-top: 0; color: #c6a26c;">[NUEVA ORDEN APOLENA] ${data.order_code}</h2>
+        <p style="font-size: 14px; color: #FFFBF2;">Se ha registrado un nuevo pedido con adelanto del 50%</p>
+        <div style="background: #123B30; padding: 16px; border-radius: 12px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(198,162,108,0.35);">
           <p style="margin: 4px 0;"><strong>Tracking ID:</strong> ${data.tracking_id}</p>
           <p style="margin: 4px 0;"><strong>Cliente:</strong> ${data.buyer_name} (${data.buyer_email})</p>
           <p style="margin: 4px 0;"><strong>Teléfono / WhatsApp:</strong> ${data.buyer_phone}</p>
@@ -66,7 +66,7 @@ export function renderEmailHtml(
           <p style="margin: 4px 0;"><strong>Personalización:</strong> ${data.customizations?.size_label} · ${data.customizations?.frame_name}</p>
         </div>
         <div style="margin-top: 20px;">
-          <a href="${adminUrl}" style="display: inline-block; background: #FD9414; color: #FFFFFF; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 600;">
+          <a href="${adminUrl}" style="display: inline-block; background: #c6a26c; color: #174B3D; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 700;">
             Abrir Panel de Administración
           </a>
         </div>
@@ -75,15 +75,15 @@ export function renderEmailHtml(
   }
 
   return `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #F7F2EB; padding: 28px; border-radius: 20px; color: #102854; border: 1px solid #E6EDF5;">
-      <h2 style="font-family: Georgia, serif; margin-top: 0; color: #102854;">Actualización de tu pedido #${data.order_code || ""}</h2>
-      <p style="font-size: 14px; color: #475569;">
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 28px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
+      <h2 style="font-family: Georgia, serif; margin-top: 0; color: #174B3D;">Actualización de tu pedido #${data.order_code || ""}</h2>
+      <p style="font-size: 14px; color: #3E3C37;">
         Nuevo estado de tu orden (Tracking <strong>${data.tracking_id || ""}</strong>):
       </p>
-      <div style="background: #FFFFFF; border: 1px solid #E6EDF5; padding: 16px; border-radius: 12px; margin: 16px 0;">
-        <strong style="font-size: 16px; color: #FD9414;">${data.status_label || data.status}</strong>
+      <div style="background: #FFFFFF; border: 1px solid #E8DEC8; padding: 16px; border-radius: 12px; margin: 16px 0;">
+        <strong style="font-size: 16px; color: #174B3D;">${data.status_label || data.status}</strong>
       </div>
-      <a href="${appUrl}/track/${data.tracking_id || ""}" style="display: inline-block; background: #102854; color: #FFFFFF; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px;">
+      <a href="${appUrl}/track/${data.tracking_id || ""}" style="display: inline-block; background: #c6a26c; color: #174B3D; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 700;">
         Ver Seguimiento en Vivo
       </a>
     </div>

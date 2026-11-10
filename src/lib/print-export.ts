@@ -243,9 +243,13 @@ export async function exportWatermarkedPreviewImage(
   const artImg = await loadImg(imageSrc);
   let logoImg: HTMLImageElement | null = null;
   try {
-    logoImg = await loadImg("/logo.png");
+    logoImg = await loadImg("/logo-light.png");
   } catch {
-    logoImg = null;
+    try {
+      logoImg = await loadImg("/logo.png");
+    } catch {
+      logoImg = null;
+    }
   }
 
   const srcW = artImg.naturalWidth || artImg.width || 1024;
@@ -286,22 +290,22 @@ export async function exportWatermarkedPreviewImage(
   for (let y = -targetH; y <= targetH; y += stepY) {
     for (let x = -targetW; x <= targetW; x += stepX) {
       // Subtle dark shadow + translucent white text so it is visible on both dark and light fur
-      ctx.fillStyle = "rgba(16, 40, 84, 0.22)";
+      ctx.fillStyle = "rgba(23, 75, 61, 0.25)";
       ctx.fillText("APOLENA · MUESTRA DIGITAL", x + 1, y + 1);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.30)";
       ctx.fillText("APOLENA · MUESTRA DIGITAL", x, y);
 
       if (logoImg) {
         ctx.save();
-        ctx.globalAlpha = 0.16;
-        const wmLogoW = 92;
+        ctx.globalAlpha = 0.18;
+        const wmLogoW = 72;
         const wmLogoH = Math.round(
           (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * wmLogoW,
         );
         ctx.drawImage(
           logoImg,
           x - wmLogoW / 2,
-          y + 18,
+          y + 16,
           wmLogoW,
           wmLogoH,
         );
@@ -311,53 +315,40 @@ export async function exportWatermarkedPreviewImage(
   }
   ctx.restore();
 
-  // 3. Center-bottom translucent badge with official Apolena Logo
+  // 3. Center-bottom translucent badge with official Apolena Logo on Primary #174B3D
   const footerHeight = 64;
   const grad = ctx.createLinearGradient(0, targetH - footerHeight * 1.8, 0, targetH);
-  grad.addColorStop(0, "rgba(12, 25, 42, 0)");
-  grad.addColorStop(0.5, "rgba(12, 25, 42, 0.72)");
-  grad.addColorStop(1, "rgba(12, 25, 42, 0.92)");
+  grad.addColorStop(0, "rgba(23, 75, 61, 0)");
+  grad.addColorStop(0.5, "rgba(23, 75, 61, 0.78)");
+  grad.addColorStop(1, "rgba(23, 75, 61, 0.96)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, targetH - footerHeight * 1.8, targetW, footerHeight * 1.8);
 
-  // Cream pill for the official logo so both orange isotipo and navy text are crisp
   if (logoImg) {
-    const pillW = 148;
-    const pillH = 38;
-    const pillX = 18;
-    const pillY = targetH - pillH - 13;
-
-    ctx.save();
-    ctx.fillStyle = "rgba(250, 246, 240, 0.94)";
-    ctx.beginPath();
-    ctx.roundRect(pillX, pillY, pillW, pillH, 19);
-    ctx.fill();
-
-    const logoDrawW = 116;
+    const logoDrawW = 54;
     const logoDrawH = Math.round(
       (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * logoDrawW,
     );
     ctx.drawImage(
       logoImg,
-      pillX + (pillW - logoDrawW) / 2,
-      pillY + (pillH - logoDrawH) / 2,
+      18,
+      targetH - logoDrawH - 10,
       logoDrawW,
       logoDrawH,
     );
-    ctx.restore();
   }
 
   // Right-side protection legend
   ctx.save();
   ctx.textAlign = "right";
-  ctx.fillStyle = "#FD9414";
+  ctx.fillStyle = "#c6a26c";
   ctx.font = "700 11px sans-serif";
   ctx.fillText(
     "MUESTRA PROTEGIDA · NO APTA PARA IMPRENTA",
     targetW - 18,
     targetH - 30,
   );
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.fillStyle = "rgba(255, 251, 242, 0.90)";
   ctx.font = "500 10px sans-serif";
   ctx.fillText(
     `${themeName} · Impresión exclusiva 300 DPI en apolena.pe`,

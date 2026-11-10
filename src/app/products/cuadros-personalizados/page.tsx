@@ -701,10 +701,10 @@ export default function personalizedWallArt() {
               <div className="max-w-sm mx-auto pt-2">
                 <button
                   onClick={() => setStep(2)}
-                  className="w-full py-4 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-medium flex items-center justify-center gap-2.5 shadow-soft transition-all"
+                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all"
                 >
                   <span>Continuar a Estilo y Escena</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                 </button>
               </div>
             )}
@@ -935,10 +935,10 @@ export default function personalizedWallArt() {
             <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
               <button
                 onClick={handleStartFusion}
-                className="w-full py-4 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-sm font-medium flex items-center justify-center gap-2.5 shadow-soft transition-all"
+                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all"
               >
                 <span>Crear Retrato Ahora</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
               </button>
               <p className="text-xs text-stone-500">
                 Prepararemos{" "}
@@ -1118,16 +1118,16 @@ export default function personalizedWallArt() {
                               {/* Mini Watermark Overlay on Proposal Thumbnail */}
                               <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-35">
                                 <img
-                                  src="/logo.png"
+                                  src="/logo-light.png"
                                   alt=""
                                   draggable={false}
-                                  className="w-14 object-contain -rotate-12 drop-shadow"
+                                  className="w-12 object-contain -rotate-12 drop-shadow"
                                 />
                               </div>
                               {isActiveVariant && (
                                 <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
-                                  <span className="w-6 h-6 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow">
-                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  <span className="w-6 h-6 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow">
+                                    <Check className="w-3.5 h-3.5 stroke-[3] text-[#c6a26c]" />
                                   </span>
                                 </div>
                               )}
@@ -1135,11 +1135,11 @@ export default function personalizedWallArt() {
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-1">
-                                <span className="text-xs font-bold text-stone-900 truncate">
+                                <span className="text-xs font-bold text-[#174B3D] truncate">
                                   {proposalTitle}
                                 </span>
                                 {isActiveVariant && (
-                                  <span className="text-[10px] uppercase tracking-wider font-bold text-terracotta-600 bg-white px-2 py-0.5 rounded-full border border-terracotta-200">
+                                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#174B3D] bg-[#c6a26c]/25 px-2 py-0.5 rounded-full border border-[#c6a26c]/50">
                                     Elegida
                                   </span>
                                 )}
@@ -1151,7 +1151,7 @@ export default function personalizedWallArt() {
                                 <span
                                   className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${
                                     isActiveVariant
-                                      ? "bg-terracotta-500 text-white shadow-xs"
+                                      ? "bg-[#174B3D] text-white shadow-xs"
                                       : "bg-cream-100 text-stone-700 hover:bg-cream-200"
                                   }`}
                                 >
@@ -1283,12 +1283,12 @@ export default function personalizedWallArt() {
                               className="flex flex-col items-center justify-center gap-1"
                             >
                               <img
-                                src="/logo.png"
+                                src="/logo-light.png"
                                 alt=""
                                 draggable={false}
-                                className="w-24 sm:w-28 object-contain drop-shadow-md"
+                                className="w-16 sm:w-20 object-contain drop-shadow-md"
                               />
-                              <span className="text-[9px] font-bold tracking-widest uppercase text-white bg-stone-950/50 px-2 py-0.5 rounded">
+                              <span className="text-[9px] font-bold tracking-widest uppercase text-white bg-[#174B3D]/70 px-2 py-0.5 rounded">
                                 MUESTRA PROTEGIDA
                               </span>
                             </div>
@@ -1296,20 +1296,20 @@ export default function personalizedWallArt() {
                         </div>
 
                         {/* Sello inferior oficial Apolena */}
-                        <div className="mt-auto relative z-20 bg-gradient-to-t from-stone-950/90 via-stone-950/60 to-transparent pt-8 pb-3 px-4 flex items-center justify-between gap-3 pointer-events-none">
-                          <div className="px-3 py-1 rounded-full bg-cream-100/95 shadow-sm flex items-center">
+                        <div className="mt-auto relative z-20 bg-gradient-to-t from-[#174B3D]/95 via-[#174B3D]/70 to-transparent pt-8 pb-3 px-4 flex items-center justify-between gap-3 pointer-events-none">
+                          <div className="flex items-center">
                             <img
-                              src="/logo.png"
+                              src="/logo-light.png"
                               alt="Apolena"
                               draggable={false}
-                              className="h-5 w-auto object-contain"
+                              className="h-9 w-auto object-contain"
                             />
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-terracotta-400">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#c6a26c]">
                               Vista Previa Protegida
                             </p>
-                            <p className="text-[9px] text-stone-300">
+                            <p className="text-[9px] text-[#FFFBF2]/90">
                               El lienzo físico se imprime sin marcas a 300 DPI
                             </p>
                           </div>
@@ -1339,9 +1339,9 @@ export default function personalizedWallArt() {
                           >
                             <div className="absolute inset-0 flex items-center justify-center opacity-35">
                               <img
-                                src="/logo.png"
+                                src="/logo-light.png"
                                 alt=""
-                                className="w-24 object-contain -rotate-12"
+                                className="w-20 object-contain -rotate-12"
                               />
                             </div>
                           </div>
@@ -1385,10 +1385,10 @@ export default function personalizedWallArt() {
                         {Array.from({ length: 12 }).map((_, wIdx) => (
                           <img
                             key={wIdx}
-                            src="/logo.png"
+                            src="/logo-light.png"
                             alt=""
                             draggable={false}
-                            className="w-24 object-contain"
+                            className="w-20 object-contain"
                           />
                         ))}
                       </div>
@@ -1544,9 +1544,9 @@ export default function personalizedWallArt() {
                   {/* Primary Order & Checkout CTA */}
                   <button
                     onClick={handleProceedToCheckout}
-                    className="w-full py-4 px-5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
+                    className="w-full py-4 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
                   >
-                    <ShoppingBag className="w-4 h-4" />
+                    <ShoppingBag className="w-4 h-4 text-[#c6a26c]" />
                     <span>
                       Ordenar Cuadro · Adelanto 50% (S/{" "}
                       {currentAdvance50.toFixed(2)})
@@ -1591,7 +1591,7 @@ export default function personalizedWallArt() {
 
               <button
                 onClick={() => setStep(2)}
-                className="px-6 py-3 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-medium shadow-soft transition-all"
+                className="px-6 py-3 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-bold shadow-soft transition-all"
               >
                 Probar otro escenario
               </button>

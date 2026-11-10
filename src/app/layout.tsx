@@ -37,7 +37,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-cream-100 text-secondary min-h-screen selection:bg-primary-100 selection:text-secondary">
+      <body className="bg-[#FFFBF2] text-[#141414] min-h-screen selection:bg-[#c6a26c]/30 selection:text-[#174B3D]">
         {children}
       </body>
     </html>

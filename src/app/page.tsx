@@ -9,13 +9,13 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#FAF6F0] text-[#1C1B1A]">
+    <main className="min-h-screen bg-[#FFFBF2] text-[#141414]">
       <Header />
       {/* 1. Carrusel de Banners Principal después del Header */}
       <BannerCarousel />
       {/* 2. Cómo Funciona (Pasos) */}
       <StepsSection />
-      {/* 3. Quiénes Somos */}
+      {/* 3. Quiénes Somos (Fondo Primary #174B3D con Logo Blanco) */}
       <AboutSection />
       {/* 4. Testimonios & Reseñas de Clientes */}
       <TestimonialsSection />
@@ -23,7 +23,7 @@ export default function Home() {
       <ContactSection />
       {/* 6. Preguntas Frecuentes */}
       <FaqSection />
-      {/* 7. Footer */}
+      {/* 7. Footer (Fondo Primary #174B3D con Logo Blanco) */}
       <Footer />
     </main>
   );

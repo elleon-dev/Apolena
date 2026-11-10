@@ -18,22 +18,22 @@ export default function TrackLookupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#1C1B1A]">
+    <div className="min-h-screen flex flex-col bg-[#FFFBF2] text-[#141414]">
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 py-16">
-        <div className="max-w-xl w-full bg-white border border-[#E8E2D9] rounded-3xl p-8 sm:p-10 shadow-soft space-y-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+        <div className="max-w-xl w-full bg-white border border-[#c6a26c]/40 rounded-3xl p-8 sm:p-10 shadow-soft space-y-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#174B3D]/10 border border-[#174B3D]/20 text-[#174B3D] flex items-center justify-center mx-auto">
             <PackageSearch className="w-7 h-7" />
           </div>
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold tracking-widest uppercase">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c6a26c]/20 text-[#174B3D] text-[11px] font-bold tracking-widest uppercase border border-[#c6a26c]/40">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>SEGUIMIENTO EN TIEMPO REAL</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-extrabold text-secondary">
+            <h1 className="font-serif text-3xl sm:text-4xl font-extrabold text-[#174B3D]">
               Rastrea tu Pedido
             </h1>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-[#141414]/75 max-w-md mx-auto">
               Ingresa tu <strong>Tracking ID único</strong> (ej. <code>APO-2026-849201</code>) para consultar la etapa de fabricación y delivery de tu cuadro.
             </p>
           </div>
@@ -47,16 +47,16 @@ export default function TrackLookupPage() {
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
                 placeholder="Ej. APO-2026-849201"
-                className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FAF6F0] border border-[#E8E2D9] text-sm font-mono text-stone-900 focus:border-primary focus:bg-white focus:outline-none uppercase"
+                className="w-full pl-11 pr-4 py-4 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-sm font-mono text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none uppercase"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-4 px-6 rounded-full bg-primary hover:bg-primary-600 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+              className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
             >
               <span>Consultar Estado de mi Pedido</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
             </button>
           </form>
 

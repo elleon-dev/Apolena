@@ -104,9 +104,13 @@ export async function burnServerSideWatermark(
 
     // Prepare official logo as base64 for embedding inside the SVG watermark
     let logoDataUri = "";
-    const logoPath = path.join(process.cwd(), "public", "logo.png");
-    if (fs.existsSync(logoPath)) {
-      const resizedLogoBuf = await sharp(logoPath)
+    const logoLightPath = path.join(process.cwd(), "public", "logo-light.png");
+    const logoNormalPath = path.join(process.cwd(), "public", "logo.png");
+    const chosenLogoPath = fs.existsSync(logoLightPath)
+      ? logoLightPath
+      : logoNormalPath;
+    if (fs.existsSync(chosenLogoPath)) {
+      const resizedLogoBuf = await sharp(chosenLogoPath)
         .resize({ width: 160, withoutEnlargement: true })
         .png()
         .toBuffer();
@@ -123,17 +127,17 @@ export async function burnServerSideWatermark(
         <pattern id="apolenaSecGrid" width="${patternW}" height="${patternH}" patternTransform="rotate(-26)" patternUnits="userSpaceOnUse">
           ${
             logoDataUri
-              ? `<image href="${logoDataUri}" x="55" y="14" width="130" height="42" opacity="0.24" />`
+              ? `<image href="${logoDataUri}" x="55" y="10" width="130" height="48" opacity="0.24" />`
               : ""
           }
-          <text x="120" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#102854" fill-opacity="0.26">APOLENA · MUESTRA PROTEGIDA</text>
+          <text x="120" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#174B3D" fill-opacity="0.28">APOLENA · MUESTRA PROTEGIDA</text>
           <text x="119" y="77" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#FFFFFF" fill-opacity="0.34">APOLENA · MUESTRA PROTEGIDA</text>
-          <text x="120" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#FD9414" fill-opacity="0.32">PROHIBIDA SU IMPRESIÓN · 300 DPI EN TALLER</text>
+          <text x="120" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#c6a26c" fill-opacity="0.38">PROHIBIDA SU IMPRESIÓN · 300 DPI EN TALLER</text>
         </pattern>
         <linearGradient id="footerGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#0C192A" stop-opacity="0" />
-          <stop offset="45%" stop-color="#0C192A" stop-opacity="0.78" />
-          <stop offset="100%" stop-color="#0C192A" stop-opacity="0.95" />
+          <stop offset="0%" stop-color="#174B3D" stop-opacity="0" />
+          <stop offset="45%" stop-color="#174B3D" stop-opacity="0.82" />
+          <stop offset="100%" stop-color="#174B3D" stop-opacity="0.96" />
         </linearGradient>
       </defs>
 
@@ -143,15 +147,14 @@ export async function burnServerSideWatermark(
       <!-- Bottom Institutional Protection Strip -->
       <rect x="0" y="${height - footerH * 1.6}" width="${width}" height="${footerH * 1.6}" fill="url(#footerGrad)" />
 
-      <rect x="14" y="${height - 42}" width="132" height="32" rx="16" fill="#FAF6F0" fill-opacity="0.95" />
       ${
         logoDataUri
-          ? `<image href="${logoDataUri}" x="26" y="${height - 38}" width="108" height="24" />`
-          : `<text x="80" y="${height - 22}" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="14" fill="#102854">Apolena</text>`
+          ? `<image href="${logoDataUri}" x="18" y="${height - 44}" width="64" height="36" />`
+          : `<text x="50" y="${height - 22}" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="14" fill="#FFFFFF">Apolena</text>`
       }
 
-      <text x="${width - 14}" y="${height - 26}" text-anchor="end" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#FD9414">VISTA PREVIA CON MARCA DE AGUA</text>
-      <text x="${width - 14}" y="${height - 13}" text-anchor="end" font-family="Arial, sans-serif" font-size="9.5" fill="#E7E5E4">Tu cuadro físico se fabrica sin marcas a 300 DPI</text>
+      <text x="${width - 14}" y="${height - 26}" text-anchor="end" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#c6a26c">VISTA PREVIA CON MARCA DE AGUA</text>
+      <text x="${width - 14}" y="${height - 13}" text-anchor="end" font-family="Arial, sans-serif" font-size="9.5" fill="#FFFBF2">Tu cuadro físico se fabrica sin marcas a 300 DPI</text>
     </svg>`;
 
     const outBuffer = await baseImage
@@ -250,4 +253,3 @@ export function resolveCleanMasterArtwork(
 
   return fallbackUrl || null;
 }
-

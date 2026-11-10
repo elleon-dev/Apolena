@@ -36,7 +36,7 @@ export function ProtectedArtworkCanvas({
     }
 
     const logoImg = new Image();
-    logoImg.src = "/logo.png";
+    logoImg.src = "/logo-light.png";
 
     const renderToCanvas = () => {
       if (cancelled || !canvasRef.current) return;
@@ -68,15 +68,15 @@ export function ProtectedArtworkCanvas({
 
         for (let y = -h; y <= h; y += 150) {
           for (let x = -w; x <= w; x += 230) {
-            ctx.fillStyle = "rgba(16, 40, 84, 0.22)";
+            ctx.fillStyle = "rgba(23, 75, 61, 0.26)";
             ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x + 1, y + 1);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.30)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.32)";
             ctx.fillText("APOLENA · MUESTRA PROTEGIDA", x, y);
 
             if (logoImg.complete && logoImg.naturalWidth > 0) {
               ctx.save();
-              ctx.globalAlpha = 0.18;
-              const lw = 95;
+              ctx.globalAlpha = 0.22;
+              const lw = 76;
               const lh = Math.round(
                 (logoImg.naturalHeight / logoImg.naturalWidth) * lw,
               );

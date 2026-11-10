@@ -501,7 +501,7 @@ export default function CheckoutPage() {
               <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
   <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
     <div className="flex items-center gap-2.5">
-      <FileText className="w-5 h-5 text-[#E9A17B]" />
+      <FileText className="w-5 h-5 text-[#c6a26c]" />
       <h2 className="font-serif text-lg font-bold text-[#174B3D]">
         2. Comprobante de Pago
       </h2>
@@ -511,8 +511,8 @@ export default function CheckoutPage() {
     </span>
   </div>
 
-  <div className="p-4 rounded-2xl bg-[#F5EDE0]/60 border border-[#174B3D]/10">
-    <p className="text-xs text-[#4A6B60] leading-relaxed font-medium">
+  <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
+    <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
       Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
     </p>
   </div>
@@ -896,7 +896,7 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 px-6 rounded-full bg-terracotta-500 hover:bg-terracotta-600 disabled:opacity-60 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
+                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
                 >
                   {isSubmitting ? (
                     <>
