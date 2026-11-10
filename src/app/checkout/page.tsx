@@ -497,19 +497,19 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA) */}
+              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA)
               <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
-                  <div className="flex items-center gap-2.5">
-                    <FileText className="w-5 h-5 text-[#c6a26c]" />
-                    <h2 className="font-serif text-lg font-bold text-[#174B3D]">
-                      2. Comprobante de Pago
-                    </h2>
-                  </div>
-                  <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
-                    Comprobante de Pedido
-                  </span>
-                </div>
+  <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
+    <div className="flex items-center gap-2.5">
+      <FileText className="w-5 h-5 text-[#c6a26c]" />
+      <h2 className="font-serif text-lg font-bold text-[#174B3D]">
+        2. Comprobante de Pago
+      </h2>
+    </div>
+    <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
+      Comprobante de Pedido
+    </span>
+  </div>
 
                 <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
                   <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
@@ -519,6 +519,12 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
+  <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
+    <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
+      Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
+    </p>
+  </div>
+</div>*/}
 
               {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
@@ -526,7 +532,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      3. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
+                      2. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
                     </h2>
                   </div>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-terracotta-50 text-terracotta-700 border border-terracotta-100">
@@ -581,11 +587,7 @@ export default function CheckoutPage() {
                   {paymentMethod === "yape" && (
                     <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Yapea{" "}
-                        <strong className="text-terracotta-600 font-bold">
-                          S/ {advance50.toFixed(2)}
-                        </strong>{" "}
-                        al número oficial de Apolena:
+                        Yapea <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
                       </p>
                       <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
                         <div>
