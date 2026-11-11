@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import {
   MapPin,
@@ -20,8 +21,6 @@ import {
   PackageSearch,
   Lock,
   User,
-  LogIn,
-  UserPlus,
   PenTool,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
@@ -58,7 +57,10 @@ const DEFAULT_DRAFT: CheckoutDraft = {
   },
 };
 
-export default function CheckoutPage() {
+function CheckoutContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [draft, setDraft] = useState<CheckoutDraft>(DEFAULT_DRAFT);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [shippingRates, setShippingRates] = useState<{
@@ -90,7 +92,7 @@ export default function CheckoutPage() {
   const [legalName, setLegalName] = useState("");
   const [taxAddress, setTaxAddress] = useState("");
 
-  // User Session & Mandatory Auth Gate State
+  // User Session State
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     email: string;
@@ -99,15 +101,7 @@ export default function CheckoutPage() {
     role: string;
   } | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-  // Inline Auth Form State
-  const [authTab, setAuthTab] = useState<"register" | "login">("register");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authName, setAuthName] = useState("");
-  const [authPhone, setAuthPhone] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [isRestoredNotice, setIsRestoredNotice] = useState(false);
 
   // 50% Advance Payment State
   const [paymentMethod, setPaymentMethod] = useState<
@@ -131,7 +125,35 @@ export default function CheckoutPage() {
           setDraft(parsed);
         }
       }
+
+      const savedForm = localStorage.getItem("apolena_pending_checkout");
+      if (savedForm) {
+        const p = JSON.parse(savedForm);
+        if (p.name) setName(p.name);
+        if (p.phone) setPhone(p.phone);
+        if (p.email) setEmail(p.email);
+        if (p.docType) setDocType(p.docType);
+        if (p.docNumber) setDocNumber(p.docNumber);
+        if (p.department) setDepartment(p.department);
+        if (p.province) setProvince(p.province);
+        if (p.district) setDistrict(p.district);
+        if (p.address) setAddress(p.address);
+        if (p.reference) setReference(p.reference);
+        if (p.notes) setNotes(p.notes);
+        if (p.invoiceType) setInvoiceType(p.invoiceType);
+        if (p.rucNumber) setRucNumber(p.rucNumber);
+        if (p.legalName) setLegalName(p.legalName);
+        if (p.taxAddress) setTaxAddress(p.taxAddress);
+        if (p.paymentMethod) setPaymentMethod(p.paymentMethod);
+        if (p.operationNumber) setOperationNumber(p.operationNumber);
+        if (p.proofImageUrl) setProofImageUrl(p.proofImageUrl);
+      }
     } catch {}
+
+    const isPending = searchParams.get("pendingOrder") === "true";
+    if (isPending) {
+      setIsRestoredNotice(true);
+    }
 
     fetch("/api/settings")
       .then((r) => r.json())
@@ -146,87 +168,23 @@ export default function CheckoutPage() {
       .then((data) => {
         if (data?.user) {
           setCurrentUser(data.user);
-          setName(data.user.name || "");
-          setEmail(data.user.email || "");
-          setPhone(data.user.phone || "");
-          if (data.user.address) setAddress(data.user.address);
-          if (data.user.district) setDistrict(data.user.district);
-          if (data.user.department) setDepartment(data.user.department);
+          setName((prev) => prev || data.user.name || "");
+          setEmail((prev) => prev || data.user.email || "");
+          setPhone((prev) => prev || data.user.phone || "");
+          if (data.user.address) setAddress((prev) => prev || data.user.address);
+          if (data.user.district) setDistrict((prev) => prev || data.user.district);
+          if (data.user.department) setDepartment((prev) => prev || data.user.department);
         }
       })
       .catch(() => {})
       .finally(() => setIsLoadingUser(false));
-  }, []);
-
-  const handleInlineLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    setAuthLoading(true);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: authEmail, password: authPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || "No se pudo iniciar sesión.");
-        return;
-      }
-      setCurrentUser(data.user);
-      setName(data.user.name || "");
-      setEmail(data.user.email || authEmail);
-      setPhone(data.user.phone || "");
-      if (data.user.address) setAddress(data.user.address);
-      if (data.user.district) setDistrict(data.user.district);
-      if (data.user.department) setDepartment(data.user.department);
-      setError(null);
-    } catch {
-      setAuthError("Error de conexión al iniciar sesión.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleInlineRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    setAuthLoading(true);
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: authName,
-          email: authEmail,
-          phone: authPhone,
-          password: authPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || "No se pudo registrar la cuenta.");
-        return;
-      }
-      setCurrentUser(data.user);
-      setName(data.user.name || authName);
-      setEmail(data.user.email || authEmail);
-      setPhone(data.user.phone || authPhone);
-      setError(null);
-    } catch {
-      setAuthError("Error de conexión al registrar la cuenta.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+  }, [searchParams]);
 
   const handleSwitchAccount = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {}
     setCurrentUser(null);
-    setAuthEmail("");
-    setAuthPassword("");
   };
 
   const shippingCost =
@@ -249,10 +207,51 @@ export default function CheckoutPage() {
     e.preventDefault();
     setError(null);
 
+    if (!name.trim() || !phone.trim() || !email.trim() || !address.trim() || !district.trim() || !department.trim()) {
+      setError("Por favor completa todos los campos obligatorios (*) de datos de entrega.");
+      window.scrollTo({ top: 250, behavior: "smooth" });
+      return;
+    }
+
+    if (!operationNumber.trim()) {
+      setError("Por favor ingresa el número de operación o referencia del 50% de adelanto.");
+      return;
+    }
+
+    // Si el usuario no está autenticado, guardamos el borrador en localStorage y lo enviamos a login/register
     if (!currentUser) {
-      setError(
-        "Debes iniciar sesión o registrar tu cuenta antes de completar tu pedido.",
-      );
+      try {
+        const pendingData = {
+          name,
+          phone,
+          email,
+          docType,
+          docNumber,
+          department,
+          province,
+          district,
+          address,
+          reference,
+          notes,
+          invoiceType,
+          rucNumber,
+          legalName,
+          taxAddress,
+          paymentMethod,
+          operationNumber,
+          proofImageUrl,
+        };
+        localStorage.setItem("apolena_pending_checkout", JSON.stringify(pendingData));
+      } catch {}
+
+      const callbackUrl = "/checkout?pendingOrder=true";
+      const q = new URLSearchParams({
+        callbackUrl,
+        email,
+        name,
+        phone,
+      });
+      router.push(`/auth/login?${q.toString()}`);
       return;
     }
 
@@ -306,6 +305,10 @@ export default function CheckoutPage() {
         setError(data.error || "No se pudo procesar tu orden.");
         return;
       }
+
+      try {
+        localStorage.removeItem("apolena_pending_checkout");
+      } catch {}
 
       setCreatedOrder(data.order);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -461,201 +464,26 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* OBLIGATORIO: AUTENTICACIÓN / REGISTRO PREVIO AL CHECKOUT */}
-              {!currentUser ? (
-                <div className="bg-white border-2 border-[#174B3D]/30 rounded-3xl p-6 sm:p-7 shadow-card space-y-5">
-                  <div className="flex items-center gap-3 pb-3 border-b border-cream-200">
-                    <div className="w-10 h-10 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center shrink-0 shadow-soft">
-                      <Lock className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="font-serif text-lg font-semibold text-stone-900">
-                        Paso 1: Identifícate o Crea tu Cuenta
-                      </h2>
-                      <p className="text-xs text-stone-500">
-                        Para asociar tu cuadro a tu galería y seguir tu pedido con tu Tracking ID.
-                      </p>
-                    </div>
+              {/* RESTORED NOTICE BANNER */}
+              {isRestoredNotice && currentUser && (
+                <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 text-sage-900 text-xs flex items-center gap-3 shadow-xs">
+                  <CheckCircle2 className="w-5 h-5 text-sage-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-stone-900">
+                      ¡Sesión iniciada con éxito!
+                    </p>
+                    <p className="text-stone-600 mt-0.5">
+                      Tus datos de entrega y pago fueron restaurados. Revisa el resumen y haz clic en <strong>Confirmar Orden</strong> para completar tu pedido.
+                    </p>
                   </div>
-
-                  {/* Tabs: Registro / Login */}
-                  <div className="grid grid-cols-2 p-1 rounded-2xl bg-cream-100 border border-cream-200 text-xs font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthTab("register");
-                        setAuthError(null);
-                      }}
-                      className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                        authTab === "register"
-                          ? "bg-[#174B3D] text-white shadow-xs"
-                          : "text-stone-600 hover:text-stone-900"
-                      }`}
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>Crear Cuenta Nueva</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthTab("login");
-                        setAuthError(null);
-                      }}
-                      className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                        authTab === "login"
-                          ? "bg-[#174B3D] text-white shadow-xs"
-                          : "text-stone-600 hover:text-stone-900"
-                      }`}
-                    >
-                      <LogIn className="w-3.5 h-3.5" />
-                      <span>Ya tengo Cuenta</span>
-                    </button>
-                  </div>
-
-                  {authError && (
-                    <div className="p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-terracotta-600" />
-                      <span>{authError}</span>
-                    </div>
-                  )}
-
-                  {authTab === "register" ? (
-                    <div className="space-y-3.5 text-xs">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div className="space-y-1">
-                          <label className="font-semibold text-stone-800 block">
-                            Tu Nombre Completo *
-                          </label>
-                          <input
-                            type="text"
-                            value={authName}
-                            onChange={(e) => setAuthName(e.target.value)}
-                            placeholder="Ej. Valeria Mendoza"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="font-semibold text-stone-800 block">
-                            Teléfono / WhatsApp *
-                          </label>
-                          <input
-                            type="tel"
-                            value={authPhone}
-                            onChange={(e) => setAuthPhone(e.target.value)}
-                            placeholder="999 888 777"
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-semibold text-stone-800 block">
-                          Correo Electrónico *
-                        </label>
-                        <input
-                          type="email"
-                          value={authEmail}
-                          onChange={(e) => setAuthEmail(e.target.value)}
-                          placeholder="tu@correo.com"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-semibold text-stone-800 block">
-                          Crea una Contraseña Segura (mín. 6 caracteres) *
-                        </label>
-                        <input
-                          type="password"
-                          value={authPassword}
-                          onChange={(e) => setAuthPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleInlineRegister}
-                        disabled={authLoading}
-                        className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-soft transition-all"
-                      >
-                        {authLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Creando cuenta segura...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Crear Cuenta y Continuar</span>
-                            <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3.5 text-xs">
-                      <div className="space-y-1">
-                        <label className="font-semibold text-stone-800 block">
-                          Correo Electrónico *
-                        </label>
-                        <input
-                          type="email"
-                          value={authEmail}
-                          onChange={(e) => setAuthEmail(e.target.value)}
-                          placeholder="tu@correo.com"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <label className="font-semibold text-stone-800 block">
-                            Tu Contraseña *
-                          </label>
-                          <Link
-                            href="/auth/forgot-password"
-                            target="_blank"
-                            className="text-[11px] text-[#174B3D] hover:underline"
-                          >
-                            ¿Olvidaste tu contraseña?
-                          </Link>
-                        </div>
-                        <input
-                          type="password"
-                          value={authPassword}
-                          onChange={(e) => setAuthPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleInlineLogin}
-                        disabled={authLoading}
-                        className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-soft transition-all"
-                      >
-                        {authLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Verificando credenciales...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Iniciar Sesión y Continuar</span>
-                            <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
                 </div>
-              ) : (
-                /* BANNER DE CUENTA ACTIVA VERIFICADA */
-                <div className="bg-white border border-cream-200 rounded-3xl p-5 shadow-soft flex items-center justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center font-bold text-sm shadow-soft">
+              )}
+
+              {/* CUENTA ACTIVA (SI ESTÁ LOGUEADO) */}
+              {currentUser && (
+                <div className="bg-white border border-cream-200 rounded-2xl p-4 sm:p-5 shadow-soft flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center font-bold text-sm shadow-soft">
                       {currentUser.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                     <div>
@@ -663,9 +491,9 @@ export default function CheckoutPage() {
                         <span className="font-semibold text-stone-900 text-xs sm:text-sm">
                           {currentUser.name}
                         </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-sage-700 bg-sage-50 px-2.5 py-0.5 rounded-full border border-sage-200 flex items-center gap-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200 flex items-center gap-1">
                           <Check className="w-3 h-3 text-sage-600" />
-                          <span>Cuenta Verificada</span>
+                          <span>Cuenta Activa</span>
                         </span>
                       </div>
                       <p className="text-[11px] text-stone-500 mt-0.5">
@@ -683,16 +511,12 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* STEP 2: DATOS DE CONTACTO Y DELIVERY */}
-              <div
-                className={`bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4 transition-opacity ${
-                  !currentUser ? "opacity-50 pointer-events-none select-none" : ""
-                }`}
-              >
+              {/* STEP 1: DATOS DE CONTACTO Y DELIVERY */}
+              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4">
                 <div className="flex items-center gap-2.5 pb-3 border-b border-cream-200">
                   <MapPin className="w-4 h-4 text-terracotta-500" />
                   <h2 className="font-serif text-lg font-semibold text-stone-900">
-                    2. Datos de Contacto y Ubicación de Delivery
+                    1. Datos de Contacto y Ubicación de Delivery
                   </h2>
                 </div>
 
@@ -828,46 +652,13 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA)
-              <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
-  <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
-    <div className="flex items-center gap-2.5">
-      <FileText className="w-5 h-5 text-[#c6a26c]" />
-      <h2 className="font-serif text-lg font-bold text-[#174B3D]">
-        2. Comprobante de Pago
-      </h2>
-    </div>
-    <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
-      Comprobante de Pedido
-    </span>
-  </div>
-
-                <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
-                  <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
-                    Se emitirá un <strong>Comprobante de Pedido </strong>{" "}
-                    digital con los datos de contacto ingresados en la orden
-                    para el seguimiento y recepción de tu cuadro.
-                  </p>
-                </div>
-              </div>
-  <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
-    <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
-      Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
-    </p>
-  </div>
-</div>*/}
-
-              {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
-              <div
-                className={`bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5 transition-opacity ${
-                  !currentUser ? "opacity-50 pointer-events-none select-none" : ""
-                }`}
-              >
+              {/* STEP 2: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
+              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      3. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
+                      2. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
                     </h2>
                   </div>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-terracotta-50 text-terracotta-700 border border-terracotta-100">
@@ -1268,18 +1059,13 @@ export default function CheckoutPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || !currentUser}
-                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Generando Orden y Tracking ID...</span>
-                    </>
-                  ) : !currentUser ? (
-                    <>
-                      <Lock className="w-4 h-4 text-[#c6a26c]" />
-                      <span>Identifícate arriba para confirmar pedido</span>
                     </>
                   ) : (
                     <>
@@ -1287,10 +1073,16 @@ export default function CheckoutPage() {
                         Confirmar Orden y Adelanto 50% (S/{" "}
                         {advance50.toFixed(2)})
                       </span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                     </>
                   )}
                 </button>
+
+                {!currentUser && (
+                  <p className="text-[11px] text-stone-500 text-center leading-relaxed">
+                    Al confirmar, podrás iniciar sesión o crear tu contraseña para recibir tu <strong>Tracking ID</strong> y seguir tu pedido en vivo.
+                  </p>
+                )}
 
                 <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 text-center">
                   <ShieldCheck className="w-4 h-4 text-sage-600 flex-shrink-0" />
@@ -1306,5 +1098,19 @@ export default function CheckoutPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-cream-50 flex items-center justify-center text-xs text-stone-500">
+          Cargando checkout...
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

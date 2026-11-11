@@ -1150,13 +1150,15 @@ export default function personalizedWallArt() {
 
             {/* Simulation Warning Banner when APIs exceed quota (429) */}
             {isSimulationJob && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-3.5 shadow-soft">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-amber-950 text-sm">
+              <div className="p-4 sm:p-5 rounded-2xl bg-red-50/95 border-2 border-red-300 text-red-900 text-xs flex items-start gap-3.5 shadow-soft animate-in fade-in duration-200">
+                <div className="w-8 h-8 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <p className="font-bold text-red-950 text-sm">
                     Muestra de Ilustración de Estudio (Modo Demostración)
                   </p>
-                  <p className="text-amber-800 leading-relaxed text-xs">
+                  <p className="text-red-800 leading-relaxed text-xs">
                     {simulationNotice ||
                       "Las claves de API de los motores de IA (OpenAI / Google Gemini) alcanzaron su cuota o saldo disponible (Error 429 Quota Exceeded). Por ello, el sistema desplegó una muestra ilustrativa del atelier en lugar de la transformación en vivo de tu foto. Para fusionar en tiempo real conservando al 100% las facciones exactas de tu mascota, por favor recarga los créditos de tu cuenta de OpenAI o habilita facturación en Google Cloud / AI Studio."}
                   </p>

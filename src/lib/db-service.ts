@@ -1458,8 +1458,12 @@ export async function enqueueEmail(input: {
     template: input.template,
     data: safeData,
     cc: input.cc || [],
-    status: dispatchResult.sent ? "sent" : "failed",
-    attempts: 1,
+    status: dispatchResult.sent
+      ? "sent"
+      : dispatchResult.simulated
+        ? "pending"
+        : "pending",
+    attempts: dispatchResult.sent ? 1 : 0,
     max_attempts: 3,
     last_error: dispatchResult.error || null,
     created_at: now,
@@ -1479,6 +1483,7 @@ export async function enqueueEmail(input: {
           status: record.status,
           attempts: record.attempts,
           max_attempts: record.max_attempts,
+          last_error: record.last_error,
         },
       });
     } catch (e) {
