@@ -16,11 +16,14 @@ Este skill define la lógica financiera y de checkout inalterable de Apolena, ba
 
 Una vez que el usuario genera y selecciona el retrato de su mascota:
 
-1. **Datos de Contacto y Ubicación para Delivery (`order_shippings`):**
-   - Se solicita: Nombre completo (`name`), Teléfono/WhatsApp (`phone`), Email (`email`), Dirección exacta (`address`), Departamento (`department`), Provincia (`province`), Distrito (`district`), Referencia de ubicación (`reference`) y Documento (`document_type`: DNI/CE/RUC, `document_number`).
-2. **Datos de Comprobante (`order_invoices`):**
+1. **Autenticación Obligatoria Previa:**
+   - Para evitar cuentas fantasma o con contraseñas por defecto (`"cliente123"`), el comprador debe iniciar sesión o crear su cuenta directamente en `/checkout` antes de confirmar la orden.
+   - `/api/orders` responde con `401 Unauthorized` si no existe una sesión válida de `Profile`.
+2. **Datos de Contacto y Ubicación para Delivery (`order_shippings`):**
+   - Se solicita: Nombre completo (`name`), Teléfono/WhatsApp (`phone`), Email (`email`), Dirección exacta (`address`), Departamento (`department`), Provincia (`province`), Distrito (`district`), Referencia de ubicación (`reference`) y Documento (`document_type`: DNI/CE/RUC, `document_number`). Pre-llenados automáticamente con los datos del perfil activo.
+3. **Datos de Comprobante (`order_invoices`):**
    - Selección de Boleta o Factura con sus datos respectivos.
-3. **Cálculo de Importes en la Orden (`orders`):**
+4. **Cálculo de Importes en la Orden (`orders`):**
    - `subtotal`: Suma de los `order_items`.
    - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`).
    - `total_amount`: $\text{subtotal} + \text{shipping\_cost}$.

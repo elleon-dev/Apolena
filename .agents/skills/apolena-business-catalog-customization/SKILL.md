@@ -102,11 +102,13 @@ Para que Apolena escale a nuevas personalizaciones (ej. **marcos para cada cuadr
     "size_id": "size-l",
     "size_label": "50 × 70 cm (L)",
     "dpi": 300,
-    "finish_mode": "museum-matte",
-    "frame": {
-      "id": "wood-oak",
-      "name": "Marco de Madera Roble Natural",
-      "price_modifier": 35.0
+    "finish_mode": "full-bleed",
+    "frame_id": "canvas-bastidor",
+    "frame_name": "Lienzo en Bastidor de Madera",
+    "pet_inscription": {
+      "enabled": true,
+      "pet_name": "Max",
+      "style": "brush-white-diagonal"
     },
     "notes": "Ojos bien iluminados"
   }

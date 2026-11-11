@@ -173,6 +173,76 @@ export async function verifySessionToken(
   }
 }
 
+export interface PasswordResetPayload {
+  email: string;
+  userId: string;
+  purpose: "password_reset";
+  exp: number;
+}
+
+/**
+ * Genera un token firmado y seguro para restablecer contraseña con validez de 1 hora
+ */
+export async function signPasswordResetToken(
+  email: string,
+  userId: string,
+  ttlSeconds = 60 * 60, // 1 hora
+): Promise<string> {
+  const payload: PasswordResetPayload = {
+    email: email.trim().toLowerCase(),
+    userId,
+    purpose: "password_reset",
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+  };
+  const encoder = new TextEncoder();
+  const payloadB64 = toBase64Url(encoder.encode(JSON.stringify(payload)));
+  const key = await getHmacKey(getAuthSecret());
+  const signatureBuffer = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(payloadB64),
+  );
+  const signatureB64 = toBase64Url(new Uint8Array(signatureBuffer));
+  return `${payloadB64}.${signatureB64}`;
+}
+
+/**
+ * Valida un token de restablecimiento de contraseña
+ */
+export async function verifyPasswordResetToken(
+  token?: string | null,
+): Promise<{ email: string; userId: string } | null> {
+  if (!token || !token.includes(".")) return null;
+  try {
+    const [payloadB64, signatureB64] = token.split(".");
+    if (!payloadB64 || !signatureB64) return null;
+
+    const encoder = new TextEncoder();
+    const key = await getHmacKey(getAuthSecret());
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      fromBase64Url(signatureB64) as unknown as BufferSource,
+      encoder.encode(payloadB64),
+    );
+    if (!isValid) return null;
+
+    const jsonStr = new TextDecoder().decode(fromBase64Url(payloadB64));
+    const payload = JSON.parse(jsonStr) as PasswordResetPayload;
+    if (payload.purpose !== "password_reset") return null;
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return {
+      email: payload.email,
+      userId: payload.userId,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Server helper to retrieve current authenticated user from cookies
  */

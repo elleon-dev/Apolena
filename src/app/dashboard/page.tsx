@@ -48,6 +48,7 @@ import {
   Upload,
   RefreshCw,
   SlidersHorizontal,
+  PenTool,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -3855,6 +3856,17 @@ export default function AdminDashboardPage() {
                               <strong>Mascotas en retrato:</strong>{" "}
                               {modalItem.customizations?.pet_count || 1}
                             </p>
+                            {modalItem.customizations?.pet_inscription?.enabled &&
+                              modalItem.customizations.pet_inscription.pet_name && (
+                                <p className="text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mt-1 flex items-center gap-2">
+                                  <PenTool className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                                  <span>
+                                    <strong>Nombre de Mascota:</strong> &ldquo;
+                                    {modalItem.customizations.pet_inscription.pet_name}
+                                    &rdquo; (Brush blanco inferior derecha en diagonal)
+                                  </span>
+                                </p>
+                              )}
                             {modalItem.customizations?.notes && (
                               <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200 mt-1">
                                 <strong>Nota taller:</strong>{" "}

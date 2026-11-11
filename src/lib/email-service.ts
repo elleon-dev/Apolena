@@ -74,6 +74,26 @@ export function renderEmailHtml(
     `;
   }
 
+  if (template === "password_reset") {
+    return `
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 32px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
+        <h1 style="font-size: 24px; margin-bottom: 8px; color: #174B3D;">Recuperación de Contraseña · Apolena</h1>
+        <p style="font-family: sans-serif; font-size: 14px; color: #3E3C37; line-height: 1.6;">
+          Hola ${data.name || ""}, recibimos una solicitud para restablecer la contraseña de tu cuenta en Apolena.
+        </p>
+        <div style="background: #FFFFFF; border: 1px solid #E8DEC8; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center; font-family: sans-serif;">
+          <p style="font-size: 13px; color: #5C5850; margin: 0 0 16px;">Haz clic en el siguiente botón para crear una nueva contraseña. Este enlace expira en 60 minutos:</p>
+          <a href="${data.reset_url}" style="display: inline-block; background: #174B3D; color: #FFFBF2; text-decoration: none; padding: 12px 28px; border-radius: 999px; font-size: 14px; font-weight: 700; border: 1px solid #c6a26c;">
+            Restablecer mi Contraseña
+          </a>
+        </div>
+        <p style="font-family: sans-serif; font-size: 12px; color: #8A857A; line-height: 1.5;">
+          Si tú no solicitaste este cambio, puedes ignorar este correo de forma segura. Tu contraseña actual no se modificará.
+        </p>
+      </div>
+    `;
+  }
+
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 28px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
       <h2 style="font-family: Georgia, serif; margin-top: 0; color: #174B3D;">Actualización de tu pedido #${data.order_code || ""}</h2>

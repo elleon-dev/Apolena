@@ -214,9 +214,17 @@ function LoginForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#174B3D] block">
-            Contraseña
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-[#174B3D] block">
+              Contraseña
+            </label>
+            <Link
+              href="/auth/forgot-password"
+              className="text-[11px] text-[#174B3D] hover:text-[#c6a26c] font-medium transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <div className="relative">
             <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input

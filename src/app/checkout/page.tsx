@@ -18,6 +18,11 @@ import {
   Building2,
   Mail,
   PackageSearch,
+  Lock,
+  User,
+  LogIn,
+  UserPlus,
+  PenTool,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
 
@@ -85,6 +90,25 @@ export default function CheckoutPage() {
   const [legalName, setLegalName] = useState("");
   const [taxAddress, setTaxAddress] = useState("");
 
+  // User Session & Mandatory Auth Gate State
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    email: string;
+    name: string | null;
+    phone: string | null;
+    role: string;
+  } | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  // Inline Auth Form State
+  const [authTab, setAuthTab] = useState<"register" | "login">("register");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   // 50% Advance Payment State
   const [paymentMethod, setPaymentMethod] = useState<
     "yape" | "plin" | "bank_transfer"
@@ -121,6 +145,7 @@ export default function CheckoutPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
+          setCurrentUser(data.user);
           setName(data.user.name || "");
           setEmail(data.user.email || "");
           setPhone(data.user.phone || "");
@@ -129,8 +154,80 @@ export default function CheckoutPage() {
           if (data.user.department) setDepartment(data.user.department);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setIsLoadingUser(false));
   }, []);
+
+  const handleInlineLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail, password: authPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.error || "No se pudo iniciar sesión.");
+        return;
+      }
+      setCurrentUser(data.user);
+      setName(data.user.name || "");
+      setEmail(data.user.email || authEmail);
+      setPhone(data.user.phone || "");
+      if (data.user.address) setAddress(data.user.address);
+      if (data.user.district) setDistrict(data.user.district);
+      if (data.user.department) setDepartment(data.user.department);
+      setError(null);
+    } catch {
+      setAuthError("Error de conexión al iniciar sesión.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleInlineRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: authName,
+          email: authEmail,
+          phone: authPhone,
+          password: authPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.error || "No se pudo registrar la cuenta.");
+        return;
+      }
+      setCurrentUser(data.user);
+      setName(data.user.name || authName);
+      setEmail(data.user.email || authEmail);
+      setPhone(data.user.phone || authPhone);
+      setError(null);
+    } catch {
+      setAuthError("Error de conexión al registrar la cuenta.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    setCurrentUser(null);
+    setAuthEmail("");
+    setAuthPassword("");
+  };
 
   const shippingCost =
     department.trim().toLowerCase() === "lima"
@@ -151,6 +248,14 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!currentUser) {
+      setError(
+        "Debes iniciar sesión o registrar tu cuenta antes de completar tu pedido.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -356,12 +461,238 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* STEP 1: DATOS DE CONTACTO Y DELIVERY */}
-              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4">
+              {/* OBLIGATORIO: AUTENTICACIÓN / REGISTRO PREVIO AL CHECKOUT */}
+              {!currentUser ? (
+                <div className="bg-white border-2 border-[#174B3D]/30 rounded-3xl p-6 sm:p-7 shadow-card space-y-5">
+                  <div className="flex items-center gap-3 pb-3 border-b border-cream-200">
+                    <div className="w-10 h-10 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center shrink-0 shadow-soft">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-serif text-lg font-semibold text-stone-900">
+                        Paso 1: Identifícate o Crea tu Cuenta
+                      </h2>
+                      <p className="text-xs text-stone-500">
+                        Para asociar tu cuadro a tu galería y seguir tu pedido con tu Tracking ID.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tabs: Registro / Login */}
+                  <div className="grid grid-cols-2 p-1 rounded-2xl bg-cream-100 border border-cream-200 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthTab("register");
+                        setAuthError(null);
+                      }}
+                      className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                        authTab === "register"
+                          ? "bg-[#174B3D] text-white shadow-xs"
+                          : "text-stone-600 hover:text-stone-900"
+                      }`}
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Crear Cuenta Nueva</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthTab("login");
+                        setAuthError(null);
+                      }}
+                      className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                        authTab === "login"
+                          ? "bg-[#174B3D] text-white shadow-xs"
+                          : "text-stone-600 hover:text-stone-900"
+                      }`}
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Ya tengo Cuenta</span>
+                    </button>
+                  </div>
+
+                  {authError && (
+                    <div className="p-3.5 rounded-2xl bg-terracotta-50 border border-terracotta-200 text-terracotta-800 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-terracotta-600" />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  {authTab === "register" ? (
+                    <div className="space-y-3.5 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="font-semibold text-stone-800 block">
+                            Tu Nombre Completo *
+                          </label>
+                          <input
+                            type="text"
+                            value={authName}
+                            onChange={(e) => setAuthName(e.target.value)}
+                            placeholder="Ej. Valeria Mendoza"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="font-semibold text-stone-800 block">
+                            Teléfono / WhatsApp *
+                          </label>
+                          <input
+                            type="tel"
+                            value={authPhone}
+                            onChange={(e) => setAuthPhone(e.target.value)}
+                            placeholder="999 888 777"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-semibold text-stone-800 block">
+                          Correo Electrónico *
+                        </label>
+                        <input
+                          type="email"
+                          value={authEmail}
+                          onChange={(e) => setAuthEmail(e.target.value)}
+                          placeholder="tu@correo.com"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-semibold text-stone-800 block">
+                          Crea una Contraseña Segura (mín. 6 caracteres) *
+                        </label>
+                        <input
+                          type="password"
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleInlineRegister}
+                        disabled={authLoading}
+                        className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-soft transition-all"
+                      >
+                        {authLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Creando cuenta segura...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Crear Cuenta y Continuar</span>
+                            <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5 text-xs">
+                      <div className="space-y-1">
+                        <label className="font-semibold text-stone-800 block">
+                          Correo Electrónico *
+                        </label>
+                        <input
+                          type="email"
+                          value={authEmail}
+                          onChange={(e) => setAuthEmail(e.target.value)}
+                          placeholder="tu@correo.com"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="font-semibold text-stone-800 block">
+                            Tu Contraseña *
+                          </label>
+                          <Link
+                            href="/auth/forgot-password"
+                            target="_blank"
+                            className="text-[11px] text-[#174B3D] hover:underline"
+                          >
+                            ¿Olvidaste tu contraseña?
+                          </Link>
+                        </div>
+                        <input
+                          type="password"
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:outline-none focus:border-[#174B3D]"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleInlineLogin}
+                        disabled={authLoading}
+                        className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-soft transition-all"
+                      >
+                        {authLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Verificando credenciales...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Iniciar Sesión y Continuar</span>
+                            <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* BANNER DE CUENTA ACTIVA VERIFICADA */
+                <div className="bg-white border border-cream-200 rounded-3xl p-5 shadow-soft flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center font-bold text-sm shadow-soft">
+                      {currentUser.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-stone-900 text-xs sm:text-sm">
+                          {currentUser.name}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-sage-700 bg-sage-50 px-2.5 py-0.5 rounded-full border border-sage-200 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-sage-600" />
+                          <span>Cuenta Verificada</span>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        {currentUser.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSwitchAccount}
+                    className="text-xs text-stone-500 hover:text-stone-800 underline font-medium"
+                  >
+                    Cambiar cuenta
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2: DATOS DE CONTACTO Y DELIVERY */}
+              <div
+                className={`bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4 transition-opacity ${
+                  !currentUser ? "opacity-50 pointer-events-none select-none" : ""
+                }`}
+              >
                 <div className="flex items-center gap-2.5 pb-3 border-b border-cream-200">
                   <MapPin className="w-4 h-4 text-terracotta-500" />
                   <h2 className="font-serif text-lg font-semibold text-stone-900">
-                    1. Datos de Contacto y Ubicación de Delivery
+                    2. Datos de Contacto y Ubicación de Delivery
                   </h2>
                 </div>
 
@@ -527,12 +858,16 @@ export default function CheckoutPage() {
 </div>*/}
 
               {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
-              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
+              <div
+                className={`bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5 transition-opacity ${
+                  !currentUser ? "opacity-50 pointer-events-none select-none" : ""
+                }`}
+              >
                 <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      2. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
+                      3. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
                     </h2>
                   </div>
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-terracotta-50 text-terracotta-700 border border-terracotta-100">
@@ -879,6 +1214,21 @@ export default function CheckoutPage() {
                       Presentación:{" "}
                       <strong>Lienzo en Bastidor (Full Screen)</strong>
                     </p>
+                    {draft.customizations?.pet_inscription?.enabled &&
+                      draft.customizations.pet_inscription.pet_name && (
+                        <div className="pt-1.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-[11px] font-medium">
+                            <PenTool className="w-3 h-3 text-[#c6a26c]" />
+                            <span>
+                              Nombre grabado:{" "}
+                              <strong className="font-brush text-stone-950 font-bold text-sm tracking-wide">
+                                &ldquo;{draft.customizations.pet_inscription.pet_name}&rdquo;
+                              </strong>{" "}
+                              <span className="text-[10px] text-stone-500">(Brush blanco diagonal)</span>
+                            </span>
+                          </span>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -918,13 +1268,18 @@ export default function CheckoutPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+                  disabled={isSubmitting || !currentUser}
+                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Generando Orden y Tracking ID...</span>
+                    </>
+                  ) : !currentUser ? (
+                    <>
+                      <Lock className="w-4 h-4 text-[#c6a26c]" />
+                      <span>Identifícate arriba para confirmar pedido</span>
                     </>
                   ) : (
                     <>

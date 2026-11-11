@@ -95,6 +95,11 @@ export interface OrderItemCustomizations {
   notes?: string | null;
   selected_variant_id?: string | null;
   master_art_url?: string | null;
+  pet_inscription?: {
+    enabled: boolean;
+    pet_name: string;
+    style?: string;
+  } | null;
 }
 
 export interface OrderRecord {
@@ -964,6 +969,40 @@ export async function updateProfileByAdmin(input: {
   }
 
   return existing;
+}
+
+export async function updateProfilePassword(
+  userId: string,
+  newPasswordHash: string,
+): Promise<boolean> {
+  invalidateProfileCache(userId);
+  if (isDatabaseConfigured()) {
+    try {
+      await prisma.profile.update({
+        where: { id: userId },
+        data: { password_hash: newPasswordHash },
+      });
+      void readLocalDb().then((db) => {
+        const idx = db.profiles.findIndex((p) => p.id === userId);
+        if (idx !== -1) {
+          db.profiles[idx].password_hash = newPasswordHash;
+          writeLocalDb(db);
+        }
+      });
+      return true;
+    } catch (e) {
+      console.warn("Prisma updateProfilePassword fallback:", e);
+    }
+  }
+
+  const db = await readLocalDb();
+  const idx = db.profiles.findIndex((p) => p.id === userId);
+  if (idx !== -1) {
+    db.profiles[idx].password_hash = newPasswordHash;
+    writeLocalDb(db);
+    return true;
+  }
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
