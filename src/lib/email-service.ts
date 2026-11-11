@@ -5,6 +5,7 @@
 
 import * as React from "react";
 import { render } from "@react-email/render";
+import { resolveAppUrl } from "@/lib/app-url";
 import OrderCreatedBuyerEmail from "@/emails/OrderCreatedBuyerEmail";
 import OrderCreatedAdminEmail from "@/emails/OrderCreatedAdminEmail";
 import OrderStatusUpdatedEmail from "@/emails/OrderStatusUpdatedEmail";
@@ -32,8 +33,7 @@ export async function renderEmailHtml(
   template: string,
   data: Record<string, any>,
 ): Promise<string> {
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+  const appUrl = resolveAppUrl(data.app_url);
 
   switch (template) {
     case "order_created_buyer":

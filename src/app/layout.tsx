@@ -2,10 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthHashListener } from "@/components/AuthHashListener";
 import { JsonLd } from "@/components/JsonLd";
+import { resolveAppUrl } from "@/lib/app-url";
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-  "https://apolena.shop";
+const baseUrl = resolveAppUrl();
 
 export const viewport: Viewport = {
   themeColor: "#174B3D",

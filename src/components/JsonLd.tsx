@@ -1,9 +1,8 @@
 import React from "react";
+import { resolveAppUrl } from "@/lib/app-url";
 
 export function JsonLd() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-    "https://apolena.shop";
+  const baseUrl = resolveAppUrl();
 
   const organizationSchema = {
     "@context": "https://schema.org",

@@ -10,6 +10,7 @@ import {
 import { PRINT_PRESETS, FRAME_OPTIONS } from "@/lib/print-export";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import { dispatchEmailWithResend } from "@/lib/email-service";
+import { resolveAppUrl } from "@/lib/app-url";
 import {
   externalizeBase64Image,
   stripHeavyFieldsForEmailData,
@@ -1849,6 +1850,7 @@ export async function createOrderWithSplitPayment(input: {
   operation_number: string;
   proof_image_url?: string | null;
   notes?: string | null;
+  app_url?: string | null;
   customizations: OrderItemCustomizations;
   shipping: {
     name: string;
@@ -2176,6 +2178,7 @@ export async function createOrderWithSplitPayment(input: {
 
   // Doble notificación obligatoria en email_queue (await para garantizar envío antes del freeze de Vercel Serverless):
   const adminEmails = settings.ADMIN_NOTIFICATION_EMAILS.emails;
+  const effectiveAppUrl = resolveAppUrl(input.app_url);
   try {
     await Promise.all([
       enqueueEmail({
@@ -2195,7 +2198,8 @@ export async function createOrderWithSplitPayment(input: {
           cci: bankCfg.cci,
           holder_name: bankCfg.holder_name,
           customizations: stripHeavyFieldsForEmailData(finalCustomizations),
-          tracking_url: `/track/${trackingId}`,
+          app_url: effectiveAppUrl,
+          tracking_url: `${effectiveAppUrl}/track/${trackingId}`,
         },
       }),
       enqueueEmail({
@@ -2216,6 +2220,8 @@ export async function createOrderWithSplitPayment(input: {
           advance_amount: advanceAmount,
           remaining_amount: remainingAmount,
           customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+          app_url: effectiveAppUrl,
+          admin_url: `${effectiveAppUrl}/admin`,
         },
       }),
     ]);
@@ -2375,6 +2381,7 @@ export async function updateOrderAdminLifecycle(input: {
   finalPaymentMethod?: PaymentMethod;
   finalOperationNumber?: string;
   notes?: string;
+  app_url?: string;
 }): Promise<OrderRecord | null> {
   const existingOrder = await findOrderById(input.orderId);
   if (!existingOrder) return null;
@@ -2608,6 +2615,7 @@ export async function updateOrderAdminLifecycle(input: {
       completed: "¡Orden Exitosa! Pago 100% Completado",
       cancelled: "Orden Cancelada",
     };
+    const effectiveAppUrl = resolveAppUrl(input.app_url);
     try {
       await enqueueEmail({
         to_email: order.shipping.email,
@@ -2619,6 +2627,8 @@ export async function updateOrderAdminLifecycle(input: {
           status: order.status,
           status_label: stepLabels[order.status],
           payment_status: order.payment_status,
+          app_url: effectiveAppUrl,
+          tracking_url: `${effectiveAppUrl}/track/${order.tracking_id}`,
         },
       });
     } catch (err) {

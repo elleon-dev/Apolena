@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findProfileByEmail, enqueueEmail } from "@/lib/db-service";
 import { signPasswordResetToken } from "@/lib/auth";
+import { getRequestOrigin } from "@/lib/app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (profile && profile.is_active !== false) {
       const token = await signPasswordResetToken(profile.email, profile.id);
-      const appUrl =
-        process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-        req.nextUrl.origin ||
-        "http://localhost:3000";
+      const appUrl = getRequestOrigin(req);
       const resetUrl = `${appUrl}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
       await enqueueEmail({

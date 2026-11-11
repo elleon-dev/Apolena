@@ -1,9 +1,8 @@
 import { MetadataRoute } from "next";
+import { resolveAppUrl } from "@/lib/app-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-    "https://apolena.shop";
+  const baseUrl = resolveAppUrl();
 
   const now = new Date();
 
