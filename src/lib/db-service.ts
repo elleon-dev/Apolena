@@ -2174,50 +2174,54 @@ export async function createOrderWithSplitPayment(input: {
     writeLocalDb(db);
   });
 
-  // Doble notificación obligatoria en email_queue (en segundo plano para respuesta inmediata):
+  // Doble notificación obligatoria en email_queue (await para garantizar envío antes del freeze de Vercel Serverless):
   const adminEmails = settings.ADMIN_NOTIFICATION_EMAILS.emails;
-  void Promise.all([
-    enqueueEmail({
-      to_email: input.shipping.email,
-      subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
-      template: "order_created_buyer",
-      data: {
-        order_code: orderCode,
-        tracking_id: trackingId,
-        buyer_name: input.shipping.name,
-        total_amount: totalAmount,
-        advance_amount: advanceAmount,
-        remaining_amount: remainingAmount,
-        payment_method: input.payment_method,
-        bank_name: bankCfg.bank_name,
-        account_number: bankCfg.account_number,
-        cci: bankCfg.cci,
-        holder_name: bankCfg.holder_name,
-        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
-        tracking_url: `/track/${trackingId}`,
-      },
-    }),
-    enqueueEmail({
-      to_email: adminEmails[0] || "admin@apolena.pe",
-      cc: adminEmails.slice(1),
-      subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
-      template: "order_created_admin",
-      data: {
-        order_id: orderId,
-        order_code: orderCode,
-        tracking_id: trackingId,
-        buyer_name: input.shipping.name,
-        buyer_phone: input.shipping.phone,
-        buyer_email: input.shipping.email,
-        shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
-        payment_method: input.payment_method,
-        operation_number: input.operation_number,
-        advance_amount: advanceAmount,
-        remaining_amount: remainingAmount,
-        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
-      },
-    }),
-  ]).catch((err) => console.warn("Background email dispatch warning:", err));
+  try {
+    await Promise.all([
+      enqueueEmail({
+        to_email: input.shipping.email,
+        subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
+        template: "order_created_buyer",
+        data: {
+          order_code: orderCode,
+          tracking_id: trackingId,
+          buyer_name: input.shipping.name,
+          total_amount: totalAmount,
+          advance_amount: advanceAmount,
+          remaining_amount: remainingAmount,
+          payment_method: input.payment_method,
+          bank_name: bankCfg.bank_name,
+          account_number: bankCfg.account_number,
+          cci: bankCfg.cci,
+          holder_name: bankCfg.holder_name,
+          customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+          tracking_url: `/track/${trackingId}`,
+        },
+      }),
+      enqueueEmail({
+        to_email: adminEmails[0] || "admin@apolena.pe",
+        cc: adminEmails.slice(1),
+        subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
+        template: "order_created_admin",
+        data: {
+          order_id: orderId,
+          order_code: orderCode,
+          tracking_id: trackingId,
+          buyer_name: input.shipping.name,
+          buyer_phone: input.shipping.phone,
+          buyer_email: input.shipping.email,
+          shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
+          payment_method: input.payment_method,
+          operation_number: input.operation_number,
+          advance_amount: advanceAmount,
+          remaining_amount: remainingAmount,
+          customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+        },
+      }),
+    ]);
+  } catch (err) {
+    console.warn("Background email dispatch warning:", err);
+  }
 
   return newOrder;
 }
@@ -2604,18 +2608,22 @@ export async function updateOrderAdminLifecycle(input: {
       completed: "¡Orden Exitosa! Pago 100% Completado",
       cancelled: "Orden Cancelada",
     };
-    void enqueueEmail({
-      to_email: order.shipping.email,
-      subject: `Actualización de tu orden ${order.order_code}: ${stepLabels[order.status]}`,
-      template: "order_status_updated",
-      data: {
-        order_code: order.order_code,
-        tracking_id: order.tracking_id,
-        status: order.status,
-        status_label: stepLabels[order.status],
-        payment_status: order.payment_status,
-      },
-    }).catch((err) => console.warn("Async status email error:", err));
+    try {
+      await enqueueEmail({
+        to_email: order.shipping.email,
+        subject: `Actualización de tu orden ${order.order_code}: ${stepLabels[order.status]}`,
+        template: "order_status_updated",
+        data: {
+          order_code: order.order_code,
+          tracking_id: order.tracking_id,
+          status: order.status,
+          status_label: stepLabels[order.status],
+          payment_status: order.payment_status,
+        },
+      });
+    } catch (err) {
+      console.warn("Async status email error:", err);
+    }
   }
 
   return order;
