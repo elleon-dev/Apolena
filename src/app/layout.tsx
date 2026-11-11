@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthHashListener } from "@/components/AuthHashListener";
 
 export const metadata: Metadata = {
   title: "Apolena — Estudio de Retratos Personalizados para Mascotas",
@@ -38,6 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#FFFBF2] text-[#141414] min-h-screen selection:bg-[#c6a26c]/30 selection:text-[#174B3D]">
+        <AuthHashListener />
         {children}
       </body>
     </html>
