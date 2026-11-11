@@ -1168,6 +1168,40 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
 export async function getWallArtCharacterById(
   characterId: string,
 ): Promise<FamousCharacter> {
+  if (isDatabaseConfigured()) {
+    try {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          characterId,
+        );
+      const row = await prisma.characterTemplate.findFirst({
+        where: isUuid
+          ? { OR: [{ id: characterId }, { slug: characterId }] }
+          : { slug: characterId },
+      });
+      if (row) {
+        return {
+          id: row.slug,
+          name: row.name,
+          characterTitle: row.character_title || "",
+          universe: row.universe,
+          description: row.description || "",
+          characterImageUrl: row.character_image_url,
+          maskUrl: row.mask_url || "",
+          fusionSampleUrl: row.fusion_sample_url || row.character_image_url,
+          accentColor: row.accent_color || "bg-terracotta-500",
+          tagColor:
+            row.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+          prompt: row.prompt || "",
+          negativePrompt: row.negative_prompt || "",
+          isAvailable: row.is_available,
+        };
+      }
+    } catch (err) {
+      console.warn("Prisma getWallArtCharacterById direct lookup fallback:", err);
+    }
+  }
+
   try {
     const products = await getProducts(false);
     const wallArt =
