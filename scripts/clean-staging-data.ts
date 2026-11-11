@@ -41,6 +41,7 @@ async function run() {
     { table: "platform_settings", countBefore: await prisma.platformSetting.count(), action: "KEEP" },
     { table: "products", countBefore: await prisma.product.count(), action: "KEEP" },
     { table: "product_images", countBefore: await prisma.productImage.count(), action: "KEEP" },
+    { table: "character_templates", countBefore: await prisma.characterTemplate.count(), action: "KEEP" },
     { table: "payment_transactions", countBefore: await prisma.paymentTransaction.count(), action: "PURGE" },
     { table: "order_invoices", countBefore: await prisma.orderInvoice.count(), action: "PURGE" },
     { table: "order_items", countBefore: await prisma.orderItem.count(), action: "PURGE" },

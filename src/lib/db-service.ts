@@ -1060,36 +1060,70 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
 
   if (isDatabaseConfigured()) {
     try {
+      // 1. Cargar personajes relacionales desde la tabla character_templates
+      let dbCharacters: FamousCharacter[] | null = null;
+      try {
+        const charRows = await prisma.characterTemplate.findMany({
+          where: onlyActive ? { is_available: true } : undefined,
+          orderBy: { position: "asc" },
+        });
+        if (charRows.length > 0) {
+          dbCharacters = charRows.map((c) => ({
+            id: c.slug,
+            name: c.name,
+            characterTitle: c.character_title || "",
+            universe: c.universe,
+            description: c.description || "",
+            characterImageUrl: c.character_image_url,
+            maskUrl: c.mask_url || "",
+            fusionSampleUrl: c.fusion_sample_url || "",
+            accentColor: c.accent_color || "bg-terracotta-500",
+            tagColor: c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+            prompt: c.prompt || "",
+            negativePrompt: c.negative_prompt || "",
+            isAvailable: c.is_available,
+          }));
+        }
+      } catch (charErr) {
+        console.warn("Prisma characterTemplate fetch fallback:", charErr);
+      }
+
       const rows = await prisma.product.findMany({
         where: onlyActive ? { status: "active" } : undefined,
         include: { images: { orderBy: { position: "asc" } } },
         orderBy: { created_at: "asc" },
       });
       if (rows.length > 0) {
-        const mapped = rows.map((r) => ({
-          id: r.id,
-          title: r.title,
-          slug: r.slug,
-          description: r.description,
-          category: r.category,
-          base_price: Number(r.base_price),
-          status: r.status as "active" | "inactive" | "archived",
-          stock: r.stock,
-          specifications: (r.specifications as Record<string, any>) || {},
-          customization_config: isWallArtProductSlug(r.slug)
-            ? normalizeWallArtCustomizationConfig(r.customization_config)
-            : (r.customization_config as unknown as ProductCustomizationConfig) ||
-              DEFAULT_WALL_ART_PRODUCT.customization_config,
-          images: r.images.map((img) => ({
-            id: img.id,
-            product_id: img.product_id,
-            url: img.url,
-            alt_text: img.alt_text,
-            position: img.position,
-          })),
-          created_at: r.created_at.toISOString(),
-          updated_at: r.updated_at.toISOString(),
-        }));
+        const mapped = rows.map((r) => {
+          const normConfig = normalizeWallArtCustomizationConfig(r.customization_config);
+          return {
+            id: r.id,
+            title: r.title,
+            slug: r.slug,
+            description: r.description,
+            category: r.category,
+            base_price: Number(r.base_price),
+            status: r.status as "active" | "inactive" | "archived",
+            stock: r.stock,
+            specifications: (r.specifications as Record<string, any>) || {},
+            customization_config: isWallArtProductSlug(r.slug)
+              ? {
+                  ...normConfig,
+                  characters: dbCharacters && dbCharacters.length > 0 ? dbCharacters : normConfig.characters,
+                }
+              : (r.customization_config as unknown as ProductCustomizationConfig) ||
+                DEFAULT_WALL_ART_PRODUCT.customization_config,
+            images: r.images.map((img) => ({
+              id: img.id,
+              product_id: img.product_id,
+              url: img.url,
+              alt_text: img.alt_text,
+              position: img.position,
+            })),
+            created_at: r.created_at.toISOString(),
+            updated_at: r.updated_at.toISOString(),
+          };
+        });
         if (onlyActive) {
           memCache.productsActive = {
             data: mapped,
@@ -1183,6 +1217,64 @@ export async function updateProductCustomizationConfig(
 
   if (isDatabaseConfigured()) {
     try {
+      if (updates.customization_config?.characters) {
+        try {
+          const chars = updates.customization_config.characters;
+          const currentSlugs = new Set<string>();
+
+          for (let i = 0; i < chars.length; i++) {
+            const ch = chars[i];
+            const slug = ch.id || `char-${i}`;
+            currentSlugs.add(slug);
+
+            await prisma.characterTemplate.upsert({
+              where: { slug },
+              update: {
+                name: ch.name,
+                character_title: ch.characterTitle || null,
+                universe: ch.universe || "General",
+                description: ch.description || null,
+                character_image_url: ch.characterImageUrl,
+                mask_url: ch.maskUrl || null,
+                fusion_sample_url: ch.fusionSampleUrl || null,
+                accent_color: ch.accentColor || "bg-terracotta-500",
+                tag_color: ch.tagColor || "bg-white/90 text-stone-800 border-stone-200/80",
+                prompt: ch.prompt || "",
+                negative_prompt: ch.negativePrompt || "human face, deformed mouth, cartoon, plastic, blurry, bad anatomy",
+                is_available: ch.isAvailable !== false,
+                position: i,
+              },
+              create: {
+                slug,
+                name: ch.name,
+                character_title: ch.characterTitle || null,
+                universe: ch.universe || "General",
+                description: ch.description || null,
+                character_image_url: ch.characterImageUrl,
+                mask_url: ch.maskUrl || null,
+                fusion_sample_url: ch.fusionSampleUrl || null,
+                accent_color: ch.accentColor || "bg-terracotta-500",
+                tag_color: ch.tagColor || "bg-white/90 text-stone-800 border-stone-200/80",
+                prompt: ch.prompt || "",
+                negative_prompt: ch.negativePrompt || "human face, deformed mouth, cartoon, plastic, blurry, bad anatomy",
+                is_available: ch.isAvailable !== false,
+                position: i,
+              },
+            });
+          }
+
+          if (currentSlugs.size > 0) {
+            await prisma.characterTemplate.deleteMany({
+              where: {
+                slug: { notIn: Array.from(currentSlugs) },
+              },
+            });
+          }
+        } catch (charSyncErr) {
+          console.warn("Error syncing characterTemplate:", charSyncErr);
+        }
+      }
+
       const updatedRow = await prisma.product.update({
         where: { id: productId },
         data: {

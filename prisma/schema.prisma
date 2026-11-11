@@ -83,6 +83,35 @@ model ProductImage {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// CHARACTER TEMPLATE — Catálogo relacional de Personajes y Escenas IA
+// ═══════════════════════════════════════════════════════════════════════
+
+model CharacterTemplate {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                String   @unique
+  name                String
+  character_title     String?
+  universe            String   @default("General")
+  description         String?
+  character_image_url String
+  mask_url            String?
+  fusion_sample_url   String?
+  accent_color        String?  @default("bg-terracotta-500")
+  tag_color           String?  @default("bg-white/90 text-stone-800 border-stone-200/80")
+  prompt              String?  @default("")
+  negative_prompt     String?  @default("human face, deformed mouth, cartoon, plastic, blurry, bad anatomy")
+  is_available        Boolean  @default(true)
+  position            Int      @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@index([is_available])
+  @@index([universe])
+  @@index([position])
+  @@map("character_templates")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // GENERATION JOB — Tareas de fusión IA de mascotas con temáticas
 // ═══════════════════════════════════════════════════════════════════════
 
