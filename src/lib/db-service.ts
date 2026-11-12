@@ -2628,10 +2628,39 @@ export async function updateOrderAdminLifecycle(input: {
 
     // 1. Actualizar parcialmente datos de contacto y dirección de entrega
     if (input.shipping) {
-      order.shipping = {
-        ...order.shipping,
-        ...input.shipping,
-      };
+      if (order.shipping) {
+        order.shipping = {
+          ...order.shipping,
+          ...input.shipping,
+          id: order.shipping.id,
+          order_id: order.shipping.order_id,
+          name: input.shipping.name ?? order.shipping.name,
+          phone: input.shipping.phone ?? order.shipping.phone,
+          email: input.shipping.email !== undefined ? input.shipping.email : order.shipping.email,
+          address: input.shipping.address ?? order.shipping.address,
+          department: input.shipping.department !== undefined ? input.shipping.department : order.shipping.department,
+          province: input.shipping.province !== undefined ? input.shipping.province : order.shipping.province,
+          district: input.shipping.district !== undefined ? input.shipping.district : order.shipping.district,
+          reference: input.shipping.reference !== undefined ? input.shipping.reference : order.shipping.reference,
+          document_type: input.shipping.document_type !== undefined ? input.shipping.document_type : order.shipping.document_type,
+          document_number: input.shipping.document_number !== undefined ? input.shipping.document_number : order.shipping.document_number,
+        };
+      } else {
+        order.shipping = {
+          id: crypto.randomUUID(),
+          order_id: order.id,
+          name: input.shipping.name || "",
+          phone: input.shipping.phone || "",
+          email: input.shipping.email ?? null,
+          address: input.shipping.address || "",
+          department: input.shipping.department ?? null,
+          province: input.shipping.province ?? null,
+          district: input.shipping.district ?? null,
+          reference: input.shipping.reference ?? null,
+          document_type: input.shipping.document_type ?? null,
+          document_number: input.shipping.document_number ?? null,
+        };
+      }
     }
 
     // 2. Historial acumulativo de comprobantes (agrega el nuevo sin borrar los anteriores)
