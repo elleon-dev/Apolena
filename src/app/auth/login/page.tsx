@@ -1,21 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, {Suspense, useEffect, useState} from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Header } from "@/components/Header";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { setCachedSessionUser } from "@/lib/client-session";
-import {
-  Lock,
-  Mail,
-  ArrowRight,
-  AlertCircle,
-  Loader2,
-  Shield,
-  User,
-  PackageCheck,
-} from "lucide-react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {Header} from "@/components/Header";
+import {supabaseBrowser} from "@/lib/supabase-browser";
+import {setCachedSessionUser} from "@/lib/client-session";
+import {AlertCircle, ArrowRight, Loader2, Lock, Mail, PackageCheck,} from "lucide-react";
+
+// Esquema de validación con Zod
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "El email es obligatorio.")
+    .email("Ingresa un correo electrónico válido."),
+  password: z
+    .string()
+    .min(1, "La contraseña es obligatoria.")
+    .min(6, "La contraseña debe tener al menos 6 caracteres."),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 function GoogleIcon() {
   return (
@@ -44,19 +52,25 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
-
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Si Supabase redirige de vuelta con #access_token o ?code a /auth/login
+  console.log({email})
+
+  // Configuración de react-hook-form con Zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onTouched",
+  });
+
   useEffect(() => {
-    const qEmail = searchParams.get("email");
-    if (qEmail && !email) {
-      setEmail(qEmail);
-    }
     if (typeof window === "undefined") return;
     const hasHashToken = window.location.hash.includes("access_token=");
     const hasCode = searchParams.get("code");
@@ -72,7 +86,7 @@ function LoginForm() {
     try {
       if (!supabaseBrowser) {
         setError(
-          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
         );
         setIsGoogleLoading(false);
         return;
@@ -104,26 +118,25 @@ function LoginForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
-      const data = await res.json();
+      const resData = await res.json();
       if (!res.ok) {
-        setError(data.error || "Error al iniciar sesión.");
+        setError(resData.error || "Error al iniciar sesión.");
         return;
       }
-      if (data.user) {
-        setCachedSessionUser(data.user);
+      if (resData.user) {
+        setCachedSessionUser(resData.user);
       }
       const isAdmin =
-        data.user?.role === "admin" || data.user?.role === "super_admin";
+        resData.user?.role === "admin" || resData.user?.role === "super_admin";
       const safeCallbackUrl =
         callbackUrl &&
         !isAdmin &&
@@ -132,9 +145,7 @@ function LoginForm() {
           ? "/orders"
           : callbackUrl;
       const target =
-        safeCallbackUrl ||
-        data.redirectTo ||
-        (isAdmin ? "/dashboard" : "/orders");
+        safeCallbackUrl || resData.redirectTo || (isAdmin ? "/dashboard" : "/orders");
       router.push(target);
       router.refresh();
     } catch {
@@ -142,12 +153,6 @@ function LoginForm() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillDemo = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
   };
 
   const isCheckoutFlow = callbackUrl?.includes("checkout");
@@ -214,7 +219,8 @@ function LoginForm() {
         <div className="border-t border-[#E8DEC8] w-full" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {/* Campo Email */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-[#174B3D] block">
             Correo electrónico
@@ -223,15 +229,24 @@ function LoginForm() {
             <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
               placeholder="tu@correo.com"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+              className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border text-xs text-[#141414] focus:bg-white focus:outline-none transition-colors ${
+                errors.email
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E8DEC8] focus:border-[#174B3D]"
+              }`}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          {errors.email && (
+            <p className="text-[11px] font-medium text-red-600 mt-1">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
+        {/* Campo Contraseña */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-[#174B3D] block">
@@ -248,19 +263,26 @@ function LoginForm() {
             <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+              className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border text-xs text-[#141414] focus:bg-white focus:outline-none transition-colors ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E8DEC8] focus:border-[#174B3D]"
+              }`}
             />
           </div>
+          {errors.password && (
+            <p className="text-[11px] font-medium text-red-600 mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all mt-2"
         >
           {isLoading ? (
             <>
