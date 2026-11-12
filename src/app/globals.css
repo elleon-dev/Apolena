@@ -17,6 +17,11 @@
 
   --font-sans: "Plus Jakarta Sans", sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
+  --font-brush: "Kaushan Script", "Caveat", "Brush Script MT", cursive;
+}
+
+.font-brush {
+  font-family: var(--font-brush);
 }
 
 body {

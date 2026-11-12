@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { setCachedSessionUser } from "@/lib/client-session";
@@ -15,6 +15,7 @@ import {
   ArrowRight,
   AlertCircle,
   Loader2,
+  PackageCheck,
 } from "lucide-react";
 
 function GoogleIcon() {
@@ -40,8 +41,11 @@ function GoogleIcon() {
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -49,6 +53,15 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    const qEmail = searchParams.get("email");
+    const qName = searchParams.get("name");
+    const qPhone = searchParams.get("phone");
+    if (qEmail && !email) setEmail(qEmail);
+    if (qName && !name) setName(qName);
+    if (qPhone && !phone) setPhone(qPhone);
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     setError(null);
@@ -63,6 +76,10 @@ export default function RegisterPage() {
       }
 
       const redirectUrl = new URL("/auth/callback", window.location.origin);
+      if (callbackUrl) {
+        redirectUrl.searchParams.set("callbackUrl", callbackUrl);
+      }
+
       const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -102,7 +119,8 @@ export default function RegisterPage() {
       if (data.user) {
         setCachedSessionUser(data.user);
       }
-      router.push(data.redirectTo || "/orders");
+      const target = callbackUrl || data.redirectTo || "/orders";
+      router.push(target);
       router.refresh();
     } catch {
       setError("Error de conexión con el servidor.");
@@ -111,157 +129,181 @@ export default function RegisterPage() {
     }
   };
 
+  const isCheckoutFlow = callbackUrl?.includes("checkout");
+
+  const loginLinkHref = callbackUrl
+    ? `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}${email ? `&email=${encodeURIComponent(email)}` : ""}`
+    : "/auth/login";
+
+  return (
+    <div className="max-w-md w-full mx-auto bg-white border border-[#c6a26c]/40 rounded-3xl p-8 shadow-soft space-y-6">
+      <div className="text-center space-y-2">
+        <div className="w-12 h-12 rounded-2xl bg-[#174B3D]/10 border border-[#174B3D]/20 text-[#174B3D] flex items-center justify-center mx-auto">
+          <UserPlus className="w-5 h-5" />
+        </div>
+        <h1 className="font-serif text-3xl font-bold text-[#174B3D]">
+          Crea tu cuenta en Apolena
+        </h1>
+        <p className="text-xs text-[#141414]/70">
+          Guarda tus retratos generados y haz seguimiento de tus cuadros personalizados.
+        </p>
+      </div>
+
+      {isCheckoutFlow && (
+        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+          <PackageCheck className="w-4 h-4 shrink-0 text-[#c6a26c]" />
+          <span>
+            <strong>¡Casi listo!</strong> Crea tu contraseña para asociar tu pedido y recibir tu Tracking ID.
+          </span>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        disabled={isGoogleLoading || isLoading}
+        className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-[#FFFBF2] border border-[#E8DEC8] disabled:opacity-60 text-[#141414] text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all"
+      >
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin text-[#174B3D]" />
+            <span>Redirigiendo a Google...</span>
+          </>
+        ) : (
+          <>
+            <GoogleIcon />
+            <span>Continuar con Google</span>
+          </>
+        )}
+      </button>
+
+      <div className="relative flex items-center justify-center">
+        <div className="border-t border-[#E8DEC8] w-full" />
+        <span className="bg-white px-3 text-[11px] font-medium text-stone-400 uppercase tracking-wider shrink-0">
+          o regístrate con tu correo
+        </span>
+        <div className="border-t border-[#E8DEC8] w-full" />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#174B3D] block">
+            Nombre completo
+          </label>
+          <div className="relative">
+            <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ej. Valeria Mendoza"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#174B3D] block">
+            Correo electrónico
+          </label>
+          <div className="relative">
+            <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#174B3D] block">
+            Celular / WhatsApp
+          </label>
+          <div className="relative">
+            <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="999 888 777"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-[#174B3D] block">
+            Contraseña (mín. 6 caracteres)
+          </label>
+          <div className="relative">
+            <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Creando cuenta...</span>
+            </>
+          ) : (
+            <>
+              <span>Registrarme en Apolena</span>
+              <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+            </>
+          )}
+        </button>
+      </form>
+
+      <p className="text-center text-xs text-stone-500">
+        ¿Ya tienes una cuenta?{" "}
+        <Link
+          href={loginLinkHref}
+          className="text-terracotta-600 font-semibold hover:underline"
+        >
+          Iniciar sesión
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+export default function RegisterPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFBF2] text-[#141414]">
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="max-w-md w-full mx-auto bg-white border border-[#c6a26c]/40 rounded-3xl p-8 shadow-soft space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-[#174B3D]/10 border border-[#174B3D]/20 text-[#174B3D] flex items-center justify-center mx-auto">
-              <UserPlus className="w-5 h-5" />
-            </div>
-            <h1 className="font-serif text-3xl font-bold text-[#174B3D]">
-              Crea tu cuenta en Apolena
-            </h1>
-            <p className="text-xs text-[#141414]/70">
-              Guarda tus retratos generados y haz seguimiento de tus cuadros
-              personalizados.
-            </p>
-          </div>
-
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={isGoogleLoading || isLoading}
-            className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-[#FFFBF2] border border-[#E8DEC8] disabled:opacity-60 text-[#141414] text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all"
-          >
-            {isGoogleLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-[#174B3D]" />
-                <span>Redirigiendo a Google...</span>
-              </>
-            ) : (
-              <>
-                <GoogleIcon />
-                <span>Continuar con Google</span>
-              </>
-            )}
-          </button>
-
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-[#E8DEC8] w-full" />
-            <span className="bg-white px-3 text-[11px] font-medium text-stone-400 uppercase tracking-wider shrink-0">
-              o regístrate con tu correo
-            </span>
-            <div className="border-t border-[#E8DEC8] w-full" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#174B3D] block">
-                Nombre completo
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Valeria Mendoza"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#174B3D] block">
-                Correo electrónico
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#174B3D] block">
-                Celular / WhatsApp
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="999 888 777"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#174B3D] block">
-                Contraseña (mín. 6 caracteres)
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs text-[#141414] focus:border-[#174B3D] focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Creando cuenta...</span>
-                </>
-              ) : (
-                <>
-                  <span>Registrarme en Apolena</span>
-                  <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-stone-500">
-            ¿Ya tienes una cuenta?{" "}
-            <Link
-              href="/auth/login"
-              className="text-terracotta-600 font-semibold hover:underline"
-            >
-              Iniciar sesión
-            </Link>
-          </p>
-        </div>
+        <Suspense
+          fallback={<div className="text-xs text-stone-500">Cargando...</div>}
+        >
+          <RegisterForm />
+        </Suspense>
       </main>
     </div>
   );

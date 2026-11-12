@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
 import {
   Shield,
@@ -48,6 +49,7 @@ import {
   Upload,
   RefreshCw,
   SlidersHorizontal,
+  PenTool,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -115,6 +117,22 @@ function formatRelativeTime(isoDate: string): string {
 }
 
 export default function AdminDashboardPage() {
+
+  const [confirmModalData, setConfirmModalData] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    variant: "default" | "destructive" | "success";
+    action: () => Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    variant: "default",
+    action: async () => {},
+  });
+
+
   const [activeTab, setActiveTab] = useState<
     "orders" | "cuadros" | "users" | "settings" | "emails"
   >("orders");
@@ -276,18 +294,19 @@ export default function AdminDashboardPage() {
   // ============================================================================
   // 1. GESTIÓN DE ÓRDENES, PRIORIZACIÓN OPERATIVA Y MODAL DE DETALLE
   // ============================================================================
-  const handleOrderLifecycleAction = async (
+  type OrderLifecycleAction =
+    | "verify_advance_50"
+    | "set_step_manufacturing"
+    | "set_step_in_transit"
+    | "set_step_delivered"
+    | "complete_final_50_payment"
+    | "cancel_order";
+
+  // Ejecución real (lógica original, sin cambios)
+  const executeOrderLifecycleAction = async (
     orderId: string,
-    action:
-      | "verify_advance_50"
-      | "set_step_manufacturing"
-      | "set_step_in_transit"
-      | "set_step_delivered"
-      | "complete_final_50_payment"
-      | "cancel_order",
-    e?: React.MouseEvent,
+    action: OrderLifecycleAction,
   ) => {
-    if (e) e.stopPropagation();
     setUpdatingOrderId(orderId);
     try {
       const res = await fetch(`/api/admin/orders/${orderId}`, {
@@ -307,6 +326,57 @@ export default function AdminDashboardPage() {
     } finally {
       setUpdatingOrderId(null);
     }
+  };
+
+  // Wrapper: abre el modal de confirmación y ejecuta solo en onConfirm
+  const handleOrderLifecycleAction = async (
+    orderId: string,
+    action: OrderLifecycleAction,
+    e?: React.MouseEvent,
+  ) => {
+    if (e) e.stopPropagation();
+
+    const orderCode =
+      orders.find((o) => o.id === orderId)?.order_code || "esta orden";
+
+    if (action === "verify_advance_50") {
+      setConfirmModalData({
+        open: true,
+        title: "Aprobar Pago",
+        description: `¿Confirmas que el adelanto del 50% de la orden ${orderCode} fue recibido y deseas aprobarlo?`,
+        variant: "success",
+        action: async () => {
+          await executeOrderLifecycleAction(orderId, action);
+        },
+      });
+      return;
+    }
+
+    if (
+      action === "set_step_manufacturing" ||
+      action === "set_step_in_transit" ||
+      action === "set_step_delivered"
+    ) {
+      const stepLabel =
+        action === "set_step_manufacturing"
+          ? "En Fabricación"
+          : action === "set_step_in_transit"
+            ? "En Camino"
+            : "Entregado";
+      setConfirmModalData({
+        open: true,
+        title: "Actualizar Estado de Orden",
+        description: `¿Deseas cambiar el estado de la orden ${orderCode} a "${stepLabel}"? El cliente verá el cambio en su seguimiento.`,
+        variant: "default",
+        action: async () => {
+          await executeOrderLifecycleAction(orderId, action);
+        },
+      });
+      return;
+    }
+
+    // complete_final_50_payment y cancel_order: comportamiento original (sin modal)
+    await executeOrderLifecycleAction(orderId, action);
   };
 
   // Ordenamiento inteligente: Primero las órdenes pendientes/recientes urgentes, luego por fecha más reciente
@@ -731,26 +801,34 @@ export default function AdminDashboardPage() {
       "Visibilidad del personaje actualizada.",
     );
   };
-
-  const handleDeleteCharacter = async (charId: string, charName: string) => {
+const handleDeleteCharacter = (charId: string, charName: string) => {
     const currentChars = wallArtConfig.characters || [];
     if (currentChars.length <= 1) {
       showToast(
         "error",
-        "El estudio debe conservar al menos 1 personaje activo.",
+        "El estudio debe conservar al menos 1 personaje activo."
       );
       return;
     }
-    const nextCharacters = currentChars.filter((c) => c.id !== charId);
-    await persistWallArtConfig(
-      {
-        ...wallArtConfig,
-        characters: nextCharacters,
-      },
-      `Personaje "${charName}" eliminado del catálogo.`,
-    );
-  };
 
+    // Abre el modal para pedir confirmación
+    setConfirmModalData({
+      open: true,
+      title: "Eliminar Personaje",
+      description: `¿Estás seguro de que deseas eliminar el personaje "${charName}" del catálogo? Esta acción no se puede deshacer.`,
+      variant: "destructive",
+      action: async () => {
+        const nextCharacters = currentChars.filter((c) => c.id !== charId);
+        await persistWallArtConfig(
+          {
+            ...wallArtConfig,
+            characters: nextCharacters,
+          },
+          `Personaje "${charName}" eliminado del catálogo.`
+        );
+      },
+    });
+  };
   // --- CRUD Marcos de Cuadros ---
   const openCreateFrameModal = () => {
     setEditingFrameId(null);
@@ -3855,6 +3933,17 @@ export default function AdminDashboardPage() {
                               <strong>Mascotas en retrato:</strong>{" "}
                               {modalItem.customizations?.pet_count || 1}
                             </p>
+                            {modalItem.customizations?.pet_inscription?.enabled &&
+                              modalItem.customizations.pet_inscription.pet_name && (
+                                <p className="text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mt-1 flex items-center gap-2">
+                                  <PenTool className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                                  <span>
+                                    <strong>Nombre de Mascota:</strong> &ldquo;
+                                    {modalItem.customizations.pet_inscription.pet_name}
+                                    &rdquo; (Brush blanco inferior derecha en diagonal)
+                                  </span>
+                                </p>
+                              )}
                             {modalItem.customizations?.notes && (
                               <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200 mt-1">
                                 <strong>Nota taller:</strong>{" "}
@@ -4063,6 +4152,17 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+        {/* Modal de confirmación genérico para acciones del Admin */}
+        <ConfirmModal
+          open={confirmModalData.open}
+          onOpenChange={(open) =>
+            setConfirmModalData((prev) => ({ ...prev, open }))
+          }
+          title={confirmModalData.title}
+          description={confirmModalData.description}
+          variant={confirmModalData.variant}
+          onConfirm={confirmModalData.action}
+        />
       </main>
     </div>
   );

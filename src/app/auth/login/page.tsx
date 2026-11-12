@@ -1,21 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, {Suspense, useEffect, useState} from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {useRouter, useSearchParams} from "next/navigation";
+import {useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Header } from "@/components/Header";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { setCachedSessionUser } from "@/lib/client-session";
-import {
-  Lock,
-  Mail,
-  ArrowRight,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import {Header} from "@/components/Header";
+import {supabaseBrowser} from "@/lib/supabase-browser";
+import {setCachedSessionUser} from "@/lib/client-session";
+import {AlertCircle, ArrowRight, Loader2, Lock, Mail, PackageCheck,} from "lucide-react";
 
 // Esquema de validación con Zod
 const loginSchema = z.object({
@@ -158,6 +152,11 @@ function LoginForm() {
     }
   };
 
+  const isCheckoutFlow = callbackUrl?.includes("checkout");
+  const registerLinkHref = callbackUrl
+    ? `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}${email ? `&email=${encodeURIComponent(email)}` : ""}`
+    : "/auth/register";
+
   return (
     <div className="max-w-md w-full mx-auto bg-white border border-[#c6a26c]/40 rounded-3xl p-8 shadow-soft space-y-6">
       <div className="text-center space-y-2">
@@ -172,6 +171,15 @@ function LoginForm() {
           vivo.
         </p>
       </div>
+
+      {isCheckoutFlow && (
+        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+          <PackageCheck className="w-4 h-4 shrink-0 text-[#c6a26c]" />
+          <span>
+            <strong>Tus datos de envío han sido guardados.</strong> Inicia sesión o crea tu cuenta para confirmar tu pedido.
+          </span>
+        </div>
+      )}
 
       {error && (
         <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
@@ -236,9 +244,17 @@ function LoginForm() {
 
         {/* Campo Contraseña */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#174B3D] block">
-            Contraseña
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-[#174B3D] block">
+              Contraseña
+            </label>
+            <Link
+              href="/auth/forgot-password"
+              className="text-[11px] text-[#174B3D] hover:text-[#c6a26c] font-medium transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <div className="relative">
             <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -281,7 +297,7 @@ function LoginForm() {
       <p className="text-center text-xs text-stone-500">
         ¿Aún no tienes cuenta?{" "}
         <Link
-          href="/auth/register"
+          href={registerLinkHref}
           className="text-terracotta-600 font-semibold hover:underline"
         >
           Crear cuenta gratis

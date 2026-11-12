@@ -18,6 +18,8 @@
     "@fal-ai/serverless-client": "^0.14.0",
     "@hookform/resolvers": "^7.0.5",
     "@prisma/client": "6.7.0",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.3.1",
     "@supabase/supabase-js": "^2.45.6",
     "canvas-confetti": "^1.9.3",
     "clsx": "^2.1.1",

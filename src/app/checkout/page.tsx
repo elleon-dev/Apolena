@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import {
   MapPin,
@@ -18,6 +19,9 @@ import {
   Building2,
   Mail,
   PackageSearch,
+  Lock,
+  User,
+  PenTool,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
 
@@ -53,7 +57,10 @@ const DEFAULT_DRAFT: CheckoutDraft = {
   },
 };
 
-export default function CheckoutPage() {
+function CheckoutContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [draft, setDraft] = useState<CheckoutDraft>(DEFAULT_DRAFT);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [shippingRates, setShippingRates] = useState<{
@@ -85,6 +92,17 @@ export default function CheckoutPage() {
   const [legalName, setLegalName] = useState("");
   const [taxAddress, setTaxAddress] = useState("");
 
+  // User Session State
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    email: string;
+    name: string | null;
+    phone: string | null;
+    role: string;
+  } | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isRestoredNotice, setIsRestoredNotice] = useState(false);
+
   // 50% Advance Payment State
   const [paymentMethod, setPaymentMethod] = useState<
     "yape" | "plin" | "bank_transfer"
@@ -107,7 +125,35 @@ export default function CheckoutPage() {
           setDraft(parsed);
         }
       }
+
+      const savedForm = localStorage.getItem("apolena_pending_checkout");
+      if (savedForm) {
+        const p = JSON.parse(savedForm);
+        if (p.name) setName(p.name);
+        if (p.phone) setPhone(p.phone);
+        if (p.email) setEmail(p.email);
+        if (p.docType) setDocType(p.docType);
+        if (p.docNumber) setDocNumber(p.docNumber);
+        if (p.department) setDepartment(p.department);
+        if (p.province) setProvince(p.province);
+        if (p.district) setDistrict(p.district);
+        if (p.address) setAddress(p.address);
+        if (p.reference) setReference(p.reference);
+        if (p.notes) setNotes(p.notes);
+        if (p.invoiceType) setInvoiceType(p.invoiceType);
+        if (p.rucNumber) setRucNumber(p.rucNumber);
+        if (p.legalName) setLegalName(p.legalName);
+        if (p.taxAddress) setTaxAddress(p.taxAddress);
+        if (p.paymentMethod) setPaymentMethod(p.paymentMethod);
+        if (p.operationNumber) setOperationNumber(p.operationNumber);
+        if (p.proofImageUrl) setProofImageUrl(p.proofImageUrl);
+      }
     } catch {}
+
+    const isPending = searchParams.get("pendingOrder") === "true";
+    if (isPending) {
+      setIsRestoredNotice(true);
+    }
 
     fetch("/api/settings")
       .then((r) => r.json())
@@ -121,16 +167,25 @@ export default function CheckoutPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
-          setName(data.user.name || "");
-          setEmail(data.user.email || "");
-          setPhone(data.user.phone || "");
-          if (data.user.address) setAddress(data.user.address);
-          if (data.user.district) setDistrict(data.user.district);
-          if (data.user.department) setDepartment(data.user.department);
+          setCurrentUser(data.user);
+          setName((prev) => prev || data.user.name || "");
+          setEmail((prev) => prev || data.user.email || "");
+          setPhone((prev) => prev || data.user.phone || "");
+          if (data.user.address) setAddress((prev) => prev || data.user.address);
+          if (data.user.district) setDistrict((prev) => prev || data.user.district);
+          if (data.user.department) setDepartment((prev) => prev || data.user.department);
         }
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+      .finally(() => setIsLoadingUser(false));
+  }, [searchParams]);
+
+  const handleSwitchAccount = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    setCurrentUser(null);
+  };
 
   const shippingCost =
     department.trim().toLowerCase() === "lima"
@@ -151,6 +206,55 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!name.trim() || !phone.trim() || !email.trim() || !address.trim() || !district.trim() || !department.trim()) {
+      setError("Por favor completa todos los campos obligatorios (*) de datos de entrega.");
+      window.scrollTo({ top: 250, behavior: "smooth" });
+      return;
+    }
+
+    if (!operationNumber.trim()) {
+      setError("Por favor ingresa el número de operación o referencia del 50% de adelanto.");
+      return;
+    }
+
+    // Si el usuario no está autenticado, guardamos el borrador en localStorage y lo enviamos a login/register
+    if (!currentUser) {
+      try {
+        const pendingData = {
+          name,
+          phone,
+          email,
+          docType,
+          docNumber,
+          department,
+          province,
+          district,
+          address,
+          reference,
+          notes,
+          invoiceType,
+          rucNumber,
+          legalName,
+          taxAddress,
+          paymentMethod,
+          operationNumber,
+          proofImageUrl,
+        };
+        localStorage.setItem("apolena_pending_checkout", JSON.stringify(pendingData));
+      } catch {}
+
+      const callbackUrl = "/checkout?pendingOrder=true";
+      const q = new URLSearchParams({
+        callbackUrl,
+        email,
+        name,
+        phone,
+      });
+      router.push(`/auth/login?${q.toString()}`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -201,6 +305,10 @@ export default function CheckoutPage() {
         setError(data.error || "No se pudo procesar tu orden.");
         return;
       }
+
+      try {
+        localStorage.removeItem("apolena_pending_checkout");
+      } catch {}
 
       setCreatedOrder(data.order);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -356,6 +464,53 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* RESTORED NOTICE BANNER */}
+              {isRestoredNotice && currentUser && (
+                <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 text-sage-900 text-xs flex items-center gap-3 shadow-xs">
+                  <CheckCircle2 className="w-5 h-5 text-sage-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-stone-900">
+                      ¡Sesión iniciada con éxito!
+                    </p>
+                    <p className="text-stone-600 mt-0.5">
+                      Tus datos de entrega y pago fueron restaurados. Revisa el resumen y haz clic en <strong>Confirmar Orden</strong> para completar tu pedido.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* CUENTA ACTIVA (SI ESTÁ LOGUEADO) */}
+              {currentUser && (
+                <div className="bg-white border border-cream-200 rounded-2xl p-4 sm:p-5 shadow-soft flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center font-bold text-sm shadow-soft">
+                      {currentUser.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-stone-900 text-xs sm:text-sm">
+                          {currentUser.name}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-sage-600" />
+                          <span>Cuenta Activa</span>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        {currentUser.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSwitchAccount}
+                    className="text-xs text-stone-500 hover:text-stone-800 underline font-medium"
+                  >
+                    Cambiar cuenta
+                  </button>
+                </div>
+              )}
+
               {/* STEP 1: DATOS DE CONTACTO Y DELIVERY */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4">
                 <div className="flex items-center gap-2.5 pb-3 border-b border-cream-200">
@@ -497,36 +652,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* STEP 2: COMPROBANTE FISCAL (BOLETA / FACTURA)
-              <div className="bg-white border border-[#174B3D]/15 rounded-3xl p-6 shadow-sm space-y-4">
-  <div className="flex items-center justify-between pb-3 border-b border-[#174B3D]/10">
-    <div className="flex items-center gap-2.5">
-      <FileText className="w-5 h-5 text-[#c6a26c]" />
-      <h2 className="font-serif text-lg font-bold text-[#174B3D]">
-        2. Comprobante de Pago
-      </h2>
-    </div>
-    <span className="px-3.5 py-1.5 rounded-full bg-[#174B3D] text-white text-xs font-semibold shadow-sm">
-      Comprobante de Pedido
-    </span>
-  </div>
-
-                <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
-                  <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
-                    Se emitirá un <strong>Comprobante de Pedido </strong>{" "}
-                    digital con los datos de contacto ingresados en la orden
-                    para el seguimiento y recepción de tu cuadro.
-                  </p>
-                </div>
-              </div>
-  <div className="p-4 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35">
-    <p className="text-xs text-[#141414]/80 leading-relaxed font-medium">
-      Se emitirá un <strong>Comprobante de Pedido </strong> digital con los datos de contacto ingresados en la orden para el seguimiento y recepción de tu cuadro.
-    </p>
-  </div>
-</div>*/}
-
-              {/* STEP 3: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
+              {/* STEP 2: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                   <div className="flex items-center gap-2.5">
@@ -879,6 +1005,21 @@ export default function CheckoutPage() {
                       Presentación:{" "}
                       <strong>Lienzo en Bastidor (Full Screen)</strong>
                     </p>
+                    {draft.customizations?.pet_inscription?.enabled &&
+                      draft.customizations.pet_inscription.pet_name && (
+                        <div className="pt-1.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-[11px] font-medium">
+                            <PenTool className="w-3 h-3 text-[#c6a26c]" />
+                            <span>
+                              Nombre grabado:{" "}
+                              <strong className="font-brush text-stone-950 font-bold text-sm tracking-wide">
+                                &ldquo;{draft.customizations.pet_inscription.pet_name}&rdquo;
+                              </strong>{" "}
+                              <span className="text-[10px] text-stone-500">(Brush blanco diagonal)</span>
+                            </span>
+                          </span>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -919,7 +1060,7 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
@@ -932,10 +1073,16 @@ export default function CheckoutPage() {
                         Confirmar Orden y Adelanto 50% (S/{" "}
                         {advance50.toFixed(2)})
                       </span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                     </>
                   )}
                 </button>
+
+                {!currentUser && (
+                  <p className="text-[11px] text-stone-500 text-center leading-relaxed">
+                    Al confirmar, podrás iniciar sesión o crear tu contraseña para recibir tu <strong>Tracking ID</strong> y seguir tu pedido en vivo.
+                  </p>
+                )}
 
                 <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 text-center">
                   <ShieldCheck className="w-4 h-4 text-sage-600 flex-shrink-0" />
@@ -951,5 +1098,19 @@ export default function CheckoutPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-cream-50 flex items-center justify-center text-xs text-stone-500">
+          Cargando checkout...
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

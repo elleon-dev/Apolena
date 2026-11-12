@@ -1,0 +1,40 @@
+name: Apolena Email Worker Cron
+
+on:
+  schedule:
+    # Se ejecuta cada 5 minutos de forma 100% gratuita usando GitHub Actions
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Permite ejecutar el worker manualmente desde la pestaña Actions en GitHub
+
+jobs:
+  dispatch-emails:
+    name: Procesar Cola de Correos Transaccionales
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Invocar Worker de Correos (/api/cron/email-worker)
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || secrets.APP_URL || 'https://apolena.shop' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "📡 Conectando con el worker de correos en: $APP_URL/api/cron/email-worker"
+          
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "$APP_URL/api/cron/email-worker" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            --connect-timeout 15 \
+            --max-time 60)
+          
+          HTTP_BODY=$(echo "$RESPONSE" | sed -e '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | cut -d':' -f2)
+          
+          echo "📥 Respuesta del Servidor (HTTP $HTTP_STATUS):"
+          echo "$HTTP_BODY"
+          
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Cola de correos procesada exitosamente."
+          else
+            echo "❌ Error al invocar el worker (Código HTTP: $HTTP_STATUS)."
+            exit 1
+          fi

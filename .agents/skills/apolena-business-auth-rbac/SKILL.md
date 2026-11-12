@@ -18,6 +18,8 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 - Soporta dos modalidades de inicio de sesión que convergen en la misma sesión firmada (`apolena_session`) y en `public.profiles`:
   1. **Credenciales (Correo + Contraseña):** `/api/auth/login` y `/api/auth/register`.
   2. **Proveedor Google OAuth (vía Supabase Auth):** El botón _"Continuar con Google"_ en `/auth/login` y `/auth/register` inicia `supabaseBrowser.auth.signInWithOAuth({ provider: "google" })`, redirige a `/auth/callback` y sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `POST /api/auth/oauth/google` y `upsertOAuthProfile`.
+- **Recuperación Segura de Contraseña:** Flujo con token criptográfico HMAC SHA-256 (`signPasswordResetToken` / `verifyPasswordResetToken` con TTL de 60 min) enviado a la cola `email_queue` (`template: "password_reset"`), procesado en `/auth/forgot-password`, `/auth/reset-password` y `/api/auth/reset-password`.
+- **Autenticación Obligatoria en Checkout:** Queda prohibida la generación de órdenes anónimas o la creación silenciosa de cuentas con contraseñas por defecto (`"cliente123"`). Todo comprador debe identificarse o registrarse previamente en `/checkout` antes de emitir la orden en `/api/orders`.
 - Campos clave de `Profile` (`@@map("profiles")`):
   - `id`: UUID (`@id @default(dbgenerated("gen_random_uuid()")) @db.Uuid`).
   - `email`: Único (`@unique`).

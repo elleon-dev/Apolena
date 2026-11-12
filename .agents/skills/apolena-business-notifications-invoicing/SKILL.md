@@ -27,6 +27,10 @@ Toda notificación por correo electrónico se registra primero en la tabla `emai
 2. **Al Cambiar el Estado del Tracking (`template = "order_status_updated"`):**
    - Notifica al comprador cuando su pedido avanza a **En camino (`in_transit`)**, **Entregado (`delivered`)** y cuando culmina como **Exitoso (`completed`)** tras abonar el 50% final.
 
+3. **Al Registrarse una Hoja de Reclamación Virtual (`/libro-de-reclamaciones`):**
+   - **Email 1 — Al Consumidor Reclamante (`template = "claim_registered_consumer"`):** Envío formal de copia y código único correlativo (`REC-YYYYMMDD-XXXX`) conforme a la Ley N° 29571 y D.S. N° 011-2011-PCM (plazo de 15 días hábiles).
+   - **Email 2 — Al Equipo Legal de Apolena (`template = "claim_registered_admin"`):** Notificación inmediata con todos los detalles y pedido concreto del consumidor para su atención.
+
 ---
 
 ## 2. Comprobantes de Pago (`order_invoices`)

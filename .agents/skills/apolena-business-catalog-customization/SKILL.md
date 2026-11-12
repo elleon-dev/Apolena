@@ -30,6 +30,12 @@ Este skill define la arquitectura de productos y personalizaciones en Apolena, g
     - `finishes`: Lista dinámica de Acabados de Lienzo (`full-bleed` / `museum-matte` con `name`, `description`, `priceModifierPen`, `isAvailable`).
   - **Gestión Dinámica en `/dashboard`:** Tanto `super_admin` como `admin` pueden crear, editar, activar/ocultar y eliminar personajes IA, marcos, medidas 300 DPI y acabados del servicio `cuadros-personalizados` desde la pestaña **"Cuadros Personalizados"** del Dashboard Administrativo (`PUT /api/admin/settings` con `{ productId, productUpdate }`).
   - **Asistente IA para Alta Rápida de Personajes (`/api/admin/analyze-character`):** En el modal de creación de personajes, el primer paso es la subida de la imagen de vestuario de referencia. Al cargarse, el sistema ejecuta un análisis multimodal con IA (Gemini Flash free-tier y motor heurístico local a costo $0) que deduce automáticamente el nombre, título, universo y descripción para el cliente. No se muestra ni se requiere ningún campo técnico `"Prompt Maestro IA"` en las tarjetas ni en el formulario de personajes. El Estudio IA (`/products/cuadros-personalizados`) y el worker de generación (`src/lib/queue.ts` vía `getWallArtCharacterById`) consumen esta configuración dinámica en tiempo real.
+- **`CharacterTemplate` (`@@map("character_templates")`)**:
+  - Tabla relacional dedicada para el catálogo de personajes y escenas IA, diseñada para escalar a cientos de temáticas sin deuda técnica.
+  - Campos: `id` (UUID), `slug` (único, ej. `joker`, `jack-sparrow`), `name`, `character_title`, `universe` (ej. `Colección Cine`, `Imperio Inca`), `description`, `character_image_url`, `mask_url`, `fusion_sample_url`, `accent_color`, `tag_color`, `prompt`, `negative_prompt`, `is_available` (booleano), `position` (entero de ordenación), `created_at` y `updated_at`.
+  - Índices: `[is_available]`, `[universe]`, `[position]` para búsquedas y paginación ultra rápidas.
+  - Sincronización transparente: Las APIs de catálogo (`/api/products`, `/api/templates`) y el dashboard administrativo leen y sincronizan atómicamente con esta tabla manteniendo compatibilidad completa con el personalizador.
+
 - **`ProductImage` (`@@map("product_images")`)**:
   - Galería de imágenes de muestra del producto (`product_id`, `url`, `position`, `alt_text`).
 
@@ -102,11 +108,13 @@ Para que Apolena escale a nuevas personalizaciones (ej. **marcos para cada cuadr
     "size_id": "size-l",
     "size_label": "50 × 70 cm (L)",
     "dpi": 300,
-    "finish_mode": "museum-matte",
-    "frame": {
-      "id": "wood-oak",
-      "name": "Marco de Madera Roble Natural",
-      "price_modifier": 35.0
+    "finish_mode": "full-bleed",
+    "frame_id": "canvas-bastidor",
+    "frame_name": "Lienzo en Bastidor de Madera",
+    "pet_inscription": {
+      "enabled": true,
+      "pet_name": "Max",
+      "style": "brush-white-diagonal"
     },
     "notes": "Ojos bien iluminados"
   }

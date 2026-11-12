@@ -16,11 +16,18 @@ Este skill define la lógica financiera y de checkout inalterable de Apolena, ba
 
 Una vez que el usuario genera y selecciona el retrato de su mascota:
 
-1. **Datos de Contacto y Ubicación para Delivery (`order_shippings`):**
-   - Se solicita: Nombre completo (`name`), Teléfono/WhatsApp (`phone`), Email (`email`), Dirección exacta (`address`), Departamento (`department`), Provincia (`province`), Distrito (`district`), Referencia de ubicación (`reference`) y Documento (`document_type`: DNI/CE/RUC, `document_number`).
-2. **Datos de Comprobante (`order_invoices`):**
+1. **Llenado Libre y Autenticación con Redirección Fluida:**
+   - Para maximizar la conversión y comodidad del usuario, el comprador puede completar todos los datos de delivery y método de pago (50% de adelanto) sin bloqueos iniciales.
+   - Al hacer clic en **"Confirmar Orden"**:
+     - Si el usuario **ya está autenticado**, la orden se procesa directamente en `/api/orders`.
+     - Si el usuario **no está autenticado**, todos sus datos ingresados se guardan de forma segura en `localStorage` (`apolena_pending_checkout`) y se le redirige a `/auth/login` o `/auth/register` con parámetro `callbackUrl=/checkout?pendingOrder=true` (prellenando su correo, nombre y teléfono).
+     - Al completar su inicio de sesión o registro, regresa automáticamente a `/checkout`, donde todos sus datos son restaurados instantáneamente para que confirme su orden con un solo clic.
+   - En el backend, `/api/orders` responde con `401 Unauthorized` si no existe una sesión válida de `Profile`, garantizando que ninguna orden se cree sin un usuario real y verificado.
+2. **Datos de Contacto y Ubicación para Delivery (`order_shippings`):**
+   - Se solicita: Nombre completo (`name`), Teléfono/WhatsApp (`phone`), Email (`email`), Dirección exacta (`address`), Departamento (`department`), Provincia (`province`), Distrito (`district`), Referencia de ubicación (`reference`) y Documento (`document_type`: DNI/CE/RUC, `document_number`). Pre-llenados automáticamente con los datos del perfil activo.
+3. **Datos de Comprobante (`order_invoices`):**
    - Selección de Boleta o Factura con sus datos respectivos.
-3. **Cálculo de Importes en la Orden (`orders`):**
+4. **Cálculo de Importes en la Orden (`orders`):**
    - `subtotal`: Suma de los `order_items`.
    - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`).
    - `total_amount`: $\text{subtotal} + \text{shipping\_cost}$.

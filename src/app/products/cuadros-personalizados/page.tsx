@@ -52,6 +52,7 @@ import {
   Printer,
   Frame,
   ShoppingBag,
+  PenTool,
 } from "lucide-react";
 
 export default function personalizedWallArt() {
@@ -63,6 +64,9 @@ export default function personalizedWallArt() {
   const [petImage, setPetImage] = useState<string | null>(null);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
   const [petSpecies, setPetSpecies] = useState<"dog" | "cat" | "other">("dog");
+  const [includePetInscription, setIncludePetInscription] =
+    useState<boolean>(false);
+  const [petInscriptionName, setPetInscriptionName] = useState<string>("");
   const [isSimulationJob, setIsSimulationJob] = useState<boolean>(false);
   const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
 
@@ -356,7 +360,9 @@ export default function personalizedWallArt() {
           customThemeImageUrl: useCustomTheme ? customThemeImage : null,
           customPrompt: customPrompt.trim() || null,
           provider: selectedProvider,
-          petName: secondPetImage ? "Dúo de Mascotas" : "Mascota",
+          petName:
+            petInscriptionName.trim() ||
+            (secondPetImage ? "Dúo de Mascotas" : "Mascota"),
           species: petSpecies,
         }),
       });
@@ -488,6 +494,8 @@ export default function personalizedWallArt() {
     setIsGenerating(false);
     setIsSimulationJob(false);
     setSimulationNotice(null);
+    setIncludePetInscription(false);
+    setPetInscriptionName("");
   };
 
   const activeThemeImageUrl =
@@ -504,6 +512,8 @@ export default function personalizedWallArt() {
 
   const handleProceedToCheckout = () => {
     const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
+    const hasInscription =
+      includePetInscription && Boolean(petInscriptionName.trim());
     const draft = {
       product_id: wallArtProductId,
       generation_job_id: activeGenerationJobId,
@@ -526,6 +536,13 @@ export default function personalizedWallArt() {
         pet_count: secondPetImage ? 2 : 1,
         selected_variant_id: selectedVariantId || "variant-1",
         notes: customPrompt.trim() || null,
+        pet_inscription: hasInscription
+          ? {
+              enabled: true,
+              pet_name: petInscriptionName.trim(),
+              style: "brush-white-diagonal",
+            }
+          : null,
       },
     };
     try {
@@ -753,6 +770,83 @@ export default function personalizedWallArt() {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Opción de Nombre de Mascota en el Lienzo */}
+                <div className="pt-3 border-t border-cream-200 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-stone-800 flex items-center gap-1.5">
+                      <PenTool className="w-3.5 h-3.5 text-[#c6a26c]" />
+                      <span>Nombre de tu mascota en el lienzo:</span>
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Opcional · Tipografía Brush en blanco
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setIncludePetInscription(false)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                        !includePetInscription
+                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                          : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                      }`}
+                    >
+                      <Sparkles
+                        className={`w-3.5 h-3.5 ${
+                          !includePetInscription
+                            ? "text-[#c6a26c]"
+                            : "text-stone-400"
+                        }`}
+                      />
+                      <span>Solo Arte (Sin texto)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIncludePetInscription(true)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                        includePetInscription
+                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                          : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                      }`}
+                    >
+                      <PenTool
+                        className={`w-3.5 h-3.5 ${
+                          includePetInscription
+                            ? "text-[#c6a26c]"
+                            : "text-stone-400"
+                        }`}
+                      />
+                      <span>Con Nombre (Tipografía Brush)</span>
+                    </button>
+                  </div>
+
+                  {includePetInscription && (
+                    <div className="pt-1 space-y-1.5 animate-in fade-in duration-200">
+                      <label className="text-[11px] font-medium text-stone-700 block">
+                        Escribe el nombre de tu mascota a inscribir:
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={petInscriptionName}
+                          onChange={(e) =>
+                            setPetInscriptionName(e.target.value)
+                          }
+                          placeholder="Ej. Clattering, Max, Luna, Thor..."
+                          maxLength={35}
+                          className="w-full px-3.5 py-2 pl-9 rounded-xl bg-white border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] focus:ring-1 focus:ring-[#174B3D]"
+                        />
+                        <PenTool className="w-3.5 h-3.5 text-[#c6a26c] absolute left-3 top-2.5" />
+                      </div>
+                      <p className="text-[11px] text-stone-500">
+                        Se inscribirá en color blanco con tipografía brush en la esquina inferior derecha en diagonal, al estilo firma de atelier.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1056,13 +1150,15 @@ export default function personalizedWallArt() {
 
             {/* Simulation Warning Banner when APIs exceed quota (429) */}
             {isSimulationJob && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-3.5 shadow-soft">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-amber-950 text-sm">
+              <div className="p-4 sm:p-5 rounded-2xl bg-red-50/95 border-2 border-red-300 text-red-900 text-xs flex items-start gap-3.5 shadow-soft animate-in fade-in duration-200">
+                <div className="w-8 h-8 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <p className="font-bold text-red-950 text-sm">
                     Muestra de Ilustración de Estudio (Modo Demostración)
                   </p>
-                  <p className="text-amber-800 leading-relaxed text-xs">
+                  <p className="text-red-800 leading-relaxed text-xs">
                     {simulationNotice ||
                       "Las claves de API de los motores de IA (OpenAI / Google Gemini) alcanzaron su cuota o saldo disponible (Error 429 Quota Exceeded). Por ello, el sistema desplegó una muestra ilustrativa del atelier en lugar de la transformación en vivo de tu foto. Para fusionar en tiempo real conservando al 100% las facciones exactas de tu mascota, por favor recarga los créditos de tu cuenta de OpenAI o habilita facturación en Google Cloud / AI Studio."}
                   </p>
@@ -1183,36 +1279,27 @@ export default function personalizedWallArt() {
                           >
                             <div
                               onContextMenu={(e) => e.preventDefault()}
-                              className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden border border-cream-200 bg-stone-900 flex-shrink-0 select-none"
+                              className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0 select-none shadow-xs"
                             >
                               <img
                                 src={variant.imageUrl}
                                 alt={proposalTitle}
                                 draggable={false}
                                 onContextMenu={(e) => e.preventDefault()}
-                                className="w-full h-full object-contain object-top pointer-events-none select-none"
+                                className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-300"
                               />
-                              {/* Subtle Mini Watermark on Proposal Thumbnail */}
-                              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-15">
-                                <img
-                                  src="/logo-light.png"
-                                  alt=""
-                                  draggable={false}
-                                  className="w-10 object-contain -rotate-12"
-                                />
-                              </div>
                               {isActiveVariant && (
-                                <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
-                                  <span className="w-6 h-6 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow">
-                                    <Check className="w-3.5 h-3.5 stroke-[3] text-[#c6a26c]" />
+                                <div className="absolute inset-0 bg-[#174B3D]/15 backdrop-blur-[1px] flex items-center justify-center">
+                                  <span className="w-7 h-7 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow-soft ring-2 ring-white/80">
+                                    <Check className="w-4 h-4 stroke-[3] text-[#c6a26c]" />
                                   </span>
                                 </div>
                               )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="text-xs font-bold text-[#174B3D] truncate">
+                              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                <span className="text-xs font-bold text-[#174B3D]">
                                   {proposalTitle}
                                 </span>
                                 {isActiveVariant && (
@@ -1249,6 +1336,70 @@ export default function personalizedWallArt() {
                     </div>
                   </div>
                 )}
+
+                {/* Control Interactivo de Caligrafía en Paso 3 */}
+                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-[#c6a26c] flex items-center justify-center shrink-0">
+                      <PenTool className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-stone-900 flex items-center gap-2">
+                        <span>Nombre de Mascota (Tipografía Brush)</span>
+                        {includePetInscription &&
+                          petInscriptionName.trim() && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#174B3D] bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
+                              Activo en Lienzo
+                            </span>
+                          )}
+                      </h4>
+                      <p className="text-stone-500 text-[11px] mt-0.5">
+                        {includePetInscription && petInscriptionName.trim()
+                          ? `Inscribiendo: "${petInscriptionName.trim()}" en pincel blanco en la esquina inferior derecha en diagonal.`
+                          : "Lienzo artístico puro sin texto. Puedes activar el nombre si lo deseas."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIncludePetInscription(!includePetInscription)
+                      }
+                      className={`px-3.5 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        includePetInscription
+                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                          : "bg-cream-50 text-stone-700 border-cream-200 hover:bg-cream-100"
+                      }`}
+                    >
+                      <PenTool
+                        className={`w-3.5 h-3.5 ${
+                          includePetInscription
+                            ? "text-[#c6a26c]"
+                            : "text-stone-400"
+                        }`}
+                      />
+                      <span>
+                        {includePetInscription
+                          ? "Con Nombre Brush"
+                          : "Activar Nombre"}
+                      </span>
+                    </button>
+                    {includePetInscription && (
+                      <input
+                        type="text"
+                        value={petInscriptionName}
+                        onChange={(e) =>
+                          setPetInscriptionName(e.target.value)
+                        }
+                        placeholder="Nombre de mascota"
+                        maxLength={35}
+                        className="px-3 py-2 rounded-xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] w-36 sm:w-44"
+                      />
+                    )}
+                  </div>
+                </div>
 
                 {/* Viewer Controls Bar */}
                 <div className="flex items-center justify-between gap-2 p-1.5 rounded-full bg-white border border-cream-200 shadow-soft">
@@ -1346,6 +1497,25 @@ export default function personalizedWallArt() {
                         maxHeightPx={560}
                         className="rounded-sm"
                       />
+
+                      {/* Nombre de la mascota en tipografía Brush en color blanco estilo autógrafo (esquina inferior derecha en diagonal) */}
+                      {includePetInscription && petInscriptionName.trim() && (
+                        <div className="absolute bottom-12 right-6 sm:bottom-16 sm:right-8 z-20 pointer-events-none select-none max-w-[75%] sm:max-w-[70%] text-right transform -rotate-[6deg] sm:-rotate-[7deg] origin-bottom-right">
+                          <span
+                            className={`font-brush ${
+                              petInscriptionName.trim().length > 16
+                                ? "text-base sm:text-xl md:text-2xl"
+                                : petInscriptionName.trim().length > 11
+                                ? "text-xl sm:text-2xl md:text-3xl"
+                                : petInscriptionName.trim().length > 6
+                                ? "text-2xl sm:text-3xl md:text-4xl"
+                                : "text-3xl sm:text-4xl md:text-5xl"
+                            } text-white tracking-wide font-normal leading-none select-none whitespace-nowrap block`}
+                          >
+                            {petInscriptionName.trim()}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Escudo invisible interactivo anti-descarga y anti-arrastre (la marca de agua sutil ya viene integrada en el lienzo) */}
                       <div

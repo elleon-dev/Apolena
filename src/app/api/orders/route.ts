@@ -13,6 +13,7 @@ import {
   PaymentMethod,
 } from "@/lib/db-service";
 import { resolveCleanMasterArtwork } from "@/lib/server-watermark";
+import { getRequestOrigin } from "@/lib/app-url";
 
 /**
  * Strips `master_art_url` from an order when returning to a non-admin buyer
@@ -98,29 +99,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Si el usuario aún no había iniciado sesión, vinculamos o creamos su perfil en Prisma automáticamente
+    // Seguridad e integridad de cuentas: Se exige autenticación previa para generar la orden
     if (!sessionUser) {
-      const cleanEmail = shipping.email.trim().toLowerCase();
-      let profile = await findProfileByEmail(cleanEmail);
-      if (!profile) {
-        const autoPass = body.account_password?.trim() || "cliente123";
-        const passwordHash = await hashPassword(autoPass);
-        profile = await createProfile({
-          email: cleanEmail,
-          passwordHash,
-          name: shipping.name.trim(),
-          phone: shipping.phone.trim(),
-          role: "user",
-        });
-      }
-      sessionUser = {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name || shipping.name.trim(),
-        phone: profile.phone,
-        role: profile.role,
-      };
-      newSessionToken = await signSessionToken(sessionUser);
+      return NextResponse.json(
+        {
+          error:
+            "Debes iniciar sesión o registrar tu cuenta antes de completar tu pedido. Esto garantiza el seguimiento seguro y resguardo de tus obras.",
+          requires_auth: true,
+        },
+        { status: 401 },
+      );
     }
 
     // Resolve the clean unwatermarked 300 DPI master file from the server vault (if available)
@@ -144,6 +132,7 @@ export async function POST(request: Request) {
     const createdOrder = await createOrderWithSplitPayment({
       buyer_id: sessionUser.id,
       product_id: body.product_id,
+      app_url: getRequestOrigin(request),
       generation_job_id: body.generation_job_id || null,
       pet_photo_url: body.pet_photo_url || null,
       generated_art_url: body.generated_art_url || "/samples/cat-suit.jpg",

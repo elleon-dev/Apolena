@@ -50,3 +50,9 @@ supabase/.temp
 .apolena-dev-db.json
 .apolena-master-art-vault.json
 /public/uploads/
+
+# Video experiment & generated assets
+/public/videos/
+/public/video-player/
+/hyperframes-apolena/
+scripts/generate-video.js

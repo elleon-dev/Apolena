@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { enqueueEmail, getPlatformSettings } from "@/lib/db-service";
 
 export async function POST(request: Request) {
   try {
@@ -13,27 +13,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Try to queue email notification in email_queue for admin if table exists
     try {
-      await prisma.emailQueue.create({
+      const settings = await getPlatformSettings();
+      const adminEmail = settings.ADMIN_NOTIFICATION_EMAILS?.emails?.[0] || "admin@apolena.pe";
+
+      await enqueueEmail({
+        to_email: adminEmail,
+        subject: `[Contacto Apolena] ${subject || "Nueva Consulta"} de ${name}`,
+        template: "contact_inquiry",
         data: {
-          to_email: "nmoriano26@gmail.com",
-          subject: `[Contacto Apolena] ${subject || "Nueva Consulta"} de ${name}`,
-          template: "contact_inquiry",
-          data: {
-            name,
-            email,
-            phone: phone || "No especificado",
-            subject: subject || "Consulta General",
-            message,
-            submitted_at: new Date().toISOString(),
-          },
-          status: "pending",
+          name,
+          email,
+          phone: phone || "No especificado",
+          subject: subject || "Consulta General",
+          message,
+          submitted_at: new Date().toISOString(),
         },
       });
     } catch (dbErr) {
-      // In case DB is offline or table is optional, log gracefully without blocking user response
-      console.warn("Could not insert contact inquiry to emailQueue:", dbErr);
+      console.warn("Could not enqueue contact inquiry email:", dbErr);
     }
 
     return NextResponse.json({
