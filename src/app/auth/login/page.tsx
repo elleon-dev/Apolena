@@ -52,10 +52,13 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const [email, setEmail] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  console.log({email})
 
   // Configuración de react-hook-form con Zod
   const {
@@ -233,6 +236,7 @@ function LoginForm() {
                   ? "border-red-500 focus:border-red-500"
                   : "border-[#E8DEC8] focus:border-[#174B3D]"
               }`}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           {errors.email && (
