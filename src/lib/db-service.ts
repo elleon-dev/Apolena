@@ -2501,12 +2501,19 @@ export async function updateOrderAdminLifecycle(input: {
     | "set_step_in_transit"
     | "set_step_delivered"
     | "complete_final_50_payment"
-    | "cancel_order";
+    | "cancel_order"
+    | "edit_order_details";
   courier?: string;
   carrierPhone?: string;
   finalPaymentMethod?: PaymentMethod;
   finalOperationNumber?: string;
   notes?: string;
+  shipping?: Record<string, any>;
+  paymentUpdate?: {
+    payment_method?: string;
+    operation_number?: string;
+    proof_image_url?: string;
+  };
   app_url?: string;
 }): Promise<OrderRecord | null> {
   const existingOrder = await findOrderById(input.orderId);
@@ -2608,6 +2615,77 @@ export async function updateOrderAdminLifecycle(input: {
       pkg.status = "cancelled";
       pkg.items.forEach((it) => (it.status = "cancelled"));
     });
+  } else if (input.action === "edit_order_details") {
+    // Regla de negocio: solo editable si la orden está en "pending" o "manufacturing"
+    if (
+      (order.status as string) !== "pending" &&
+      (order.status as string) !== "manufacturing"
+    ) {
+      throw new Error(
+        "La orden ya entró a fase de envío y no puede ser modificada.",
+      );
+    }
+
+    // 1. Actualizar parcialmente datos de contacto y dirección de entrega
+    if (input.shipping) {
+      if (order.shipping) {
+        order.shipping = {
+          ...order.shipping,
+          ...input.shipping,
+          id: order.shipping.id,
+          order_id: order.shipping.order_id,
+          name: input.shipping.name ?? order.shipping.name,
+          phone: input.shipping.phone ?? order.shipping.phone,
+          email: input.shipping.email !== undefined ? input.shipping.email : order.shipping.email,
+          address: input.shipping.address ?? order.shipping.address,
+          department: input.shipping.department !== undefined ? input.shipping.department : order.shipping.department,
+          province: input.shipping.province !== undefined ? input.shipping.province : order.shipping.province,
+          district: input.shipping.district !== undefined ? input.shipping.district : order.shipping.district,
+          reference: input.shipping.reference !== undefined ? input.shipping.reference : order.shipping.reference,
+          document_type: input.shipping.document_type !== undefined ? input.shipping.document_type : order.shipping.document_type,
+          document_number: input.shipping.document_number !== undefined ? input.shipping.document_number : order.shipping.document_number,
+        };
+      } else {
+        order.shipping = {
+          id: crypto.randomUUID(),
+          order_id: order.id,
+          name: input.shipping.name || "",
+          phone: input.shipping.phone || "",
+          email: input.shipping.email ?? null,
+          address: input.shipping.address || "",
+          department: input.shipping.department ?? null,
+          province: input.shipping.province ?? null,
+          district: input.shipping.district ?? null,
+          reference: input.shipping.reference ?? null,
+          document_type: input.shipping.document_type ?? null,
+          document_number: input.shipping.document_number ?? null,
+        };
+      }
+    }
+
+    // 2. Historial acumulativo de comprobantes (agrega el nuevo sin borrar los anteriores)
+    if (input.paymentUpdate?.proof_image_url) {
+      order.paymentTransactions.push({
+        id: crypto.randomUUID(),
+        order_id: order.id,
+        payment_stage: "advance_50",
+        payment_method:
+          (input.paymentUpdate.payment_method as PaymentMethod) ||
+          order.payment_method,
+        status: "verified",
+        amount: order.advance_amount,
+        currency: "PEN",
+        operation_number:
+          input.paymentUpdate.operation_number?.trim() || "EDIT-ADMIN",
+        proof_image_url: input.paymentUpdate.proof_image_url,
+        payer_name: order.shipping?.name || null,
+        payer_phone: order.shipping?.phone || null,
+        notes: "Comprobante adicional adjuntado en edición de expediente.",
+        verified_by: input.adminId,
+        verified_at: now,
+        created_at: now,
+      });
+    }
   }
 
   order.updated_at = now;
@@ -2707,6 +2785,60 @@ export async function updateOrderAdminLifecycle(input: {
               },
               data: {
                 status: "verified",
+                verified_by: input.adminId,
+                verified_at: nowDate,
+              },
+            }),
+          );
+        }
+      }
+
+      if (input.action === "edit_order_details") {
+        // Persistir datos de envío editados (actualización parcial de la relación 1:1)
+        if (input.shipping && order.shipping) {
+          const s = order.shipping;
+          batchOps.push(
+            prisma.order.update({
+              where: { id: order.id },
+              data: {
+                shipping: {
+                  update: {
+                    name: s.name,
+                    phone: s.phone,
+                    email: s.email,
+                    address: s.address,
+                    department: s.department,
+                    province: s.province,
+                    district: s.district,
+                    reference: s.reference,
+                    document_type: s.document_type || "DNI",
+                    document_number: s.document_number,
+                  },
+                },
+              },
+            }),
+          );
+        }
+
+        // Persistir el nuevo comprobante adicional (sin tocar los anteriores)
+        if (input.paymentUpdate?.proof_image_url) {
+          const newTx =
+            order.paymentTransactions[order.paymentTransactions.length - 1];
+          batchOps.push(
+            prisma.paymentTransaction.create({
+              data: {
+                id: newTx.id,
+                order_id: order.id,
+                payment_stage: newTx.payment_stage,
+                payment_method: newTx.payment_method,
+                status: newTx.status,
+                amount: newTx.amount,
+                currency: "PEN",
+                operation_number: newTx.operation_number,
+                proof_image_url: newTx.proof_image_url,
+                payer_name: newTx.payer_name,
+                payer_phone: newTx.payer_phone,
+                notes: newTx.notes,
                 verified_by: input.adminId,
                 verified_at: nowDate,
               },
