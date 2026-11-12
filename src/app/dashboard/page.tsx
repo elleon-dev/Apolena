@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { EditOrderModal } from "@/components/EditOrderModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
 import {
@@ -224,6 +225,14 @@ export default function AdminDashboardPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
+  const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
+
+  const handleOrderUpdated = (updatedOrder: OrderRecord) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
+    );
+    showToast("success", "Expediente de la orden actualizado correctamente.");
+  };
   // Filters & Modal for Users
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<
@@ -1741,7 +1750,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             </button>
                           )}
 
-                          {order.status === "delivered" && (
+                         {order.status === "delivered" && (
                             <button
                               type="button"
                               disabled={isBusy}
@@ -1761,6 +1770,19 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               </span>
                             </button>
                           )}
+
+                          {/* Botón Editar Orden */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingOrder(order);
+                            }}
+                            className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>Editar Orden</span>
+                          </button>
                         </div>
 
                         <button
@@ -4162,6 +4184,13 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
           description={confirmModalData.description}
           variant={confirmModalData.variant}
           onConfirm={confirmModalData.action}
+        />
+        {/* Modal de edición de expediente de orden */}
+        <EditOrderModal
+          order={editingOrder}
+          open={!!editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onOrderUpdated={handleOrderUpdated}
         />
       </main>
     </div>

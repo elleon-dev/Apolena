@@ -17,6 +17,28 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // Caso 1: Edición de datos de contacto / envío / comprobante
+    if (body.action === "edit_order_details") {
+      const updated = await updateOrderAdminLifecycle({
+        orderId: params.id,
+        adminId: user.id,
+        action: "edit_order_details",
+        shipping: body.shipping,
+        paymentUpdate: body.paymentUpdate,
+      } as any);
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: "No se pudo actualizar la orden. Verifica que no esté en camino." },
+          { status: 400 },
+        );
+      }
+
+      return NextResponse.json({ order: updated });
+    }
+
+    // Caso 2: Transiciones de estado originales (Ciclo de vida)
     const updated = await updateOrderAdminLifecycle({
       orderId: params.id,
       adminId: user.id,
