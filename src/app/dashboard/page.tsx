@@ -51,6 +51,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   PenTool,
+  Gift,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -224,6 +225,7 @@ export default function AdminDashboardPage() {
   >("priority_all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
+  const [copiedDedicationId, setCopiedDedicationId] = useState<string | null>(null);
 
   const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
 
@@ -262,6 +264,14 @@ export default function AdminDashboardPage() {
     navigator.clipboard.writeText(trackingId);
     setCopiedTrackingId(trackingId);
     setTimeout(() => setCopiedTrackingId(null), 2000);
+  };
+
+  const copyDedication = (text: string, id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedDedicationId(id);
+    showToast("success", "Dedicatoria copiada al portapapeles.");
+    setTimeout(() => setCopiedDedicationId(null), 2500);
   };
 
   const loadAdminData = async () => {
@@ -1606,6 +1616,12 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               <span className="text-sm font-bold text-stone-900">
                                 {order.order_code}
                               </span>
+                              {item?.customizations?.dedication_note && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-semibold">
+                                  <Gift className="w-3 h-3 text-[#c6a26c]" />
+                                  <span>Regalo</span>
+                                </span>
+                              )}
                               <span className="text-[11px] text-stone-400 flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {formatRelativeTime(order.created_at)}
@@ -1691,6 +1707,45 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           </div>
                         </div>
                       </div>
+
+                      {/* Dedicatoria para regalo (preview + copiar rápido para el taller) */}
+                      {item?.customizations?.dedication_note && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3.5 py-2.5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] text-xs flex items-center justify-between gap-2.5 shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Gift className="w-3.5 h-3.5 text-[#c6a26c] shrink-0" />
+                            <p className="truncate text-stone-700 italic font-serif text-[11px]">
+                              &ldquo;{item.customizations.dedication_note}&rdquo;
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              copyDedication(
+                                item.customizations!.dedication_note!,
+                                `card-${order.id}`,
+                                e
+                              )
+                            }
+                            className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-stone-200 text-[10px] font-semibold text-stone-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                            title="Copiar dedicatoria al portapapeles"
+                          >
+                            {copiedDedicationId === `card-${order.id}` ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span className="text-emerald-700 font-bold">¡Copiado!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3 text-stone-500" />
+                                <span>Copiar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
 
                       {/* Mini Visual Step Progress Bar + Quick Next Action + "Ver Detalle" Modal Trigger */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -3966,6 +4021,43 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                   </span>
                                 </p>
                               )}
+                            {modalItem.customizations?.dedication_note && (
+                              <div className="bg-[#FFFBF2] p-3.5 rounded-2xl border border-[#E8DEC8] mt-2 space-y-2 shadow-2xs">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#174B3D]">
+                                    <Gift className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                                    <span>Dedicatoria para Regalo (Tarjeta Taller):</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) =>
+                                      copyDedication(
+                                        modalItem.customizations!.dedication_note!,
+                                        `modal-${selectedOrder.id}`,
+                                        e
+                                      )
+                                    }
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white hover:bg-stone-50 border border-stone-200 text-[11px] font-semibold text-stone-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                                    title="Copiar dedicatoria al portapapeles"
+                                  >
+                                    {copiedDedicationId === `modal-${selectedOrder.id}` ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span className="text-emerald-700 font-bold">¡Copiado!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5 text-stone-500" />
+                                        <span>Copiar</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <p className="text-xs italic text-stone-700 font-serif bg-white/80 p-3 rounded-xl border border-[#E8DEC8]/80 whitespace-pre-wrap leading-relaxed">
+                                  &ldquo;{modalItem.customizations.dedication_note}&rdquo;
+                                </p>
+                              </div>
+                            )}
                             {modalItem.customizations?.notes && (
                               <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200 mt-1">
                                 <strong>Nota taller:</strong>{" "}

@@ -26,6 +26,7 @@ import {
   AlertCircle,
   Download,
   Lock,
+  Gift,
 } from "lucide-react";
 import type { OrderRecord, OrderStatus } from "@/lib/db-service";
 import type { SessionUser } from "@/lib/auth";
@@ -478,6 +479,18 @@ export default function CommonUserOrdersPage() {
                           <p className="text-stone-500">
                             Acabado: {item.customizations?.finish_label}
                           </p>
+
+                          {item.customizations?.dedication_note && (
+                            <div className="mt-2.5 p-3 rounded-xl bg-[#F7EFE0]/90 border border-[#EDE0C4] text-xs text-[#141414] space-y-1 shadow-2xs">
+                              <div className="flex items-center gap-1.5 font-bold text-[#174B3D]">
+                                <Gift className="w-3.5 h-3.5 text-[#c6a26c] shrink-0" />
+                                <span>Dedicatoria para regalo:</span>
+                              </div>
+                              <p className="italic pl-5 border-l-2 border-[#c6a26c] text-stone-700 whitespace-pre-wrap font-serif text-[11px] leading-relaxed">
+                                &ldquo;{item.customizations.dedication_note}&rdquo;
+                              </p>
+                            </div>
+                          )}
 
                           {/* Recuerdo Digital HD Post-Entrega (Unlocked only when status === 'completed' & paid_full) */}
                           <div className="pt-2">

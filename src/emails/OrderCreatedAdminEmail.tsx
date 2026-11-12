@@ -28,6 +28,7 @@ export interface OrderCreatedAdminEmailProps {
   customizations?: {
     size_label?: string;
     frame_name?: string;
+    dedication_note?: string;
     pet_inscription?: {
       pet_name?: string;
     };
@@ -85,6 +86,9 @@ export default function OrderCreatedAdminEmail({
             <Text style={line}><strong>Presentación:</strong> {customizations.frame_name || "Lienzo en bastidor"}</Text>
             {petName && (
               <Text style={lineGold}><strong>Nombre de Mascota grabado:</strong> &ldquo;{petName}&rdquo;</Text>
+            )}
+            {customizations.dedication_note && (
+              <Text style={line}><strong>Dedicatoria (Regalo):</strong> &ldquo;{customizations.dedication_note}&rdquo;</Text>
             )}
           </Section>
 

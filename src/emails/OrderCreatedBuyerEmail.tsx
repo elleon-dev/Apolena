@@ -29,6 +29,7 @@ export interface OrderCreatedBuyerEmailProps {
     size_label?: string;
     frame_name?: string;
     finish_label?: string;
+    dedication_note?: string;
     pet_inscription?: {
       pet_name?: string;
     };
@@ -107,6 +108,12 @@ export default function OrderCreatedBuyerEmail({
               <Row style={itemRow}>
                 <Column style={itemKey}>Nombre de tu Mascota:</Column>
                 <Column style={itemValueGold}>&ldquo;{petName}&rdquo; (Caligrafía blanca)</Column>
+              </Row>
+            )}
+            {customizations.dedication_note && (
+              <Row style={itemRow}>
+                <Column style={itemKey}>Dedicatoria (Regalo):</Column>
+                <Column style={itemValue}>&ldquo;{customizations.dedication_note}&rdquo;</Column>
               </Row>
             )}
             <Row style={itemRow}>

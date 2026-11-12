@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Download,
   Lock,
+  Gift,
 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
 
@@ -250,6 +251,16 @@ export default function TrackingDetailPage({
                     <p className="text-stone-500">
                       Listo para colgar · Algodón 100% de bellas artes
                     </p>
+                    {item.customizations?.dedication_note && (
+                      <p className="text-[#174B3D] bg-[#F7EFE0] p-2 rounded-xl border border-[#EDE0C4] text-[11px] font-medium flex items-start gap-1.5 mt-1">
+                        <Gift className="w-3.5 h-3.5 text-[#94713F] shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Dedicatoria (Regalo):</strong> &ldquo;
+                          {item.customizations.dedication_note}
+                          &rdquo;
+                        </span>
+                      </p>
+                    )}
                     <div className="pt-1.5">
                       {order.status === "completed" &&
                       order.payment_status === "paid_full" ? (

@@ -96,6 +96,7 @@ export interface OrderItemCustomizations {
   notes?: string | null;
   selected_variant_id?: string | null;
   master_art_url?: string | null;
+  dedication_note?: string | null;
   pet_inscription?: {
     enabled: boolean;
     pet_name: string;

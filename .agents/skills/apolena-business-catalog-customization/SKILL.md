@@ -116,6 +116,7 @@ Para que Apolena escale a nuevas personalizaciones (ej. **marcos para cada cuadr
       "pet_name": "Max",
       "style": "brush-white-diagonal"
     },
+    "dedication_note": "Con todo el cariño para mamá en su cumpleaños.",
     "notes": "Ojos bien iluminados"
   }
   ```

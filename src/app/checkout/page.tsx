@@ -22,6 +22,7 @@ import {
   Lock,
   User,
   PenTool,
+  Gift,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
 
@@ -1020,6 +1021,19 @@ function CheckoutContent() {
                           </span>
                         </div>
                       )}
+                    {draft.customizations?.dedication_note && (
+                      <div className="pt-1.5">
+                        <span className="inline-flex items-start gap-1.5 px-2.5 py-1.5 rounded-xl bg-terracotta-50/70 text-stone-800 border border-terracotta-200/80 text-[11px] font-medium w-full">
+                          <Gift className="w-3.5 h-3.5 text-[#c6a26c] shrink-0 mt-0.5" />
+                          <span className="leading-relaxed">
+                            Dedicatoria (Regalo):{" "}
+                            <strong className="text-stone-900 font-semibold italic">
+                              &ldquo;{draft.customizations.dedication_note}&rdquo;
+                            </strong>
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

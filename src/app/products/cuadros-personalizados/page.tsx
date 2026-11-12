@@ -53,6 +53,7 @@ import {
   Frame,
   ShoppingBag,
   PenTool,
+  Gift,
 } from "lucide-react";
 
 export default function personalizedWallArt() {
@@ -67,6 +68,7 @@ export default function personalizedWallArt() {
   const [includePetInscription, setIncludePetInscription] =
     useState<boolean>(false);
   const [petInscriptionName, setPetInscriptionName] = useState<string>("");
+  const [dedicationNote, setDedicationNote] = useState<string>("");
   const [isSimulationJob, setIsSimulationJob] = useState<boolean>(false);
   const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
 
@@ -496,6 +498,7 @@ export default function personalizedWallArt() {
     setSimulationNotice(null);
     setIncludePetInscription(false);
     setPetInscriptionName("");
+    setDedicationNote("");
   };
 
   const activeThemeImageUrl =
@@ -536,6 +539,7 @@ export default function personalizedWallArt() {
         pet_count: secondPetImage ? 2 : 1,
         selected_variant_id: selectedVariantId || "variant-1",
         notes: customPrompt.trim() || null,
+        dedication_note: dedicationNote.trim() || null,
         pet_inscription: hasInscription
           ? {
               enabled: true,
@@ -1618,6 +1622,49 @@ export default function personalizedWallArt() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Dedicatoria para Regalo (Opcional) */}
+                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-terracotta-50 text-terracotta-600 flex items-center justify-center flex-shrink-0 border border-terracotta-200/50">
+                        <Gift className="w-4 h-4 text-terracotta-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-stone-900">
+                            Nota de Dedicatoria
+                          </h4>
+                          <span className="text-[10px] font-semibold text-terracotta-700 bg-terracotta-50 px-2 py-0.5 rounded-full border border-terracotta-200/60">
+                            Opcional
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                          ¿Es un regalo para alguien especial? Escribe un mensaje o dedicatoria para incluirlo con tu pedido.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <textarea
+                      value={dedicationNote}
+                      onChange={(e) =>
+                        setDedicationNote(e.target.value.slice(0, 300))
+                      }
+                      placeholder="Ej: Con todo el amor para mamá en su cumpleaños, de parte de Max y toda la familia..."
+                      rows={3}
+                      maxLength={300}
+                      className="w-full rounded-2xl border border-cream-200 bg-cream-50/50 p-3.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-terracotta-500 focus:bg-white focus:ring-1 focus:ring-terracotta-500/20 transition-all resize-none shadow-xs"
+                    />
+                    <div className="flex items-center justify-between pt-1 px-1 text-[10px] text-stone-400">
+                      <span>Se incluirá en una tarjeta de presentación junto a la entrega.</span>
+                      <span className={dedicationNote.length >= 280 ? "text-terracotta-600 font-semibold" : ""}>
+                        {dedicationNote.length}/300
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
