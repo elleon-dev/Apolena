@@ -26,6 +26,8 @@ import {
   ArrowLeft,
   RefreshCw,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
   ZoomIn,
   Columns,
@@ -168,6 +170,44 @@ export default function personalizedWallArt() {
   const fileInput1Ref = useRef<HTMLInputElement>(null);
   const fileInput2Ref = useRef<HTMLInputElement>(null);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
+  const charactersScrollRef = useRef<HTMLDivElement>(null);
+  const createPortraitBtnRef = useRef<HTMLButtonElement>(null);
+  const [previewCharacterModal, setPreviewCharacterModal] =
+    useState<FamousCharacter | null>(null);
+
+  const scrollToCreatePortrait = () => {
+    setTimeout(() => {
+      if (createPortraitBtnRef.current) {
+        createPortraitBtnRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        createPortraitBtnRef.current.focus({ preventScroll: true });
+      }
+    }, 100);
+  };
+
+  // Cerrar lightbox con tecla Escape
+  useEffect(() => {
+    if (!previewCharacterModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPreviewCharacterModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewCharacterModal]);
+
+  const scrollCharacters = (direction: "left" | "right") => {
+    if (charactersScrollRef.current) {
+      const scrollAmount = direction === "left" ? -340 : 340;
+      charactersScrollRef.current.scrollBy({
+        left: scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // Load saved provider preference & check server .env status
   useEffect(() => {
@@ -570,7 +610,7 @@ export default function personalizedWallArt() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-8 py-10 sm:py-14 w-full">
+      <main className="flex-1 max-w-[1440px] xl:max-w-[1520px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
         {/* ========================================================================= */}
         {/* PANTALLA DE REVELADO / CARGA (MINIMALIST STUDIO LIGHT VIEW) */}
         {/* ========================================================================= */}
@@ -641,24 +681,26 @@ export default function personalizedWallArt() {
         {/* PASO 1: SUBIR FOTO DE TU MASCOTA (1 MASCOTA) */}
         {/* ========================================================================= */}
         {!isGenerating && step === 1 && (
-          <div className="space-y-10 animate-in fade-in duration-300">
-            <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <div className="space-y-6 max-w-5xl xl:max-w-6xl mx-auto animate-in fade-in duration-300">
+            {/* Header Compacto */}
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 border border-cream-200 text-stone-600 text-xs font-medium">
                 <Camera className="w-3.5 h-3.5 text-terracotta-500" />
                 <span>Paso 1 de 3 · Fotografía de Referencia</span>
               </div>
-              <h1 className="font-serif text-3xl sm:text-5xl font-semibold text-stone-900 tracking-tight">
+              <h1 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900 tracking-tight">
                 Sube la foto de tu mascota
               </h1>
-              <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
+              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
                 Selecciona una fotografía clara donde se aprecie bien el rostro,
                 los ojos y los rasgos de tu mascota.
               </p>
             </div>
 
-            {/* Centered Single Pet Upload Card */}
-            <div className="max-w-xl mx-auto">
-              <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-4">
+            {/* Grid 2 Columnas: Izquierda (Subida / Preview) - Derecha (Tipo, Nombre y CTA) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+              {/* Columna Izquierda: Dropzone de Fotografía */}
+              <div className="lg:col-span-6 bg-white border border-cream-200 rounded-3xl p-5 sm:p-6 shadow-soft flex flex-col justify-between space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-xs font-semibold text-stone-800 flex items-center gap-2">
                     <PawPrint className="w-3.5 h-3.5 text-terracotta-500" />
@@ -675,225 +717,235 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
-                {!petImage ? (
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (e.dataTransfer.files?.[0]) {
-                        readAndCompressImage(
-                          e.dataTransfer.files[0],
-                          setPetImage,
-                        );
-                      }
-                    }}
-                    onClick={() => fileInput1Ref.current?.click()}
-                    className="relative aspect-[4/3] rounded-2xl border border-dashed border-cream-300 hover:border-terracotta-500 bg-cream-50/70 hover:bg-terracotta-50/30 flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all group"
-                  >
-                    <input
-                      ref={fileInput1Ref}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        e.target.files?.[0] &&
-                        readAndCompressImage(e.target.files[0], setPetImage)
-                      }
-                      className="hidden"
-                    />
-                    <div className="w-14 h-14 rounded-full bg-white border border-cream-200 flex items-center justify-center text-stone-600 group-hover:text-terracotta-600 mb-3.5 shadow-soft transition-colors">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <p className="text-sm font-medium text-stone-900 mb-1">
-                      Seleccionar o arrastrar fotografía
-                    </p>
-                    <p className="text-xs text-stone-500">
-                      Haz clic para buscar en tu dispositivo o arrastra el
-                      archivo aquí
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-cream-200 bg-cream-100">
-                    <img
-                      src={petImage}
-                      alt="Tu Mascota"
-                      className="w-full h-full object-cover"
-                    />
-                    <button
+                <div className="flex-1 flex flex-col justify-center">
+                  {!petImage ? (
+                    <div
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (e.dataTransfer.files?.[0]) {
+                          readAndCompressImage(
+                            e.dataTransfer.files[0],
+                            setPetImage,
+                          );
+                        }
+                      }}
                       onClick={() => fileInput1Ref.current?.click()}
-                      className="absolute bottom-3 right-3 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-cream-200 text-stone-800 hover:text-terracotta-600 text-xs font-medium flex items-center gap-1.5 shadow-soft transition-colors"
+                      className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl border-2 border-dashed border-cream-300 hover:border-terracotta-500 bg-cream-50/70 hover:bg-terracotta-50/30 flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all group"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Cambiar foto</span>
-                    </button>
-                    <input
-                      ref={fileInput1Ref}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        e.target.files?.[0] &&
-                        readAndCompressImage(e.target.files[0], setPetImage)
-                      }
-                      className="hidden"
-                    />
-                  </div>
-                )}
-
-                {/* Pet Type Selector to guarantee 100% facial and species fidelity */}
-                <div className="pt-3 border-t border-cream-200 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-stone-800 flex items-center gap-1.5">
-                      <PawPrint className="w-3.5 h-3.5 text-terracotta-500" />
-                      <span>Tipo de mascota:</span>
-                    </span>
-                    <span className="text-[11px] text-stone-500">
-                      Garantiza la fidelidad fisonómica
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: "dog", label: "Perro", Icon: Dog },
-                      { id: "cat", label: "Gato", Icon: Cat },
-                      { id: "other", label: "Otra Mascota", Icon: PawPrint },
-                    ].map((t) => {
-                      const Icon = t.Icon;
-                      const isSelected = petSpecies === t.id;
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setPetSpecies(t.id as any)}
-                          className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                            isSelected
-                              ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                              : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
-                          }`}
-                        >
-                          <Icon
-                            className={`w-3.5 h-3.5 ${
-                              isSelected ? "text-[#c6a26c]" : "text-stone-500"
-                            }`}
-                          />
-                          <span>{t.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Opción de Nombre de Mascota en el Lienzo */}
-                <div className="pt-3 border-t border-cream-200 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-stone-800 flex items-center gap-1.5">
-                      <PenTool className="w-3.5 h-3.5 text-[#c6a26c]" />
-                      <span>Nombre de tu mascota en el lienzo:</span>
-                    </span>
-                    <span className="text-[11px] text-stone-500">
-                      Opcional · Tipografía Brush en blanco
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setIncludePetInscription(false)}
-                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        !includePetInscription
-                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                          : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
-                      }`}
-                    >
-                      <Sparkles
-                        className={`w-3.5 h-3.5 ${
-                          !includePetInscription
-                            ? "text-[#c6a26c]"
-                            : "text-stone-400"
-                        }`}
+                      <input
+                        ref={fileInput1Ref}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          readAndCompressImage(e.target.files[0], setPetImage)
+                        }
+                        className="hidden"
                       />
-                      <span>Solo Arte (Sin texto)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIncludePetInscription(true)}
-                      className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        includePetInscription
-                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                          : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
-                      }`}
-                    >
-                      <PenTool
-                        className={`w-3.5 h-3.5 ${
-                          includePetInscription
-                            ? "text-[#c6a26c]"
-                            : "text-stone-400"
-                        }`}
-                      />
-                      <span>Con Nombre (Tipografía Brush)</span>
-                    </button>
-                  </div>
-
-                  {includePetInscription && (
-                    <div className="pt-1 space-y-1.5 animate-in fade-in duration-200">
-                      <label className="text-[11px] font-medium text-stone-700 block">
-                        Escribe el nombre de tu mascota a inscribir:
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={petInscriptionName}
-                          onChange={(e) =>
-                            setPetInscriptionName(e.target.value)
-                          }
-                          placeholder="Ej. Clattering, Max, Luna, Thor..."
-                          maxLength={35}
-                          className="w-full px-3.5 py-2 pl-9 rounded-xl bg-white border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] focus:ring-1 focus:ring-[#174B3D]"
-                        />
-                        <PenTool className="w-3.5 h-3.5 text-[#c6a26c] absolute left-3 top-2.5" />
+                      <div className="w-14 h-14 rounded-full bg-white border border-cream-200 flex items-center justify-center text-stone-600 group-hover:text-terracotta-600 mb-3.5 shadow-soft transition-colors">
+                        <Upload className="w-6 h-6" />
                       </div>
-                      <p className="text-[11px] text-stone-500">
-                        Se inscribirá en color blanco con tipografía brush en la esquina inferior derecha en diagonal, al estilo firma de atelier.
+                      <p className="text-base font-semibold text-stone-900 mb-1">
+                        Seleccionar o arrastrar fotografía
                       </p>
+                      <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
+                        Haz clic para buscar en tu dispositivo o arrastra el archivo aquí
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl overflow-hidden border border-cream-200 bg-[#f8f6f0] flex items-center justify-center">
+                      <img
+                        src={petImage}
+                        alt="Tu Mascota"
+                        className="w-full h-full object-contain object-center"
+                      />
+                      <button
+                        onClick={() => fileInput1Ref.current?.click()}
+                        className="absolute bottom-3 right-3 px-4 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-cream-200 text-stone-800 hover:text-terracotta-600 text-xs font-semibold flex items-center gap-1.5 shadow-card transition-colors z-10"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Cambiar foto</span>
+                      </button>
+                      <input
+                        ref={fileInput1Ref}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          readAndCompressImage(e.target.files[0], setPetImage)
+                        }
+                        className="hidden"
+                      />
                     </div>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Continue CTA */}
-            {petImage && (
-              <div className="max-w-sm mx-auto pt-2">
-                <button
-                  onClick={() => setStep(2)}
-                  className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all"
-                >
-                  <span>Continuar a Estilo y Escena</span>
-                  <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-                </button>
-              </div>
-            )}
+              {/* Columna Derecha: Tipo de Mascota, Nombre en Lienzo y Botón Continuar */}
+              <div className="lg:col-span-6 bg-white border border-cream-200 rounded-3xl p-5 sm:p-6 shadow-soft flex flex-col justify-between space-y-4">
+                <div className="space-y-4">
+                  {/* Selector de Tipo de Mascota */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-stone-800 flex items-center gap-1.5">
+                        <PawPrint className="w-3.5 h-3.5 text-terracotta-500" />
+                        <span>Tipo de mascota:</span>
+                      </span>
+                      <span className="text-[11px] text-stone-500">
+                        Garantiza fidelidad fisonómica
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "dog", label: "Perro", Icon: Dog },
+                        { id: "cat", label: "Gato", Icon: Cat },
+                        { id: "other", label: "Otra Mascota", Icon: PawPrint },
+                      ].map((t) => {
+                        const Icon = t.Icon;
+                        const isSelected = petSpecies === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setPetSpecies(t.id as any)}
+                            className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                              isSelected
+                                ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                                : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                            }`}
+                          >
+                            <Icon
+                              className={`w-3.5 h-3.5 ${
+                                isSelected ? "text-[#c6a26c]" : "text-stone-500"
+                              }`}
+                            />
+                            <span>{t.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-            {/* Quick Sample Photographs Bar */}
-            <div className="max-w-xl mx-auto pt-6 border-t border-cream-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-              <span className="text-stone-500 font-medium">
-                Probar con fotografía de muestra:
-              </span>
-              <div className="flex flex-wrap items-center justify-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={loadDemoDog}
-                  className="px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:border-stone-400 hover:text-stone-900 font-medium flex items-center gap-2 transition-colors shadow-soft"
-                >
-                  <PawPrint className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Mascota de Muestra 1</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={loadDemoCat}
-                  className="px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:border-stone-400 hover:text-stone-900 font-medium flex items-center gap-2 transition-colors shadow-soft"
-                >
-                  <PawPrint className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Mascota de Muestra 2</span>
-                </button>
+                  {/* Opción de Nombre de Mascota en el Lienzo */}
+                  <div className="pt-3 border-t border-cream-200 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-stone-800 flex items-center gap-1.5">
+                        <PenTool className="w-3.5 h-3.5 text-[#c6a26c]" />
+                        <span>Nombre de tu mascota en el lienzo:</span>
+                      </span>
+                      <span className="text-[11px] text-stone-500">
+                        Opcional · Pincel blanco
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setIncludePetInscription(false)}
+                        className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                          !includePetInscription
+                            ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                            : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                        }`}
+                      >
+                        <Sparkles
+                          className={`w-3.5 h-3.5 ${
+                            !includePetInscription
+                              ? "text-[#c6a26c]"
+                              : "text-stone-400"
+                          }`}
+                        />
+                        <span>Solo Arte (Sin texto)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIncludePetInscription(true)}
+                        className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                          includePetInscription
+                            ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                            : "bg-cream-50/70 hover:bg-cream-100 text-stone-700 border-cream-200"
+                        }`}
+                      >
+                        <PenTool
+                          className={`w-3.5 h-3.5 ${
+                            includePetInscription
+                              ? "text-[#c6a26c]"
+                              : "text-stone-400"
+                          }`}
+                        />
+                        <span>Con Nombre (Brush)</span>
+                      </button>
+                    </div>
+
+                    {includePetInscription && (
+                      <div className="pt-1 space-y-1 animate-in fade-in duration-200">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={petInscriptionName}
+                            onChange={(e) =>
+                              setPetInscriptionName(e.target.value)
+                            }
+                            placeholder="Ej. Clattering, Max, Luna, Thor..."
+                            maxLength={35}
+                            className="w-full px-3.5 py-2 pl-9 rounded-xl bg-white border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] focus:ring-1 focus:ring-[#174B3D]"
+                          />
+                          <PenTool className="w-3.5 h-3.5 text-[#c6a26c] absolute left-3 top-2.5" />
+                        </div>
+                        <p className="text-[10px] text-stone-400">
+                          Se inscribirá en color blanco con tipografía brush en la esquina inferior derecha.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fotografías de Muestra Rápida */}
+                  <div className="pt-3 border-t border-cream-200 space-y-2">
+                    <span className="text-xs font-semibold text-stone-700 block">
+                      Probar con fotografía de muestra:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={loadDemoDog}
+                        className="py-2 px-3 rounded-xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-terracotta-400 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
+                      >
+                        <Dog className="w-4 h-4 text-terracotta-600" />
+                        <span>Perro de Muestra</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={loadDemoCat}
+                        className="py-2 px-3 rounded-xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-terracotta-400 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
+                      >
+                        <Cat className="w-4 h-4 text-terracotta-600" />
+                        <span>Gato de Muestra</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botón Principal Continuar */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setStep(2)}
+                    disabled={!petImage}
+                    className={`w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all ${
+                      petImage
+                        ? "bg-[#174B3D] hover:bg-[#134034] text-white cursor-pointer"
+                        : "bg-cream-200 text-stone-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <span>
+                      {petImage
+                        ? "Continuar a Estilo y Escena"
+                        : "Sube una foto para continuar"}
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -931,80 +983,122 @@ export default function personalizedWallArt() {
                 </p>
               </div>
 
-              {/* Dynamic Curated Collection Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {catalogCharacters.map((char) => {
-                  const isSelected =
-                    !useCustomTheme && selectedCharacter.id === char.id;
+              {/* Dynamic Curated Collection Cards (1 Línea Horizontal Flexible & Responsive) */}
+              <div className="relative group">
+                {/* Flechas de Navegación Horizontal */}
+                <button
+                  type="button"
+                  onClick={() => scrollCharacters("left")}
+                  aria-label="Ver estilos anteriores"
+                  className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 border border-cream-200 text-stone-700 shadow-card flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-stone-900"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCharacters("right")}
+                  aria-label="Ver siguientes estilos"
+                  className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 border border-cream-200 text-stone-700 shadow-card flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-stone-900"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
 
-                  return (
-                    <div
-                      key={char.id}
-                      onClick={() => {
-                        setSelectedCharacter(char);
-                        setUseCustomTheme(false);
-                      }}
-                      className={`group relative rounded-3xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? "border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
-                          : "border-cream-200 hover:border-stone-300 shadow-soft"
-                      }`}
-                    >
-                      <div className="relative aspect-[4/4] w-full overflow-hidden bg-cream-100">
-                        <img
-                          src={char.characterImageUrl}
-                          alt={char.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
+                {/* Track Horizontal de Personajes en 1 sola línea */}
+                <div
+                  ref={charactersScrollRef}
+                  className="flex items-stretch gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-none"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  {catalogCharacters.map((char) => {
+                    const isSelected =
+                      !useCustomTheme && selectedCharacter.id === char.id;
 
-                        <div className="absolute top-3 left-3">
-                          <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
-                            {char.universe}
-                          </span>
-                        </div>
+                    return (
+                      <div
+                        key={char.id}
+                        onClick={() => {
+                          setSelectedCharacter(char);
+                          setUseCustomTheme(false);
+                          scrollToCreatePortrait();
+                        }}
+                        className={`group/card relative rounded-2xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between flex-1 min-w-[210px] max-w-[270px] sm:max-w-none flex-shrink-0 snap-start ${
+                          isSelected
+                            ? "border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
+                            : "border-cream-200 hover:border-stone-300 shadow-soft"
+                        }`}
+                      >
+                        {/* Imagen Compacta y Proporcional */}
+                        <div className="relative aspect-[16/11] w-full overflow-hidden bg-cream-100">
+                          <img
+                            src={char.characterImageUrl}
+                            alt={char.name}
+                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
+                          />
 
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow-soft">
-                            <Check className="w-4 h-4 stroke-[2.5]" />
+                          <div className="absolute top-2 left-2">
+                            <span className="text-[9px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
+                              {char.universe}
+                            </span>
                           </div>
-                        )}
-                      </div>
 
-                      <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-terracotta-600">
-                            {char.characterTitle}
-                          </span>
-                          <h3 className="font-serif text-lg font-semibold text-stone-900 mt-0.5">
-                            {char.name}
-                          </h3>
-                          <p className="text-xs text-stone-500 leading-relaxed mt-1.5 line-clamp-3">
-                            {char.description}
-                          </p>
-                        </div>
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow-soft">
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                            </div>
+                          )}
 
-                        <div className="pt-2">
-                          <span
-                            className={`w-full py-2 px-3 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
-                              isSelected
-                                ? "bg-terracotta-50 text-terracotta-700 border border-terracotta-100"
-                                : "bg-cream-100 text-stone-700 group-hover:bg-cream-200"
-                            }`}
+                          {/* Botón flotante para ver imagen en tamaño completo */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewCharacterModal(char);
+                            }}
+                            aria-label={`Ver imagen completa de ${char.name}`}
+                            title="Ver imagen en tamaño completo"
+                            className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all duration-150 hover:scale-110 z-10"
                           >
-                            {isSelected ? (
-                              <>
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Estilo seleccionado</span>
-                              </>
-                            ) : (
-                              <span>Seleccionar estilo</span>
-                            )}
-                          </span>
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Información Compacta */}
+                        <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                          <div>
+                            <span className="text-[9px] font-semibold uppercase tracking-wider text-terracotta-600 block truncate">
+                              {char.characterTitle}
+                            </span>
+                            <h3 className="font-serif text-sm sm:text-base font-bold text-stone-900 mt-0.5 truncate">
+                              {char.name}
+                            </h3>
+                            <p className="text-[11px] text-stone-500 leading-snug mt-1 line-clamp-2">
+                              {char.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-1.5">
+                            <span
+                              className={`w-full py-1.5 px-2.5 rounded-full text-[11px] font-medium flex items-center justify-center gap-1 transition-all ${
+                                isSelected
+                                  ? "bg-terracotta-50 text-terracotta-700 border border-terracotta-100"
+                                  : "bg-cream-100 text-stone-700 group-hover/card:bg-cream-200"
+                              }`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  <span>Seleccionado</span>
+                                </>
+                              ) : (
+                                <span>Seleccionar</span>
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Custom Reference Theme Upload Box + Optional Custom Notes */}
@@ -1047,6 +1141,7 @@ export default function personalizedWallArt() {
                           readAndCompressImage(e.target.files[0], (url) => {
                             setCustomThemeImage(url);
                             setUseCustomTheme(true);
+                            scrollToCreatePortrait();
                           });
                         }
                       }}
@@ -1097,8 +1192,9 @@ export default function personalizedWallArt() {
             {/* Launch Dual Artistic Portrait Generation CTA */}
             <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
               <button
+                ref={createPortraitBtnRef}
                 onClick={handleStartFusion}
-                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all"
+                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
               >
                 <span>Crear Retrato Ahora</span>
                 <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
@@ -1114,6 +1210,71 @@ export default function personalizedWallArt() {
                 </strong>{" "}
                 para que elijas tu favorita.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Lightbox para previsualizar imagen de personaje en tamaño completo */}
+        {previewCharacterModal && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Previsualización de ${previewCharacterModal.name}`}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-950/80 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setPreviewCharacterModal(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-2xl w-full bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
+            >
+              {/* Barra superior con título y botón de cierre */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-800/80 bg-stone-900/90">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-terracotta-400 block">
+                    {previewCharacterModal.universe} · {previewCharacterModal.characterTitle}
+                  </span>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-white">
+                    {previewCharacterModal.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewCharacterModal(null)}
+                  aria-label="Cerrar vista previa"
+                  className="p-2 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Imagen completa en alta fidelidad sin recortes */}
+              <div className="relative flex-1 min-h-0 bg-stone-950/80 flex items-center justify-center p-3 sm:p-5 overflow-auto">
+                <img
+                  src={previewCharacterModal.characterImageUrl}
+                  alt={previewCharacterModal.name}
+                  className="max-h-[62vh] sm:max-h-[68vh] w-auto max-w-full object-contain rounded-xl shadow-lg border border-stone-800"
+                />
+              </div>
+
+              {/* Barra inferior con descripción y botón para seleccionar estilo */}
+              <div className="p-4 sm:p-5 border-t border-stone-800/80 bg-stone-900 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-stone-300 leading-relaxed max-w-md text-center sm:text-left">
+                  {previewCharacterModal.description}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCharacter(previewCharacterModal);
+                    setUseCustomTheme(false);
+                    setPreviewCharacterModal(null);
+                    scrollToCreatePortrait();
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Elegir este estilo</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1212,9 +1373,9 @@ export default function personalizedWallArt() {
             </div>
 
             {/* Main Stage: Gallery Frame & Print Formats Sidebar */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left 8 Columns: Dual Option Selector + Artwork Viewer */}
-              <div className="lg:col-span-8 space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+              {/* Left 7 Columns: Dual Option Selector + Artwork Viewer */}
+              <div className="lg:col-span-7 xl:col-span-7 space-y-5">
                 {/* DUAL PROPOSAL ARTWORK SELECTOR */}
                 {generatedVariants.length > 1 && (
                   <div className="bg-white border border-cream-200 rounded-3xl p-5 shadow-soft space-y-3.5">
@@ -1543,117 +1704,121 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
-                {/* Nombre de Mascota en Tipografía Brush (Firma de Atelier) */}
-                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-[#c6a26c] flex items-center justify-center shrink-0">
-                      <PenTool className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-stone-900 flex items-center gap-2">
-                        <span>Nombre de Mascota (Tipografía Brush)</span>
-                        {includePetInscription &&
-                          petInscriptionName.trim() && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#174B3D] bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
-                              Activo en Lienzo
-                            </span>
-                          )}
-                      </h4>
-                      <p className="text-stone-500 text-[11px] mt-0.5">
-                        {includePetInscription && petInscriptionName.trim()
-                          ? `Inscribiendo: "${petInscriptionName.trim()}" en pincel blanco en la esquina inferior derecha en diagonal.`
-                          : "Lienzo artístico puro sin texto. Puedes activar el nombre si lo deseas."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setIncludePetInscription(!includePetInscription)
-                      }
-                      className={`px-3.5 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                        includePetInscription
-                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                          : "bg-cream-50 text-stone-700 border-cream-200 hover:bg-cream-100"
-                      }`}
-                    >
-                      <PenTool
-                        className={`w-3.5 h-3.5 ${
-                          includePetInscription
-                            ? "text-[#c6a26c]"
-                            : "text-stone-400"
-                        }`}
-                      />
-                      <span>
-                        {includePetInscription
-                          ? "Con Nombre Brush"
-                          : "Activar Nombre"}
-                      </span>
-                    </button>
-                    {includePetInscription && (
-                      <input
-                        type="text"
-                        value={petInscriptionName}
-                        onChange={(e) =>
-                          setPetInscriptionName(e.target.value)
-                        }
-                        placeholder="Nombre de mascota"
-                        maxLength={35}
-                        className="px-3 py-2 rounded-xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] w-36 sm:w-44"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Dedicatoria para Regalo (Opcional) */}
-                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-terracotta-50 text-terracotta-600 flex items-center justify-center flex-shrink-0 border border-terracotta-200/50">
-                        <Gift className="w-4 h-4 text-terracotta-600" />
+                {/* Customizations: Nombre Brush + Dedicatoria para Regalo en Grid 2 Cols */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Nombre de Mascota en Tipografía Brush (Firma de Atelier) */}
+                  <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between gap-3 text-xs">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-[#c6a26c] flex items-center justify-center shrink-0">
+                        <PenTool className="w-4 h-4" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs sm:text-sm font-bold text-stone-900">
-                            Nota de Dedicatoria
-                          </h4>
-                          <span className="text-[10px] font-semibold text-terracotta-700 bg-terracotta-50 px-2 py-0.5 rounded-full border border-terracotta-200/60">
-                            Opcional
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-stone-500 mt-0.5">
-                          ¿Es un regalo para alguien especial? Escribe un mensaje o dedicatoria para incluirlo con tu pedido.
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-stone-900 flex flex-wrap items-center gap-1.5">
+                          <span>Nombre de Mascota (Brush)</span>
+                          {includePetInscription &&
+                            petInscriptionName.trim() && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#174B3D] bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
+                                Activo
+                              </span>
+                            )}
+                        </h4>
+                        <p className="text-stone-500 text-[11px] mt-0.5 leading-relaxed">
+                          {includePetInscription && petInscriptionName.trim()
+                            ? `Inscribiendo: "${petInscriptionName.trim()}" en pincel blanco.`
+                            : "Lienzo artístico sin texto. Puedes activar el nombre."}
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-cream-100">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setIncludePetInscription(!includePetInscription)
+                        }
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                          includePetInscription
+                            ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                            : "bg-cream-50 text-stone-700 border-cream-200 hover:bg-cream-100"
+                        }`}
+                      >
+                        <PenTool
+                          className={`w-3.5 h-3.5 ${
+                            includePetInscription
+                              ? "text-[#c6a26c]"
+                              : "text-stone-400"
+                          }`}
+                        />
+                        <span>
+                          {includePetInscription
+                            ? "Con Nombre"
+                            : "Activar Nombre"}
+                        </span>
+                      </button>
+                      {includePetInscription && (
+                        <input
+                          type="text"
+                          value={petInscriptionName}
+                          onChange={(e) =>
+                            setPetInscriptionName(e.target.value)
+                          }
+                          placeholder="Nombre de mascota"
+                          maxLength={35}
+                          className="px-3 py-1.5 rounded-xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] flex-1 min-w-[120px]"
+                        />
+                      )}
+                    </div>
                   </div>
 
-                  <div className="relative">
-                    <textarea
-                      value={dedicationNote}
-                      onChange={(e) =>
-                        setDedicationNote(e.target.value.slice(0, 300))
-                      }
-                      placeholder="Ej: Con todo el amor para mamá en su cumpleaños, de parte de Max y toda la familia..."
-                      rows={3}
-                      maxLength={300}
-                      className="w-full rounded-2xl border border-cream-200 bg-cream-50/50 p-3.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-terracotta-500 focus:bg-white focus:ring-1 focus:ring-terracotta-500/20 transition-all resize-none shadow-xs"
-                    />
-                    <div className="flex items-center justify-between pt-1 px-1 text-[10px] text-stone-400">
-                      <span>Se incluirá en una tarjeta de presentación junto a la entrega.</span>
-                      <span className={dedicationNote.length >= 280 ? "text-terracotta-600 font-semibold" : ""}>
-                        {dedicationNote.length}/300
-                      </span>
+                  {/* Dedicatoria para Regalo (Opcional) */}
+                  <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-terracotta-50 text-terracotta-600 flex items-center justify-center flex-shrink-0 border border-terracotta-200/50">
+                          <Gift className="w-4 h-4 text-terracotta-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs sm:text-sm font-bold text-stone-900">
+                              Nota de Dedicatoria
+                            </h4>
+                            <span className="text-[10px] font-semibold text-terracotta-700 bg-terracotta-50 px-2 py-0.5 rounded-full border border-terracotta-200/60">
+                              Opcional
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 mt-0.5">
+                            ¿Es un regalo? Escribe un mensaje o dedicatoria.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <textarea
+                        value={dedicationNote}
+                        onChange={(e) =>
+                          setDedicationNote(e.target.value.slice(0, 300))
+                        }
+                        placeholder="Ej: Con todo el amor para mamá en su cumpleaños..."
+                        rows={2}
+                        maxLength={300}
+                        className="w-full rounded-2xl border border-cream-200 bg-cream-50/50 p-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-terracotta-500 focus:bg-white focus:ring-1 focus:ring-terracotta-500/20 transition-all resize-none shadow-xs"
+                      />
+                      <div className="flex items-center justify-between pt-1 px-1 text-[10px] text-stone-400">
+                        <span>Tarjeta física adjunta</span>
+                        <span className={dedicationNote.length >= 280 ? "text-terracotta-600 font-semibold" : ""}>
+                          {dedicationNote.length}/300
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right 4 Columns: Predefined Print Sizes (Large XL to Small S at 300 DPI) */}
-              <div className="lg:col-span-4 space-y-5">
-                <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
+              {/* Right 5 Columns: Predefined Print Sizes & Order Details */}
+              <div className="lg:col-span-5 xl:col-span-5 space-y-5">
+                {/* Card 1: Detalles del producto (Medidas, Bastidor y Lienzo Canvas) */}
+                <div className="bg-white border border-cream-200 rounded-3xl p-5 sm:p-6 shadow-soft space-y-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-terracotta-600 text-xs font-semibold uppercase tracking-wider">
                       <Printer className="w-4 h-4" />
@@ -1667,88 +1832,84 @@ export default function personalizedWallArt() {
                     </p>
                   </div>
 
-                    {/* Dynamic Size List (Etiquetas de tallas, medidas en cm y pulgadas, total y descripción) */}
-                    <div className="space-y-2.5">
-                      {catalogSizes.map((preset) => {
-                        const isSelected = selectedPrintPreset.id === preset.id;
+                  {/* Dynamic Size List: Grid de 2 columnas compacto y optimizado */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {catalogSizes.map((preset, idx) => {
+                      const isSelected = selectedPrintPreset.id === preset.id;
+                      const isLastOdd =
+                        idx === catalogSizes.length - 1 &&
+                        catalogSizes.length % 2 !== 0;
 
-                        return (
-                          <div
-                            key={preset.id}
-                            onClick={() => setSelectedPrintPreset(preset)}
-                            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                              isSelected
-                                ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20 shadow-xs"
-                                : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-center gap-2 min-w-0">
+                      return (
+                        <div
+                          key={preset.id}
+                          onClick={() => setSelectedPrintPreset(preset)}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                            isLastOdd ? "sm:col-span-2" : ""
+                          } ${
+                            isSelected
+                              ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20 shadow-xs"
+                              : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-1.5">
+                              <div className="flex items-center gap-1.5 min-w-0">
                                 <Frame
-                                  className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                  className={`w-3.5 h-3.5 shrink-0 ${
                                     isSelected
                                       ? "text-terracotta-600"
                                       : "text-stone-400"
                                   }`}
                                 />
-                                <div>
-                                  <span className="text-sm font-bold text-stone-900 block">
-                                    {preset.tier}
-                                  </span>
-                                  <span className="text-xs font-medium text-stone-500 block mt-0.5">
-                                    {preset.cmDimensions} · {preset.inchDimensions}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <span className="text-sm font-bold text-terracotta-600 block">
-                                  S/ {preset.pricePen.toFixed(2)}
-                                </span>
-                                <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
-                                  Total
+                                <span className="text-xs font-bold text-stone-900 truncate">
+                                  {preset.tier}
                                 </span>
                               </div>
+                              <span className="text-xs font-bold text-terracotta-600 shrink-0">
+                                S/ {preset.pricePen.toFixed(2)}
+                              </span>
                             </div>
-
-                            <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-                              {preset.recommendedUse}
-                            </p>
+                            <div className="text-[11px] font-medium text-stone-500 mt-0.5">
+                              {preset.cmDimensions} · {preset.inchDimensions}
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
 
-                  {/* Formato y Presentación */}
-                  <div className="pt-3 border-t border-cream-200 space-y-2">
-                    <span className="text-xs font-semibold text-stone-800 block">
-                      Formato y Presentación:
-                    </span>
-                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                          <p className="text-[11px] text-stone-600 mt-2 leading-relaxed">
+                            {preset.recommendedUse}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Formato, Presentación y Material en 2 Columnas */}
+                  <div className="pt-3 border-t border-cream-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#c6a26c] flex items-center justify-center flex-shrink-0">
                           <Frame className="w-4 h-4 text-[#c6a26c]" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-stone-900">
-                            Lienzo en Bastidor de Madera
+                            Bastidor de Madera
                           </p>
                           <p className="text-[10px] text-stone-600 truncate">
-                            Full Screen (sin marco) · Listo para colgar
+                            Full Screen · Listo para colgar
                           </p>
                         </div>
                       </div>
-                      <span className="text-[11px] font-semibold text-[#174B3D] bg-white px-2 py-0.5 rounded-full border border-sage-200 whitespace-nowrap">
+                      <span className="text-[10px] font-semibold text-[#174B3D] bg-white px-2 py-0.5 rounded-full border border-sage-200 whitespace-nowrap">
                         Incluido
                       </span>
                     </div>
-                  </div>
 
-                  {/* Elaboración en Lienzo de Tela Canvas */}
-                  <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 text-xs">
-                    <p className="flex items-center gap-2 text-[11px] font-medium text-stone-800">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
-                      <span>Los cuadros son elaborados en lienzo de tela canvas.</span>
-                    </p>
+                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center text-xs">
+                      <p className="flex items-center gap-2 text-[11px] font-medium text-stone-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
+                        <span>Los cuadros son elaborados en lienzo de tela canvas.</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
