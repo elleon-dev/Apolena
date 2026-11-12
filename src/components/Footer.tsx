@@ -1,12 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, CheckCircle2 } from "lucide-react";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim() && email.includes("@")) {
+      setIsSubscribed(true);
+    }
+  };
 
   return (
     <footer className="w-full bg-[#174B3D] text-white border-t border-[#c6a26c]/35 pt-14 pb-10">
@@ -144,19 +153,34 @@ export function Footer() {
               Ingresa tu correo para recibir descuentos exclusivos en tus
               retratos personalizados.
             </p>
-            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                placeholder="tu@correo.com"
-                className="w-full px-3.5 py-2 rounded-full bg-[#11382D] border border-[#c6a26c]/40 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#c6a26c]"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-extrabold uppercase tracking-wider shadow-sm transition-colors whitespace-nowrap"
+            {isSubscribed ? (
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#11382D] border border-[#c6a26c]/40 text-xs">
+                <CheckCircle2 className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                <span className="font-medium text-white/95">
+                  ¡Gracias! Te avisaremos de promociones exclusivas.
+                </span>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubscribe}
+                className="flex flex-col sm:flex-row gap-2"
               >
-                Enviar
-              </button>
-            </form>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  className="w-full px-3.5 py-2 rounded-full bg-[#11382D] border border-[#c6a26c]/40 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#c6a26c]"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-extrabold uppercase tracking-wider shadow-sm transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  Enviar
+                </button>
+              </form>
+            )}
           </div>
         </div>
 

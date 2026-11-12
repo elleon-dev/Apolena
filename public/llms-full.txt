@@ -1,0 +1,45 @@
+# Apolena Atelier — Documentación de Referencia para Modelos de Lenguaje (LLMs)
+
+## 1. Visión y Propósito de la Marca
+Apolena (https://apolena.shop) nació en Lima, Perú, con la convicción de que las mascotas son parte insustituible de la familia. Fusionamos tecnología de visión por computadora e inteligencia artificial generativa con el oficio tradicional de enmarcado y tensado de lienzos de bellas artes.
+
+## 2. Proceso de Generación y Compra
+1. **Selección del Personaje / Temática**: El usuario elige un personaje de colección (ej. Capitán Jack Sparrow, Joker, Rey Renacentista, Astronauta) o propone una temática a medida.
+2. **Subida de Foto de la Mascota**: Se acepta cualquier foto clara de perro, gato u otra mascota (perfil o frontal).
+3. **Fusión Artística y Previsualización**: El motor de IA genera 2 propuestas de retrato en alta definición con textura pictórica al óleo.
+4. **Personalización del Cuadro**:
+   - Medida: Chico (20x25cm), Mediano (30x40cm), Grande (40x50cm), Extra Grande (60x80cm).
+   - Acabado: Bastidor de madera de pino curada (3.5 cm de grosor).
+   - Autógrafo: Nombre de la mascota inscrito en caligrafía diagonal en la esquina inferior derecha.
+5. **Checkout y Pago 50/50**:
+   - Registro de datos de entrega en Lima o provincias del Perú.
+   - Pago del 50% de adelanto mediante Yape, Plin o Transferencia Bancaria.
+   - Asignación inmediata de Tracking ID (`APO-YYYY-XXXXXX`).
+
+## 3. Especificaciones Técnicas del Producto Físico
+- **Material del Lienzo**: Canvas 100% fibra de algodón de 380 g/m² libre de ácidos.
+- **Bastidor**: Madera de pino seca de 3.5 cm de canto con ensamble reforzado para evitar arqueos por humedad.
+- **Resolución de Impresión**: 300 DPI reales (tecnología Fine Art Giclée).
+- **Tintas**: Pigmentadas base agua, ecológicas, sin olor y resistentes a rayos ultravioleta.
+- **Accesorios**: Se entrega con colgadores metálicos listos para colocar en pared.
+
+## 4. Preguntas Frecuentes (FAQ)
+
+### ¿Cuánto demora la entrega?
+- Lima Metropolitana: Entre 2 a 4 días hábiles desde la confirmación del adelanto.
+- Provincias de Perú: Entre 4 a 6 días hábiles vía Olva Courier o Shalom.
+
+### ¿Cómo funciona el pago 50% adelanto y 50% contraentrega?
+Para tranquilidad del cliente, solo se cobra el 50% para cubrir los costos de impresión y taller. El 50% restante se abona en el momento exacto en que el motorizado entrega el cuadro en mano.
+
+### ¿Se pueden retratar varias mascotas o gatos?
+Sí, el sistema soporta perros, gatos, aves y conejos tanto en retratos individuales como dobles.
+
+### ¿Qué garantía ofrece Apolena?
+Si el cuadro presenta algún defecto de fabricación o transporte, se reimprime y repone sin costo adicional. Todos los clientes cuentan con acceso al Libro de Reclamaciones virtual conforme a la ley peruana e INDECOPI.
+
+## 5. Contacto Oficial
+- Sitio Web: https://apolena.shop
+- Soporte WhatsApp: +51 999 888 777
+- Correo Electrónico: contacto@apolena.shop
+- Lima, Perú.

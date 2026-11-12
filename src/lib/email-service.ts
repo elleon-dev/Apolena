@@ -5,6 +5,7 @@
 
 import * as React from "react";
 import { render } from "@react-email/render";
+import { resolveAppUrl } from "@/lib/app-url";
 import OrderCreatedBuyerEmail from "@/emails/OrderCreatedBuyerEmail";
 import OrderCreatedAdminEmail from "@/emails/OrderCreatedAdminEmail";
 import OrderStatusUpdatedEmail from "@/emails/OrderStatusUpdatedEmail";
@@ -32,8 +33,7 @@ export async function renderEmailHtml(
   template: string,
   data: Record<string, any>,
 ): Promise<string> {
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+  const appUrl = resolveAppUrl(data.app_url);
 
   switch (template) {
     case "order_created_buyer":
@@ -157,7 +157,7 @@ export async function dispatchEmailWithResend(
 
   try {
     const html = await renderEmailHtml(payload.template, payload.data);
-    const response = await fetch("https://api.resend.com/emails", {
+    let response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -174,6 +174,29 @@ export async function dispatchEmailWithResend(
 
     if (!response.ok) {
       const errText = await response.text();
+      // Si el dominio personalizado no está verificado aún en Resend, fallback automático a onboarding@resend.dev
+      if (errText.includes("domain is not verified") && !fromEmail.includes("resend.dev")) {
+        console.warn("[email-service] Dominio no verificado en Resend. Reintentando con onboarding@resend.dev...");
+        const fallbackRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Apolena Atelier <onboarding@resend.dev>",
+            to: [payload.to],
+            cc: payload.cc && payload.cc.length > 0 ? payload.cc : undefined,
+            subject: payload.subject,
+            html,
+          }),
+        });
+
+        if (fallbackRes.ok) {
+          return { sent: true };
+        }
+      }
+
       return {
         sent: false,
         error: `Resend HTTP ${response.status}: ${errText}`,

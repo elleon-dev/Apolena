@@ -13,6 +13,7 @@ import {
   PaymentMethod,
 } from "@/lib/db-service";
 import { resolveCleanMasterArtwork } from "@/lib/server-watermark";
+import { getRequestOrigin } from "@/lib/app-url";
 
 /**
  * Strips `master_art_url` from an order when returning to a non-admin buyer
@@ -131,6 +132,7 @@ export async function POST(request: Request) {
     const createdOrder = await createOrderWithSplitPayment({
       buyer_id: sessionUser.id,
       product_id: body.product_id,
+      app_url: getRequestOrigin(request),
       generation_job_id: body.generation_job_id || null,
       pet_photo_url: body.pet_photo_url || null,
       generated_art_url: body.generated_art_url || "/samples/cat-suit.jpg",

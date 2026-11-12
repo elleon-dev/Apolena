@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enqueueEmail } from "@/lib/db-service";
+import { getRequestOrigin } from "@/lib/app-url";
 
 export async function POST(req: Request) {
   try {
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
         consumer_request,
       },
       legal_deadline_business_days: 15,
+      app_url: getRequestOrigin(req),
     };
 
     // 1. Enviar y encolar correo de confirmación al reclamante

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { updateOrderAdminLifecycle, PaymentMethod } from "@/lib/db-service";
+import { getRequestOrigin } from "@/lib/app-url";
 
 export async function PATCH(
   request: Request,
@@ -47,6 +48,7 @@ export async function PATCH(
       finalPaymentMethod: body.finalPaymentMethod as PaymentMethod | undefined,
       finalOperationNumber: body.finalOperationNumber,
       notes: body.notes,
+      app_url: getRequestOrigin(request),
     });
 
     if (!updated) {

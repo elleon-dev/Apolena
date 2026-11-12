@@ -10,6 +10,7 @@ import {
 import { PRINT_PRESETS, FRAME_OPTIONS } from "@/lib/print-export";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import { dispatchEmailWithResend } from "@/lib/email-service";
+import { resolveAppUrl } from "@/lib/app-url";
 import {
   externalizeBase64Image,
   stripHeavyFieldsForEmailData,
@@ -1059,36 +1060,70 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
 
   if (isDatabaseConfigured()) {
     try {
+      // 1. Cargar personajes relacionales desde la tabla character_templates
+      let dbCharacters: FamousCharacter[] | null = null;
+      try {
+        const charRows = await prisma.characterTemplate.findMany({
+          where: onlyActive ? { is_available: true } : undefined,
+          orderBy: { position: "asc" },
+        });
+        if (charRows.length > 0) {
+          dbCharacters = charRows.map((c) => ({
+            id: c.slug,
+            name: c.name,
+            characterTitle: c.character_title || "",
+            universe: c.universe,
+            description: c.description || "",
+            characterImageUrl: c.character_image_url,
+            maskUrl: c.mask_url || "",
+            fusionSampleUrl: c.fusion_sample_url || "",
+            accentColor: c.accent_color || "bg-terracotta-500",
+            tagColor: c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+            prompt: c.prompt || "",
+            negativePrompt: c.negative_prompt || "",
+            isAvailable: c.is_available,
+          }));
+        }
+      } catch (charErr) {
+        console.warn("Prisma characterTemplate fetch fallback:", charErr);
+      }
+
       const rows = await prisma.product.findMany({
         where: onlyActive ? { status: "active" } : undefined,
         include: { images: { orderBy: { position: "asc" } } },
         orderBy: { created_at: "asc" },
       });
       if (rows.length > 0) {
-        const mapped = rows.map((r) => ({
-          id: r.id,
-          title: r.title,
-          slug: r.slug,
-          description: r.description,
-          category: r.category,
-          base_price: Number(r.base_price),
-          status: r.status as "active" | "inactive" | "archived",
-          stock: r.stock,
-          specifications: (r.specifications as Record<string, any>) || {},
-          customization_config: isWallArtProductSlug(r.slug)
-            ? normalizeWallArtCustomizationConfig(r.customization_config)
-            : (r.customization_config as unknown as ProductCustomizationConfig) ||
-              DEFAULT_WALL_ART_PRODUCT.customization_config,
-          images: r.images.map((img) => ({
-            id: img.id,
-            product_id: img.product_id,
-            url: img.url,
-            alt_text: img.alt_text,
-            position: img.position,
-          })),
-          created_at: r.created_at.toISOString(),
-          updated_at: r.updated_at.toISOString(),
-        }));
+        const mapped = rows.map((r) => {
+          const normConfig = normalizeWallArtCustomizationConfig(r.customization_config);
+          return {
+            id: r.id,
+            title: r.title,
+            slug: r.slug,
+            description: r.description,
+            category: r.category,
+            base_price: Number(r.base_price),
+            status: r.status as "active" | "inactive" | "archived",
+            stock: r.stock,
+            specifications: (r.specifications as Record<string, any>) || {},
+            customization_config: isWallArtProductSlug(r.slug)
+              ? {
+                  ...normConfig,
+                  characters: dbCharacters && dbCharacters.length > 0 ? dbCharacters : normConfig.characters,
+                }
+              : (r.customization_config as unknown as ProductCustomizationConfig) ||
+                DEFAULT_WALL_ART_PRODUCT.customization_config,
+            images: r.images.map((img) => ({
+              id: img.id,
+              product_id: img.product_id,
+              url: img.url,
+              alt_text: img.alt_text,
+              position: img.position,
+            })),
+            created_at: r.created_at.toISOString(),
+            updated_at: r.updated_at.toISOString(),
+          };
+        });
         if (onlyActive) {
           memCache.productsActive = {
             data: mapped,
@@ -1133,6 +1168,40 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
 export async function getWallArtCharacterById(
   characterId: string,
 ): Promise<FamousCharacter> {
+  if (isDatabaseConfigured()) {
+    try {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          characterId,
+        );
+      const row = await prisma.characterTemplate.findFirst({
+        where: isUuid
+          ? { OR: [{ id: characterId }, { slug: characterId }] }
+          : { slug: characterId },
+      });
+      if (row) {
+        return {
+          id: row.slug,
+          name: row.name,
+          characterTitle: row.character_title || "",
+          universe: row.universe,
+          description: row.description || "",
+          characterImageUrl: row.character_image_url,
+          maskUrl: row.mask_url || "",
+          fusionSampleUrl: row.fusion_sample_url || row.character_image_url,
+          accentColor: row.accent_color || "bg-terracotta-500",
+          tagColor:
+            row.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+          prompt: row.prompt || "",
+          negativePrompt: row.negative_prompt || "",
+          isAvailable: row.is_available,
+        };
+      }
+    } catch (err) {
+      console.warn("Prisma getWallArtCharacterById direct lookup fallback:", err);
+    }
+  }
+
   try {
     const products = await getProducts(false);
     const wallArt =
@@ -1182,6 +1251,64 @@ export async function updateProductCustomizationConfig(
 
   if (isDatabaseConfigured()) {
     try {
+      if (updates.customization_config?.characters) {
+        try {
+          const chars = updates.customization_config.characters;
+          const currentSlugs = new Set<string>();
+
+          for (let i = 0; i < chars.length; i++) {
+            const ch = chars[i];
+            const slug = ch.id || `char-${i}`;
+            currentSlugs.add(slug);
+
+            await prisma.characterTemplate.upsert({
+              where: { slug },
+              update: {
+                name: ch.name,
+                character_title: ch.characterTitle || null,
+                universe: ch.universe || "General",
+                description: ch.description || null,
+                character_image_url: ch.characterImageUrl,
+                mask_url: ch.maskUrl || null,
+                fusion_sample_url: ch.fusionSampleUrl || null,
+                accent_color: ch.accentColor || "bg-terracotta-500",
+                tag_color: ch.tagColor || "bg-white/90 text-stone-800 border-stone-200/80",
+                prompt: ch.prompt || "",
+                negative_prompt: ch.negativePrompt || "human face, deformed mouth, cartoon, plastic, blurry, bad anatomy",
+                is_available: ch.isAvailable !== false,
+                position: i,
+              },
+              create: {
+                slug,
+                name: ch.name,
+                character_title: ch.characterTitle || null,
+                universe: ch.universe || "General",
+                description: ch.description || null,
+                character_image_url: ch.characterImageUrl,
+                mask_url: ch.maskUrl || null,
+                fusion_sample_url: ch.fusionSampleUrl || null,
+                accent_color: ch.accentColor || "bg-terracotta-500",
+                tag_color: ch.tagColor || "bg-white/90 text-stone-800 border-stone-200/80",
+                prompt: ch.prompt || "",
+                negative_prompt: ch.negativePrompt || "human face, deformed mouth, cartoon, plastic, blurry, bad anatomy",
+                is_available: ch.isAvailable !== false,
+                position: i,
+              },
+            });
+          }
+
+          if (currentSlugs.size > 0) {
+            await prisma.characterTemplate.deleteMany({
+              where: {
+                slug: { notIn: Array.from(currentSlugs) },
+              },
+            });
+          }
+        } catch (charSyncErr) {
+          console.warn("Error syncing characterTemplate:", charSyncErr);
+        }
+      }
+
       const updatedRow = await prisma.product.update({
         where: { id: productId },
         data: {
@@ -1849,6 +1976,7 @@ export async function createOrderWithSplitPayment(input: {
   operation_number: string;
   proof_image_url?: string | null;
   notes?: string | null;
+  app_url?: string | null;
   customizations: OrderItemCustomizations;
   shipping: {
     name: string;
@@ -2174,50 +2302,58 @@ export async function createOrderWithSplitPayment(input: {
     writeLocalDb(db);
   });
 
-  // Doble notificación obligatoria en email_queue (en segundo plano para respuesta inmediata):
+  // Doble notificación obligatoria en email_queue (await para garantizar envío antes del freeze de Vercel Serverless):
   const adminEmails = settings.ADMIN_NOTIFICATION_EMAILS.emails;
-  void Promise.all([
-    enqueueEmail({
-      to_email: input.shipping.email,
-      subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
-      template: "order_created_buyer",
-      data: {
-        order_code: orderCode,
-        tracking_id: trackingId,
-        buyer_name: input.shipping.name,
-        total_amount: totalAmount,
-        advance_amount: advanceAmount,
-        remaining_amount: remainingAmount,
-        payment_method: input.payment_method,
-        bank_name: bankCfg.bank_name,
-        account_number: bankCfg.account_number,
-        cci: bankCfg.cci,
-        holder_name: bankCfg.holder_name,
-        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
-        tracking_url: `/track/${trackingId}`,
-      },
-    }),
-    enqueueEmail({
-      to_email: adminEmails[0] || "admin@apolena.pe",
-      cc: adminEmails.slice(1),
-      subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
-      template: "order_created_admin",
-      data: {
-        order_id: orderId,
-        order_code: orderCode,
-        tracking_id: trackingId,
-        buyer_name: input.shipping.name,
-        buyer_phone: input.shipping.phone,
-        buyer_email: input.shipping.email,
-        shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
-        payment_method: input.payment_method,
-        operation_number: input.operation_number,
-        advance_amount: advanceAmount,
-        remaining_amount: remainingAmount,
-        customizations: stripHeavyFieldsForEmailData(finalCustomizations),
-      },
-    }),
-  ]).catch((err) => console.warn("Background email dispatch warning:", err));
+  const effectiveAppUrl = resolveAppUrl(input.app_url);
+  try {
+    await Promise.all([
+      enqueueEmail({
+        to_email: input.shipping.email,
+        subject: `¡Tu orden ${orderCode} en Apolena está en Fabricación! · Tracking: ${trackingId}`,
+        template: "order_created_buyer",
+        data: {
+          order_code: orderCode,
+          tracking_id: trackingId,
+          buyer_name: input.shipping.name,
+          total_amount: totalAmount,
+          advance_amount: advanceAmount,
+          remaining_amount: remainingAmount,
+          payment_method: input.payment_method,
+          bank_name: bankCfg.bank_name,
+          account_number: bankCfg.account_number,
+          cci: bankCfg.cci,
+          holder_name: bankCfg.holder_name,
+          customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+          app_url: effectiveAppUrl,
+          tracking_url: `${effectiveAppUrl}/track/${trackingId}`,
+        },
+      }),
+      enqueueEmail({
+        to_email: adminEmails[0] || "admin@apolena.pe",
+        cc: adminEmails.slice(1),
+        subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
+        template: "order_created_admin",
+        data: {
+          order_id: orderId,
+          order_code: orderCode,
+          tracking_id: trackingId,
+          buyer_name: input.shipping.name,
+          buyer_phone: input.shipping.phone,
+          buyer_email: input.shipping.email,
+          shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
+          payment_method: input.payment_method,
+          operation_number: input.operation_number,
+          advance_amount: advanceAmount,
+          remaining_amount: remainingAmount,
+          customizations: stripHeavyFieldsForEmailData(finalCustomizations),
+          app_url: effectiveAppUrl,
+          admin_url: `${effectiveAppUrl}/admin`,
+        },
+      }),
+    ]);
+  } catch (err) {
+    console.warn("Background email dispatch warning:", err);
+  }
 
   return newOrder;
 }
@@ -2378,6 +2514,7 @@ export async function updateOrderAdminLifecycle(input: {
     operation_number?: string;
     proof_image_url?: string;
   };
+  app_url?: string;
 }): Promise<OrderRecord | null> {
   const existingOrder = await findOrderById(input.orderId);
   if (!existingOrder) return null;
@@ -2707,18 +2844,25 @@ export async function updateOrderAdminLifecycle(input: {
       completed: "¡Orden Exitosa! Pago 100% Completado",
       cancelled: "Orden Cancelada",
     };
-    void enqueueEmail({
-      to_email: order.shipping.email,
-      subject: `Actualización de tu orden ${order.order_code}: ${stepLabels[order.status]}`,
-      template: "order_status_updated",
-      data: {
-        order_code: order.order_code,
-        tracking_id: order.tracking_id,
-        status: order.status,
-        status_label: stepLabels[order.status],
-        payment_status: order.payment_status,
-      },
-    }).catch((err) => console.warn("Async status email error:", err));
+    const effectiveAppUrl = resolveAppUrl(input.app_url);
+    try {
+      await enqueueEmail({
+        to_email: order.shipping.email,
+        subject: `Actualización de tu orden ${order.order_code}: ${stepLabels[order.status]}`,
+        template: "order_status_updated",
+        data: {
+          order_code: order.order_code,
+          tracking_id: order.tracking_id,
+          status: order.status,
+          status_label: stepLabels[order.status],
+          payment_status: order.payment_status,
+          app_url: effectiveAppUrl,
+          tracking_url: `${effectiveAppUrl}/track/${order.tracking_id}`,
+        },
+      });
+    } catch (err) {
+      console.warn("Async status email error:", err);
+    }
   }
 
   return order;
