@@ -87,7 +87,15 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
         - Al crearse una orden (`POST /api/orders`), el servidor vincula el archivo maestro limpio en `customizations.master_art_url`.
         - Los administradores en `/dashboard` siempre visualizan y descargan el archivo maestro limpio (`master_art_url`) para enviarlo a imprenta a 300 DPI.
         - Para el comprador (`/orders` y `/track/[trackingId]`), las APIs filtran y ocultan `master_art_url` mientras el pedido está en curso. Únicamente cuando la orden alcanza el estado **`completed`** (entregada físicamente y con el 100% pagado, `payment_status === 'paid_full'`), el sistema desbloquea automáticamente el botón **"Descargar Recuerdo Digital HD (Sin Marca de Agua)"** como beneficio exclusivo post-compra.
-   - El cliente selecciona la medida de imprenta (300 DPI). Los selectores de marcos externos y paspartú quedan desactivados en el frontend para el inicio (resultado full screen sin marco), manteniendo la arquitectura en el backend para reactivarse a futuro.
+   - El cliente selecciona la medida de imprenta (300 DPI) según la **Guía de Tamaños y Precios Oficial Apolena**:
+     - **30 × 20 cm (S/ 180.00):** Ideal para espacios reducidos, repisas o composiciones con varios cuadros. Un detalle decorativo sutil y versátil.
+     - **45 × 30 cm (S/ 210.00):** Ideal para paredes pequeñas o para complementar otros elementos decorativos. También funciona muy bien en galerías de cuadros.
+     - **60 × 40 cm (S/ 240.00):** Ideal para espacios pequeños y medianos. Tiene buena presencia sin dominar la decoración.
+     - **75 × 50 cm (S/ 270.00):** Ideal para aportar carácter y presencia sin convertirse en el foco principal del ambiente.
+     - **90 × 60 cm (S/ 300.00):** Ideal como cuadro principal. Destaca visualmente sin ocupar demasiado espacio.
+     - **105 × 70 cm (S/ 360.00):** Ideal para crear un punto focal. Perfecto sobre sofás, camas, escritorios y otros muebles pequeños.
+     - **120 × 80 cm (S/ 420.00):** Ideal para paredes amplias y espacios donde el cuadro será protagonista. Una pieza de gran presencia e impacto visual. Perfecto para cabeceras de camas y muebles medianos y grandes.
+   - **Detalles del Producto y Material:** Los cuadros son elaborados en **lienzo de tela canvas**, tensados artesanalmente sobre bastidor de madera maciza (listos para colgar con acabado Full Screen sin marco).
    - Al continuar a checkout, la obra elegida viaja en el borrador de orden (`apolena_checkout_draft`) como `generated_art_url`.
 
 ---

@@ -249,6 +249,8 @@ export interface PlatformSettingsMap {
     lima_metropolitana_pen: number;
     provincias_pen: number;
     estimated_manufacturing_days: string;
+    delivery_lima_days?: string;
+    delivery_provincias_days?: string;
   };
   ADMIN_NOTIFICATION_EMAILS: {
     emails: string[];
@@ -271,13 +273,13 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     advance_percentage: 0.5,
     yape: {
       enabled: true,
-      phone: "987 654 321",
+      phone: "978 323 984",
       holder_name: "APOLENA STUDIO SAC",
       qr_url: "/samples/cat-suit.jpg",
     },
     plin: {
       enabled: true,
-      phone: "987 654 321",
+      phone: "978 323 984",
       holder_name: "APOLENA STUDIO SAC",
       qr_url: "/samples/cat-suit.jpg",
     },
@@ -294,10 +296,12 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     lima_metropolitana_pen: 15,
     provincias_pen: 25,
     estimated_manufacturing_days: "3 a 5 días hábiles",
+    delivery_lima_days: "3 a 5 días hábiles luego de realizada la compra",
+    delivery_provincias_days: "5 a 7 días hábiles luego de realizada la compra",
   },
   ADMIN_NOTIFICATION_EMAILS: {
     emails: ["admin@apolena.pe", "produccion@apolena.pe"],
-    whatsapp_support: "+51 987 654 321",
+    whatsapp_support: "+51 978 323 984",
   },
 };
 
@@ -306,14 +310,14 @@ export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
   title: "Cuadro Artístico Personalizado para Mascota",
   slug: "cuadros-personalizados",
   description:
-    "Retrato de alta definición a 300 DPI fusionando a tu mascota con personajes históricos, realeza o temáticas personalizadas, impreso sobre lienzo de algodón de museo.",
+    "Retrato de alta definición a 300 DPI fusionando a tu mascota con personajes históricos o temáticas exclusivas, elaborado en lienzo de tela canvas sobre bastidor de madera.",
   category: "wall_art",
-  base_price: 100,
+  base_price: 180,
   status: "active",
   stock: 999,
   specifications: {
     dpi: 300,
-    canvas_material: "Lienzo Fine Art Algodón 380g",
+    canvas_material: "Lienzo de tela canvas",
     ink: "Pigmentos minerales resistentes UV por 80+ años",
     customizable_frame: true,
   },
@@ -2153,7 +2157,7 @@ export async function createOrderWithSplitPayment(input: {
         tracking_number: trackingId,
         tracking_url: `/track/${trackingId}`,
         carrier_phone:
-          settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support || "987 654 321",
+          settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support || "978 323 984",
         estimated_delivery: estimatedDelivery,
         destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
         subtotal,
@@ -2256,7 +2260,7 @@ export async function createOrderWithSplitPayment(input: {
               tracking_url: `/track/${trackingId}`,
               carrier_phone:
                 settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support ||
-                "987 654 321",
+                "978 323 984",
               estimated_delivery: new Date(estimatedDelivery),
               destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
               subtotal,

@@ -23,6 +23,7 @@ import {
   User,
   PenTool,
   Gift,
+  Truck,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
 
@@ -624,6 +625,21 @@ function CheckoutContent() {
                     />
                   </div>
 
+                  <div className="sm:col-span-2 p-3 rounded-2xl bg-[#FFFBF2] border border-[#c6a26c]/35 text-xs flex items-center gap-2.5">
+                    <Truck className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                    <p className="text-[11px] text-stone-700 leading-snug">
+                      {department.trim().toLowerCase() === "lima" ? (
+                        <span>
+                          <strong>Envíos a Lima Metropolitana:</strong> Tu pedido llegará en <strong>3 a 5 días hábiles</strong> luego de realizada la compra.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>Envíos a provincia y otros distritos:</strong> Tu pedido llegará en <strong>5 a 7 días hábiles</strong> luego de realizada la compra.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
                   <div className="sm:col-span-2 space-y-1">
                     <label className="font-semibold text-stone-800 block">
                       Dirección exacta de entrega *
@@ -722,20 +738,20 @@ function CheckoutContent() {
                             Número Yape
                           </span>
                           <span className="font-mono text-base font-bold text-terracotta-600">
-                            {paymentSettings?.yape?.phone || "987 654 321"}
+                            {paymentSettings?.yape?.phone || "978 323 984"}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() =>
                             copyToClipboard(
-                              paymentSettings?.yape?.phone || "987 654 321",
+                              paymentSettings?.yape?.phone || "978 323 984",
                             )
                           }
                           className="px-3 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 transition-colors"
                         >
                           {copiedText ===
-                          (paymentSettings?.yape?.phone || "987 654 321") ? (
+                          (paymentSettings?.yape?.phone || "978 323 984") ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-sage-600" />
                               <span>Copiado</span>
@@ -774,20 +790,20 @@ function CheckoutContent() {
                             Número Plin
                           </span>
                           <span className="font-mono text-base font-bold text-terracotta-600">
-                            {paymentSettings?.plin?.phone || "987 654 321"}
+                            {paymentSettings?.plin?.phone || "978 323 984"}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() =>
                             copyToClipboard(
-                              paymentSettings?.plin?.phone || "987 654 321",
+                              paymentSettings?.plin?.phone || "978 323 984",
                             )
                           }
                           className="px-3 py-1.5 rounded-lg bg-cream-50 hover:bg-cream-100 text-stone-700 font-medium text-[11px] flex items-center gap-1.5 border border-cream-200 transition-colors"
                         >
                           {copiedText ===
-                          (paymentSettings?.plin?.phone || "987 654 321") ? (
+                          (paymentSettings?.plin?.phone || "978 323 984") ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-sage-600" />
                               <span>Copiado</span>
@@ -1004,7 +1020,7 @@ function CheckoutContent() {
                     </p>
                     <p className="text-stone-600">
                       Presentación:{" "}
-                      <strong>Lienzo en Bastidor (Full Screen)</strong>
+                      <strong>Lienzo de tela canvas en bastidor</strong>
                     </p>
                     {draft.customizations?.pet_inscription?.enabled &&
                       draft.customizations.pet_inscription.pet_name && (
@@ -1051,6 +1067,11 @@ function CheckoutContent() {
                       S/ {shippingCost.toFixed(2)}
                     </span>
                   </div>
+                  <p className="text-[10px] text-stone-500 italic">
+                    {department.trim().toLowerCase() === "lima"
+                      ? "Lima Metropolitana: Llega en 3 a 5 días hábiles luego de tu compra."
+                      : "Provincia / otros distritos: Llega en 5 a 7 días hábiles luego de tu compra."}
+                  </p>
                   <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-cream-200">
                     <span>Total de la Orden</span>
                     <span>S/ {totalAmount.toFixed(2)}</span>

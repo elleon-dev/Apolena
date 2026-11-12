@@ -32,13 +32,19 @@ const FAQS: FaqItem[] = [
     id: 4,
     question: "¿Cuánto tiempo tarda en llegar mi pedido?",
     answer:
-      "Tu paquete llegará en un plazo de 2 a 3 días hábiles tras su fabricación artesanal. Nos mantendremos en contacto contigo vía correo electrónico o teléfono para coordinar la entrega.",
+      "Tiempos de Entrega:\n• Envíos a Lima Metropolitana: Tu pedido llegará en 3 a 5 días hábiles luego de realizada la compra.\n• Envíos a provincia y otros distritos: Tu pedido llegará en 5 a 7 días hábiles luego de realizada la compra.",
   },
   {
     id: 5,
     question: "¿Cuáles son sus políticas de devolución?",
     answer:
       "Aceptamos reposiciones o devoluciones si ocurre algún inconveniente atribuible a nuestro taller (como medida incorrecta o daños durante el transporte).",
+  },
+  {
+    id: 6,
+    question: "¿De qué material son elaborados los cuadros?",
+    answer:
+      "Los cuadros son elaborados en lienzo de tela canvas de alta calidad artística a 300 DPI, tensados artesanalmente sobre bastidor de madera maciza y listos para colgar.",
   },
 ];
 

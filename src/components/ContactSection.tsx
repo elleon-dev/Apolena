@@ -60,12 +60,12 @@ export default function ContactSection() {
             </p>
 
             <a
-              href="https://wa.me/51987654321?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
+              href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 py-3.5 px-8 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-95"
             >
-              <span>Chatear por WhatsApp (+51 987 654 321)</span>
+              <span>Chatear por WhatsApp (+51 978 323 984)</span>
             </a>
           </div>
 

@@ -54,6 +54,7 @@ import {
   ShoppingBag,
   PenTool,
   Gift,
+  Truck,
 } from "lucide-react";
 
 export default function personalizedWallArt() {
@@ -150,9 +151,12 @@ export default function personalizedWallArt() {
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Print Size, Finish & Extensible Frame state (ordered from Largest XL to Smallest S)
+  // Print Size, Finish & Extensible Frame state (Guía de tamaños oficial Apolena a 300 DPI)
   const [selectedPrintPreset, setSelectedPrintPreset] = useState<PrintPreset>(
-    PRINT_PRESETS[1],
+    () =>
+      PRINT_PRESETS.find((p) => p.cmDimensions.includes("60 × 40")) ||
+      PRINT_PRESETS[2] ||
+      PRINT_PRESETS[0],
   );
   const [printFinishMode, setPrintFinishMode] =
     useState<PrintFinishMode>("full-bleed");
@@ -528,7 +532,7 @@ export default function personalizedWallArt() {
         theme_id: useCustomTheme ? "custom" : selectedCharacter.id,
         theme_name: activeThemeName,
         size_id: selectedPrintPreset.id,
-        size_label: `${selectedPrintPreset.tier} · ${selectedPrintPreset.cmDimensions}`,
+        size_label: `${selectedPrintPreset.cmDimensions} (${selectedPrintPreset.inchDimensions})`,
         cm_dimensions: selectedPrintPreset.cmDimensions,
         dpi: selectedPrintPreset.dpi,
         finish_mode: "full-bleed",
@@ -1119,37 +1123,16 @@ export default function personalizedWallArt() {
         {/* ========================================================================= */}
         {!isGenerating && step === 3 && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            {/* Top Bar with Re-generate & Download */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-cream-200">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
-                  <span>2 propuestas artísticas listas para tu elección</span>
-                </div>
-                <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
-                  {secondPetImage ? "Retrato Doble" : "Retrato"} ·{" "}
-                  <span className="text-terracotta-600">{activeThemeName}</span>
-                </h2>
+            {/* Top Bar Header */}
+            <div className="pb-6 border-b border-cream-200">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
+                <span>2 propuestas artísticas listas para tu elección</span>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setStep(2)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-cream-200 text-stone-700 hover:text-stone-900 text-xs font-medium transition-colors shadow-soft"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Cambiar estilo</span>
-                </button>
-
-                <button
-                  onClick={() => handleDownload(selectedPrintPreset)}
-                  disabled={isExportingPrint}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-medium shadow-soft transition-all disabled:opacity-60"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Descargar Muestra con Marca de Agua</span>
-                </button>
-              </div>
+              <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
+                {secondPetImage ? "Retrato Doble" : "Retrato"} ·{" "}
+                <span className="text-terracotta-600">{activeThemeName}</span>
+              </h2>
             </div>
 
             {/* Simulation Warning Banner when APIs exceed quota (429) */}
@@ -1340,70 +1323,6 @@ export default function personalizedWallArt() {
                     </div>
                   </div>
                 )}
-
-                {/* Control Interactivo de Caligrafía en Paso 3 */}
-                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-[#c6a26c] flex items-center justify-center shrink-0">
-                      <PenTool className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-stone-900 flex items-center gap-2">
-                        <span>Nombre de Mascota (Tipografía Brush)</span>
-                        {includePetInscription &&
-                          petInscriptionName.trim() && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#174B3D] bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
-                              Activo en Lienzo
-                            </span>
-                          )}
-                      </h4>
-                      <p className="text-stone-500 text-[11px] mt-0.5">
-                        {includePetInscription && petInscriptionName.trim()
-                          ? `Inscribiendo: "${petInscriptionName.trim()}" en pincel blanco en la esquina inferior derecha en diagonal.`
-                          : "Lienzo artístico puro sin texto. Puedes activar el nombre si lo deseas."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setIncludePetInscription(!includePetInscription)
-                      }
-                      className={`px-3.5 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                        includePetInscription
-                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                          : "bg-cream-50 text-stone-700 border-cream-200 hover:bg-cream-100"
-                      }`}
-                    >
-                      <PenTool
-                        className={`w-3.5 h-3.5 ${
-                          includePetInscription
-                            ? "text-[#c6a26c]"
-                            : "text-stone-400"
-                        }`}
-                      />
-                      <span>
-                        {includePetInscription
-                          ? "Con Nombre Brush"
-                          : "Activar Nombre"}
-                      </span>
-                    </button>
-                    {includePetInscription && (
-                      <input
-                        type="text"
-                        value={petInscriptionName}
-                        onChange={(e) =>
-                          setPetInscriptionName(e.target.value)
-                        }
-                        placeholder="Nombre de mascota"
-                        maxLength={35}
-                        className="px-3 py-2 rounded-xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] w-36 sm:w-44"
-                      />
-                    )}
-                  </div>
-                </div>
 
                 {/* Viewer Controls Bar */}
                 <div className="flex items-center justify-between gap-2 p-1.5 rounded-full bg-white border border-cream-200 shadow-soft">
@@ -1624,6 +1543,70 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
+                {/* Nombre de Mascota en Tipografía Brush (Firma de Atelier) */}
+                <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-[#c6a26c] flex items-center justify-center shrink-0">
+                      <PenTool className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-stone-900 flex items-center gap-2">
+                        <span>Nombre de Mascota (Tipografía Brush)</span>
+                        {includePetInscription &&
+                          petInscriptionName.trim() && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#174B3D] bg-sage-50 px-2 py-0.5 rounded-full border border-sage-200">
+                              Activo en Lienzo
+                            </span>
+                          )}
+                      </h4>
+                      <p className="text-stone-500 text-[11px] mt-0.5">
+                        {includePetInscription && petInscriptionName.trim()
+                          ? `Inscribiendo: "${petInscriptionName.trim()}" en pincel blanco en la esquina inferior derecha en diagonal.`
+                          : "Lienzo artístico puro sin texto. Puedes activar el nombre si lo deseas."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIncludePetInscription(!includePetInscription)
+                      }
+                      className={`px-3.5 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        includePetInscription
+                          ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                          : "bg-cream-50 text-stone-700 border-cream-200 hover:bg-cream-100"
+                      }`}
+                    >
+                      <PenTool
+                        className={`w-3.5 h-3.5 ${
+                          includePetInscription
+                            ? "text-[#c6a26c]"
+                            : "text-stone-400"
+                        }`}
+                      />
+                      <span>
+                        {includePetInscription
+                          ? "Con Nombre Brush"
+                          : "Activar Nombre"}
+                      </span>
+                    </button>
+                    {includePetInscription && (
+                      <input
+                        type="text"
+                        value={petInscriptionName}
+                        onChange={(e) =>
+                          setPetInscriptionName(e.target.value)
+                        }
+                        placeholder="Nombre de mascota"
+                        maxLength={35}
+                        className="px-3 py-2 rounded-xl bg-cream-50 border border-cream-200 text-xs text-stone-900 focus:outline-none focus:border-[#174B3D] w-36 sm:w-44"
+                      />
+                    )}
+                  </div>
+                </div>
+
                 {/* Dedicatoria para Regalo (Opcional) */}
                 <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft space-y-3">
                   <div className="flex items-start justify-between gap-3">
@@ -1676,78 +1659,74 @@ export default function personalizedWallArt() {
                       <Printer className="w-4 h-4" />
                       <span>Impresión en Alta Calidad (300 DPI)</span>
                     </div>
-                    <h3 className="font-serif text-xl font-semibold text-stone-900">
-                      Medidas para Cuadros
+                    <h3 className="font-serif text-xl font-bold text-stone-900">
+                      Guía de tamaños
                     </h3>
-                    <p className="text-xs text-stone-500">
-                      Selecciona el formato desde tamaño galería (XL) hasta
-                      escritorio (S).
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      Elige el tamaño ideal según el espacio y el protagonismo que quieras darle a tu cuadro.
                     </p>
                   </div>
 
-                  {/* Dynamic Size List (300 DPI) */}
-                  <div className="space-y-2.5">
-                    {catalogSizes.map((preset) => {
-                      const isSelected = selectedPrintPreset.id === preset.id;
+                    {/* Dynamic Size List (Etiquetas de tallas, medidas en cm y pulgadas, total y descripción) */}
+                    <div className="space-y-2.5">
+                      {catalogSizes.map((preset) => {
+                        const isSelected = selectedPrintPreset.id === preset.id;
 
-                      return (
-                        <div
-                          key={preset.id}
-                          onClick={() => setSelectedPrintPreset(preset)}
-                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                            isSelected
-                              ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20"
-                              : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <Frame
-                                className={`w-4 h-4 ${
-                                  isSelected
-                                    ? "text-terracotta-600"
-                                    : "text-stone-400"
-                                }`}
-                              />
-                              <span className="text-xs font-semibold text-stone-900">
-                                {preset.tier}
-                              </span>
+                        return (
+                          <div
+                            key={preset.id}
+                            onClick={() => setSelectedPrintPreset(preset)}
+                            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                              isSelected
+                                ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20 shadow-xs"
+                                : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Frame
+                                  className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                    isSelected
+                                      ? "text-terracotta-600"
+                                      : "text-stone-400"
+                                  }`}
+                                />
+                                <div>
+                                  <span className="text-sm font-bold text-stone-900 block">
+                                    {preset.tier}
+                                  </span>
+                                  <span className="text-xs font-medium text-stone-500 block mt-0.5">
+                                    {preset.cmDimensions} · {preset.inchDimensions}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-sm font-bold text-terracotta-600 block">
+                                  S/ {preset.pricePen.toFixed(2)}
+                                </span>
+                                <span className="text-[10px] uppercase font-semibold text-stone-400 block tracking-wider">
+                                  Total
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs font-semibold text-terracotta-600 block">
-                                S/ {preset.pricePen}.00
-                              </span>
-                              <span className="text-[11px] text-stone-500">
-                                {preset.cmDimensions}
-                              </span>
-                            </div>
+
+                            <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                              {preset.recommendedUse}
+                            </p>
                           </div>
+                        );
+                      })}
+                    </div>
 
-                          <div className="flex items-center justify-between mt-1.5 text-[11px] text-stone-500">
-                            <span className="font-mono">
-                              {preset.baseWidthPx} × {preset.baseHeightPx} px ·{" "}
-                              {preset.dpi} DPI
-                            </span>
-                            <span>{preset.inchDimensions}</span>
-                          </div>
-
-                          <p className="text-[11px] text-stone-500 mt-1">
-                            {preset.recommendedUse}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Formato de Presentación: Bastidor de Madera Full Screen (Sin Marco) */}
+                  {/* Formato y Presentación */}
                   <div className="pt-3 border-t border-cream-200 space-y-2">
                     <span className="text-xs font-semibold text-stone-800 block">
                       Formato y Presentación:
                     </span>
-                    <div className="p-3 rounded-2xl border border-terracotta-200 bg-terracotta-50/40 flex items-center justify-between gap-2.5">
+                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-stone-900 text-terracotta-400 flex items-center justify-center flex-shrink-0">
-                          <Frame className="w-4 h-4 text-terracotta-400" />
+                        <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#c6a26c] flex items-center justify-center flex-shrink-0">
+                          <Frame className="w-4 h-4 text-[#c6a26c]" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-stone-900">
@@ -1758,10 +1737,46 @@ export default function personalizedWallArt() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-[11px] font-semibold text-terracotta-700 bg-white px-2 py-0.5 rounded-full border border-terracotta-200 whitespace-nowrap">
+                      <span className="text-[11px] font-semibold text-[#174B3D] bg-white px-2 py-0.5 rounded-full border border-sage-200 whitespace-nowrap">
                         Incluido
                       </span>
                     </div>
+                  </div>
+
+                  {/* Elaboración en Lienzo de Tela Canvas */}
+                  <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 text-xs">
+                    <p className="flex items-center gap-2 text-[11px] font-medium text-stone-800">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
+                      <span>Los cuadros son elaborados en lienzo de tela canvas.</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card 2: Detalles de la orden (Tiempos de Entrega, Resumen de precios y totales, y botones) */}
+                <div className="bg-white border border-cream-200 rounded-3xl p-5 sm:p-6 shadow-soft space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="font-serif text-lg font-bold text-stone-900 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#c6a26c]" />
+                      <span>Detalles de la orden</span>
+                    </h3>
+                  </div>
+
+                  {/* Tiempos de Entrega */}
+                  <div className="p-3.5 rounded-2xl border border-[#c6a26c]/35 bg-[#FFFBF2] text-xs space-y-1.5 shadow-2xs">
+                    <div className="flex items-center gap-2 font-bold text-[#174B3D]">
+                      <Truck className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                      <span>Tiempos de Entrega</span>
+                    </div>
+                    <ul className="text-[11px] text-stone-700 space-y-1 pl-1">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#c6a26c] font-bold">•</span>
+                        <span><strong>Envíos a Lima Metropolitana:</strong> Tu pedido llegará en 3 a 5 días hábiles luego de realizada la compra.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-[#c6a26c] font-bold">•</span>
+                        <span><strong>Envíos a provincia y otros distritos:</strong> Tu pedido llegará en 5 a 7 días hábiles luego de realizada la compra.</span>
+                      </li>
+                    </ul>
                   </div>
 
                   {/* Price & 50% Split Payment Box */}

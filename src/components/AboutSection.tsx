@@ -42,7 +42,7 @@ export default function AboutSection() {
           </h2>
 
           <p className="text-white/80 text-sm sm:text-base leading-relaxed">
-            Inmortalizamos a tu mejor amigo en lienzos de algodón de bellas
+            Inmortalizamos a tu mejor amigo en lienzos de tela canvas de bellas
             artes, tensados a mano sobre bastidores de madera y listos para
             colgar en tu hogar.
           </p>
@@ -69,7 +69,7 @@ export default function AboutSection() {
                     Bastidor de Madera Full Screen
                   </p>
                   <p className="text-[11px] text-[#141414]/70 truncate">
-                    Lienzo 100% algodón · Listo para colgar
+                    Lienzo de tela canvas · Listo para colgar
                   </p>
                 </div>
                 <div className="w-7 h-7 rounded-full bg-[#c6a26c]/25 text-[#174B3D] flex items-center justify-center flex-shrink-0">

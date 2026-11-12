@@ -23,6 +23,13 @@ Toda orden generada en `orders` posee:
 
 ---
 
+## 1.1. Tiempos Oficiales de Entrega
+
+- **Envíos a Lima Metropolitana:** Tu pedido llegará en **3 a 5 días hábiles** luego de realizada la compra.
+- **Envíos a provincia y otros distritos:** Tu pedido llegará en **5 a 7 días hábiles** luego de realizada la compra.
+
+---
+
 ## 2. Los 3 Pasos del Tracking Logístico + Estado Final Exitoso
 
 El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de **3 pasos operativos**, seguidos del **cierre exitoso** al completar el 50% restante del pago:

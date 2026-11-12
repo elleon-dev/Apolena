@@ -2603,7 +2603,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-serif text-lg font-bold text-stone-900">
-                                {preset.tier} · {preset.cmDimensions}
+                                {preset.cmDimensions} ({preset.inchDimensions})
                               </span>
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${

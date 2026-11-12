@@ -73,7 +73,7 @@ export function OrderTrackingStepper({
       key: "manufacturing",
       title: "1. Fabricación",
       subtitle:
-        "Impresión 300 DPI sobre lienzo de algodón y enmarcado artesanal",
+        "Impresión 300 DPI sobre lienzo de tela canvas y montado artesanal",
       icon: Hammer,
       timestamp: manufacturingStartedAt,
     },

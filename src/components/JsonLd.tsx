@@ -22,7 +22,7 @@ export function JsonLd() {
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+51-999-888-777",
+      telephone: "+51-978-323-984",
       contactType: "customer service",
       areaServed: "PE",
       availableLanguage: ["Spanish"],
@@ -36,7 +36,7 @@ export function JsonLd() {
     url: baseUrl,
     name: "Apolena — Retratos Personalizados para Mascotas",
     description:
-      "Transforma la foto de tu mascota en un cuadro de museo al óleo sobre lienzo de algodón tensado en bastidor de madera.",
+      "Transforma la foto de tu mascota en un cuadro de museo al óleo elaborado en lienzo de tela canvas tensado en bastidor de madera.",
     publisher: {
       "@id": `${baseUrl}/#organization`,
     },

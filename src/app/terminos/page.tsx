@@ -114,11 +114,11 @@ export default function TerminosPage() {
               <span className="text-[#c6a26c]">5.</span> Plazos de Fabricación y Despacho Logístico
             </h2>
             <p>
-              Los plazos habituales de fabricación oscilan entre <strong>3 y 5 días hábiles</strong> tras la validación del adelanto del 50%. Los tiempos de tránsito para entrega son:
+              Los plazos oficiales de entrega tras confirmarse la compra y validarse el adelanto del 50% son:
             </p>
             <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700">
-              <li><strong>Lima Metropolitana:</strong> 24 a 48 horas tras culminar la etapa de fabricación.</li>
-              <li><strong>Provincias del Perú:</strong> 3 a 6 días hábiles adicionales vía courier nacional asociado.</li>
+              <li><strong>Envíos a Lima Metropolitana:</strong> Tu pedido llegará en <strong>3 a 5 días hábiles</strong> luego de realizada la compra.</li>
+              <li><strong>Envíos a provincia y otros distritos:</strong> Tu pedido llegará en <strong>5 a 7 días hábiles</strong> luego de realizada la compra.</li>
             </ul>
             <p>
               Apolena no será responsable por demoras atribuibles a causas de fuerza mayor o caso fortuito (bloqueos de carreteras, desastres naturales, estados de emergencia o errores en la consignación de la dirección por parte del cliente).

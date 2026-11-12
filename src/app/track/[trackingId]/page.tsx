@@ -327,7 +327,7 @@ export default function TrackingDetailPage({
                 del repartidor?
               </p>
               <a
-                href="https://wa.me/51987654321?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20mi%20orden"
+                href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20mi%20orden"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 font-bold text-[#174B3D] hover:underline"

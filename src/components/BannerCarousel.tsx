@@ -43,11 +43,11 @@ const BANNERS: BannerSlide[] = [
     tagIcon: <Sparkles className="w-3.5 h-3.5 text-[#174B3D]" />,
     headline: "El retrato de tu mascota en un lienzo de museo",
     subheadline:
-      "Lienzo 100% algodón de bellas artes tensado a mano sobre bastidor de madera (Full Screen sin marco). Listo para colgar con orgullo en tu sala o dormitorio.",
+      "Lienzo de tela canvas de bellas artes tensado a mano sobre bastidor de madera (Full Screen sin marco). Listo para colgar con orgullo en tu sala o dormitorio.",
     bullets: [
-      "Lienzo tensado en bastidor de madera de 3.5 cm",
-      "Impresión giclée a 300 DPI con preservación total de mirada",
-      "Envío seguro y embalado a Lima y todas las provincias",
+      "Cuadros elaborados en lienzo de tela canvas",
+      "Impresión Fine Art a 300 DPI con preservación total de mirada",
+      "Envío seguro: 3 a 5 días hábiles en Lima y 5 a 7 días hábiles a provincias",
     ],
     ctaText: "Crear Retrato Ahora",
     ctaLink: "/products/cuadros-personalizados",
@@ -58,7 +58,7 @@ const BANNERS: BannerSlide[] = [
       "Cuadros personalizados de mascotas en bastidor de madera montados en sala",
     badge: {
       title: "Full Screen de Galería",
-      subtitle: "Lienzo de algodón · Listo para colgar",
+      subtitle: "Lienzo de tela canvas · Listo para colgar",
     },
   },
   {
