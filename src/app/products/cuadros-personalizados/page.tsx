@@ -57,7 +57,25 @@ import {
   PenTool,
   Gift,
   Truck,
+  Home,
 } from "lucide-react";
+
+/**
+ * Coordenadas porcentuales exactas sobre el mockup de sala (public/images/room-sizes-reference.png)
+ * Dimensiones base: 819 x 1024 px. Origen inferior-izquierdo alineado con la guía de pared.
+ */
+const ROOM_SCALE_COORDINATES: Record<
+  string,
+  { width: number; height: number; left: number; bottom: number }
+> = {
+  "size-30x20": { width: 10.62, height: 12.4, left: 28.69, bottom: 41.41 },
+  "size-45x30": { width: 15.99, height: 18.55, left: 28.69, bottom: 41.41 },
+  "size-60x40": { width: 21.25, height: 24.71, left: 28.69, bottom: 41.41 },
+  "size-75x50": { width: 26.62, height: 30.96, left: 28.69, bottom: 41.41 },
+  "size-90x60": { width: 31.87, height: 37.01, left: 28.69, bottom: 41.41 },
+  "size-105x70": { width: 37.24, height: 43.36, left: 28.69, bottom: 41.41 },
+  "size-120x80": { width: 42.49, height: 49.51, left: 28.69, bottom: 41.41 },
+};
 
 export default function personalizedWallArt() {
   const router = useRouter();
@@ -146,7 +164,7 @@ export default function personalizedWallArt() {
   const [fusionError, setFusionError] = useState<string | null>(null);
 
   // Result Viewer state
-  const [viewMode, setViewMode] = useState<"fusion" | "compare">("fusion");
+  const [viewMode, setViewMode] = useState<"fusion" | "compare" | "room">("fusion");
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [lensPos, setLensPos] = useState({ x: 50, y: 50 });
   const [sliderPos, setSliderPos] = useState(50);
@@ -160,6 +178,16 @@ export default function personalizedWallArt() {
       PRINT_PRESETS[2] ||
       PRINT_PRESETS[0],
   );
+
+  const currentRoomCoords =
+    ROOM_SCALE_COORDINATES[selectedPrintPreset?.id] ||
+    ROOM_SCALE_COORDINATES[
+      Object.keys(ROOM_SCALE_COORDINATES).find((key) => {
+        const dimensions = key.replace("size-", "").replace("x", " × ");
+        return selectedPrintPreset?.cmDimensions?.includes(dimensions);
+      }) || "size-60x40"
+    ] ||
+    ROOM_SCALE_COORDINATES["size-60x40"];
   const [printFinishMode, setPrintFinishMode] =
     useState<PrintFinishMode>("full-bleed");
   const [selectedFrame, setSelectedFrame] = useState<FrameOption>(
@@ -172,8 +200,11 @@ export default function personalizedWallArt() {
   const themeFileInputRef = useRef<HTMLInputElement>(null);
   const charactersScrollRef = useRef<HTMLDivElement>(null);
   const createPortraitBtnRef = useRef<HTMLButtonElement>(null);
+  const customizationsSectionRef = useRef<HTMLDivElement>(null);
   const [previewCharacterModal, setPreviewCharacterModal] =
     useState<FamousCharacter | null>(null);
+  const [showNoCustomizationModal, setShowNoCustomizationModal] =
+    useState<boolean>(false);
 
   const scrollToCreatePortrait = () => {
     setTimeout(() => {
@@ -187,17 +218,18 @@ export default function personalizedWallArt() {
     }, 100);
   };
 
-  // Cerrar lightbox con tecla Escape
+  // Cerrar lightbox / modal de confirmación con tecla Escape
   useEffect(() => {
-    if (!previewCharacterModal) return;
+    if (!previewCharacterModal && !showNoCustomizationModal) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setPreviewCharacterModal(null);
+        setShowNoCustomizationModal(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewCharacterModal]);
+  }, [previewCharacterModal, showNoCustomizationModal]);
 
   const scrollCharacters = (direction: "left" | "right") => {
     if (charactersScrollRef.current) {
@@ -597,6 +629,25 @@ export default function personalizedWallArt() {
       localStorage.setItem("apolena_checkout_draft", JSON.stringify(draft));
     } catch {}
     router.push("/checkout");
+  };
+
+  const handleOrderButtonClick = () => {
+    const hasInscription =
+      includePetInscription && Boolean(petInscriptionName.trim());
+    const hasDedication = Boolean(dedicationNote.trim());
+
+    // Si no tiene nombre ni dedicatoria (o no tiene nombre en el lienzo), confirmar con el usuario
+    if (!hasInscription && !hasDedication) {
+      setShowNoCustomizationModal(true);
+      return;
+    }
+
+    if (!hasInscription) {
+      setShowNoCustomizationModal(true);
+      return;
+    }
+
+    handleProceedToCheckout();
   };
 
   return (
@@ -1486,17 +1537,17 @@ export default function personalizedWallArt() {
                 )}
 
                 {/* Viewer Controls Bar */}
-                <div className="flex items-center justify-between gap-2 p-1.5 rounded-full bg-white border border-cream-200 shadow-soft">
-                  <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-full bg-white border border-cream-200 shadow-soft">
+                  <div className="flex flex-wrap items-center gap-1">
                     <button
                       onClick={() => {
                         setViewMode("fusion");
                         setIsZoomActive(false);
                       }}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
                         viewMode === "fusion"
-                          ? "bg-stone-900 text-white"
-                          : "text-stone-600 hover:text-stone-900"
+                          ? "bg-stone-900 text-white shadow-xs"
+                          : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
                       }`}
                     >
                       <Maximize2 className="w-3.5 h-3.5" />
@@ -1508,14 +1559,29 @@ export default function personalizedWallArt() {
                         setViewMode("compare");
                         setIsZoomActive(false);
                       }}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
                         viewMode === "compare"
-                          ? "bg-stone-900 text-white"
-                          : "text-stone-600 hover:text-stone-900"
+                          ? "bg-stone-900 text-white shadow-xs"
+                          : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
                       }`}
                     >
                       <Columns className="w-3.5 h-3.5" />
                       <span>Comparar Original</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setViewMode("room");
+                        setIsZoomActive(false);
+                      }}
+                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                        viewMode === "room"
+                          ? "bg-stone-900 text-white shadow-xs"
+                          : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
+                      }`}
+                    >
+                      <Home className="w-3.5 h-3.5 text-[#c6a26c]" />
+                      <span>Ver en Sala (Escala)</span>
                     </button>
                   </div>
 
@@ -1560,7 +1626,9 @@ export default function personalizedWallArt() {
                     setLensPos({ x, y });
                     if (isDraggingSlider) setSliderPos(x);
                   }}
-                  className="relative rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 min-h-[480px] flex flex-col items-center justify-center p-6 sm:p-10 select-none shadow-soft"
+                  className={`relative rounded-3xl overflow-hidden border border-cream-200 min-h-[480px] flex flex-col items-center justify-center p-3 sm:p-6 select-none shadow-soft transition-colors ${
+                    viewMode === "room" ? "bg-[#ece9e2]/50" : "bg-cream-100"
+                  }`}
                 >
                   {/* MODE 1: FULL PORTRAIT - BASTIDOR DE MADERA FULL SCREEN (SIN MARCO) */}
                   {viewMode === "fusion" && (
@@ -1702,10 +1770,122 @@ export default function personalizedWallArt() {
                       </div>
                     </div>
                   )}
+
+                  {/* MODE 3: ROOM SCALE VIEWPORT (Ver en Sala a Escala Real) */}
+                  {viewMode === "room" && (
+                    <div
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="relative w-fit max-w-full rounded-2xl overflow-hidden border border-cream-200 bg-[#EFEFEF] shadow-card select-none animate-in fade-in duration-200 mx-auto"
+                    >
+                      {/* Imagen de fondo de la sala con marcas guía de medidas (en proporción 819x1024 nativa sin recorte) */}
+                      <img
+                        src="/images/room-sizes-reference.png"
+                        alt="Escala de tamaños de cuadros en sala"
+                        draggable={false}
+                        className="block w-auto max-w-full max-h-[60vh] sm:max-h-[66vh] object-contain pointer-events-none select-none mx-auto"
+                      />
+
+                      {/* Cuadro dinámico posicionado y dimensionado sobre la pared */}
+                      <div
+                        style={{
+                          left: `${currentRoomCoords.left}%`,
+                          bottom: `${currentRoomCoords.bottom}%`,
+                          width: `${currentRoomCoords.width}%`,
+                          height: `${currentRoomCoords.height}%`,
+                        }}
+                        className="absolute transition-all duration-500 ease-out z-10 pointer-events-auto group cursor-pointer"
+                        title={`${selectedPrintPreset.cmDimensions} - ${selectedPrintPreset.tier}`}
+                      >
+                        {/* Efecto bastidor de lienzo 3D con sombra profunda sobre la pared */}
+                        <div className="relative w-full h-full rounded-xs shadow-[0_14px_36px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-black/20 overflow-hidden bg-stone-900 transition-shadow">
+                          <img
+                            src={
+                              fusedResultUrl ||
+                              selectedCharacter.fusionSampleUrl
+                            }
+                            alt="Vista previa a escala en sala"
+                            draggable={false}
+                            className="w-full h-full object-cover pointer-events-none select-none"
+                          />
+
+                          {/* Nombre de la mascota si está activo */}
+                          {includePetInscription &&
+                            petInscriptionName.trim() && (
+                              <div className="absolute bottom-1 right-1.5 sm:bottom-2 sm:right-2 z-20 pointer-events-none select-none max-w-[75%] text-right transform -rotate-[6deg] origin-bottom-right">
+                                <span
+                                  style={{
+                                    fontFamily:
+                                      "'Caveat', 'Dancing Script', cursive, sans-serif",
+                                    textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                                  }}
+                                  className="font-brush text-white tracking-wide font-normal leading-none select-none whitespace-nowrap block drop-shadow-md text-[8px] sm:text-xs md:text-sm"
+                                >
+                                  {petInscriptionName.trim()}
+                                </span>
+                              </div>
+                            )}
+
+                          {/* Marca de agua de protección ligera en sala */}
+                          <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-center opacity-20">
+                            <img
+                              src="/logo-light.png"
+                              alt=""
+                              className="w-16 sm:w-20 object-contain -rotate-12"
+                            />
+                          </div>
+
+                          {/* Etiqueta de Medida sobre el Cuadro */}
+                          <div className="absolute top-1 left-1 bg-stone-900/85 backdrop-blur-xs text-white text-[7px] sm:text-[9px] font-semibold px-1.5 py-0.5 rounded-xs shadow-xs border border-white/20 whitespace-nowrap pointer-events-none">
+                            {selectedPrintPreset.cmDimensions}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Barra flotante superior indicadora del tamaño actual */}
+                      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-cream-200 shadow-soft text-xs text-stone-800">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                        <span className="font-semibold text-stone-900">
+                          {selectedPrintPreset.cmDimensions}
+                        </span>
+                        <span className="text-stone-400">·</span>
+                        <span className="text-stone-600 font-medium">
+                          {selectedPrintPreset.tier}
+                        </span>
+                      </div>
+
+                      {/* Selector Rápido de Tamaños en la parte inferior de la sala */}
+                      <div className="absolute bottom-3 left-3 right-3 z-20 bg-stone-900/90 backdrop-blur-md p-2 rounded-2xl border border-stone-800 shadow-xl flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400 px-2 shrink-0">
+                          Escala:
+                        </span>
+                        {catalogSizes.map((preset) => {
+                          const isCurrent =
+                            selectedPrintPreset.id === preset.id;
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => setSelectedPrintPreset(preset)}
+                              className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all shrink-0 ${
+                                isCurrent
+                                  ? "bg-[#174B3D] text-white ring-1 ring-[#c6a26c]"
+                                  : "bg-stone-800 text-stone-300 hover:bg-stone-700 hover:text-white"
+                              }`}
+                            >
+                              {preset.cmDimensions}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Customizations: Nombre Brush + Dedicatoria para Regalo en Grid 2 Cols */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  ref={customizationsSectionRef}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
                   {/* Nombre de Mascota en Tipografía Brush (Firma de Atelier) */}
                   <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between gap-3 text-xs">
                     <div className="flex items-start gap-3">
@@ -1960,7 +2140,7 @@ export default function personalizedWallArt() {
 
                   {/* Primary Order & Checkout CTA */}
                   <button
-                    onClick={handleProceedToCheckout}
+                    onClick={handleOrderButtonClick}
                     className="w-full py-4 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
                   >
                     <ShoppingBag className="w-4 h-4 text-[#c6a26c]" />
@@ -2014,6 +2194,107 @@ export default function personalizedWallArt() {
               >
                 Probar otro escenario
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmación: Cuadro sin Nombre ni Dedicatoria */}
+        {showNoCustomizationModal && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmación de personalización del cuadro"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setShowNoCustomizationModal(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-md w-full bg-white rounded-3xl p-6 sm:p-7 border border-cream-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+            >
+              {/* Botón de Cierre X */}
+              <button
+                type="button"
+                onClick={() => setShowNoCustomizationModal(false)}
+                aria-label="Cerrar modal"
+                className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-cream-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Encabezado con Icono Informativo */}
+              <div className="flex items-start gap-3.5 pr-6">
+                <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg font-bold text-stone-900 leading-snug">
+                    ¿Confirmar pedido sin nombre ni dedicatoria?
+                  </h3>
+                  <p className="text-xs text-stone-500 leading-relaxed">
+                    Notamos que no has añadido el nombre de tu mascota en el lienzo ni una tarjeta de dedicatoria.
+                  </p>
+                </div>
+              </div>
+
+              {/* Resumen del Estado de Personalización */}
+              <div className="rounded-2xl bg-cream-50/80 border border-cream-200 p-4 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-stone-600 flex items-center gap-2">
+                    <PenTool className="w-3.5 h-3.5 text-[#c6a26c]" />
+                    <span>Nombre en el lienzo:</span>
+                  </span>
+                  <span className="font-semibold text-stone-700 bg-white px-2.5 py-0.5 rounded-full border border-cream-200 text-[11px]">
+                    {includePetInscription && petInscriptionName.trim()
+                      ? petInscriptionName.trim()
+                      : "Sin texto (Solo arte puro)"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-stone-600 flex items-center gap-2">
+                    <Gift className="w-3.5 h-3.5 text-terracotta-500" />
+                    <span>Tarjeta de dedicatoria:</span>
+                  </span>
+                  <span className="font-semibold text-stone-700 bg-white px-2.5 py-0.5 rounded-full border border-cream-200 text-[11px]">
+                    {dedicationNote.trim() ? "Incluida" : "Sin dedicatoria"}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-500 text-center leading-relaxed">
+                El cuadro físico se confeccionará como una obra de arte limpia sin inscripciones. ¿Deseas agregar el nombre o continuar directo al pago?
+              </p>
+
+              {/* Acciones */}
+              <div className="space-y-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNoCustomizationModal(false);
+                    setTimeout(() => {
+                      customizationsSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }, 100);
+                  }}
+                  className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+                >
+                  <PenTool className="w-4 h-4 text-[#c6a26c]" />
+                  <span>Deseo agregar Nombre o Dedicatoria</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNoCustomizationModal(false);
+                    handleProceedToCheckout();
+                  }}
+                  className="w-full py-2.5 px-5 rounded-full bg-cream-100 hover:bg-cream-200 text-stone-700 text-xs font-medium flex items-center justify-center transition-all"
+                >
+                  <span>Continuar sin texto · Proceder al Pago</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
