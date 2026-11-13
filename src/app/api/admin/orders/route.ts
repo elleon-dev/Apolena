@@ -6,6 +6,7 @@ import {
   getEmailQueue,
   getProducts,
   getPlatformSettings,
+  getNewsletterSubscribers,
 } from "@/lib/db-service";
 
 export async function GET() {
@@ -17,13 +18,15 @@ export async function GET() {
     );
   }
 
-  const [orders, profiles, emailQueue, products, settings] = await Promise.all([
-    getAllOrdersForAdmin(),
-    getAllProfiles(),
-    getEmailQueue(30),
-    getProducts(false),
-    getPlatformSettings(),
-  ]);
+  const [orders, profiles, emailQueue, products, settings, subscribers] =
+    await Promise.all([
+      getAllOrdersForAdmin(),
+      getAllProfiles(),
+      getEmailQueue(30),
+      getProducts(false),
+      getPlatformSettings(),
+      getNewsletterSubscribers(),
+    ]);
 
   const sanitizedUsers = profiles.map(({ password_hash, ...rest }) => rest);
 
@@ -34,5 +37,6 @@ export async function GET() {
     emailQueue,
     products,
     settings,
+    subscribers,
   });
 }

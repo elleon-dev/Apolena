@@ -3,17 +3,44 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, CheckCircle2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Loader2 } from "lucide-react";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responseMsg, setResponseMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && email.includes("@")) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) return;
+
+    setIsLoading(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, source: "footer" }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "No se pudo registrar tu suscripción.");
+      }
+
       setIsSubscribed(true);
+      setResponseMsg(
+        data.message || "¡Gracias! Te avisaremos de promociones exclusivas.",
+      );
+    } catch (err: any) {
+      setErrorMsg(err.message || "Error al procesar tu solicitud.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -154,31 +181,45 @@ export function Footer() {
               retratos personalizados.
             </p>
             {isSubscribed ? (
-              <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#11382D] border border-[#c6a26c]/40 text-xs">
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#11382D] border border-[#c6a26c]/40 text-xs animate-in fade-in duration-200">
                 <CheckCircle2 className="w-4 h-4 text-[#c6a26c] shrink-0" />
                 <span className="font-medium text-white/95">
-                  ¡Gracias! Te avisaremos de promociones exclusivas.
+                  {responseMsg ||
+                    "¡Gracias! Te avisaremos de promociones exclusivas."}
                 </span>
               </div>
             ) : (
               <form
                 onSubmit={handleSubscribe}
-                className="flex flex-col sm:flex-row gap-2"
+                className="space-y-2"
               >
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                  className="w-full px-3.5 py-2 rounded-full bg-[#11382D] border border-[#c6a26c]/40 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#c6a26c]"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-extrabold uppercase tracking-wider shadow-sm transition-colors whitespace-nowrap cursor-pointer"
-                >
-                  Enviar
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="email"
+                    required
+                    disabled={isLoading}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full px-3.5 py-2 rounded-full bg-[#11382D] border border-[#c6a26c]/40 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#c6a26c] disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-extrabold uppercase tracking-wider shadow-sm transition-colors whitespace-nowrap cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1.5 min-w-[76px]"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      "Enviar"
+                    )}
+                  </button>
+                </div>
+                {errorMsg && (
+                  <p className="text-[11px] text-amber-300 font-medium pl-1">
+                    {errorMsg}
+                  </p>
+                )}
               </form>
             )}
           </div>

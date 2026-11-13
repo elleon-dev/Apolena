@@ -379,3 +379,20 @@ model EmailQueue {
   @@index([created_at])
   @@map("email_queue")
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// NEWSLETTER SUBSCRIBER — Suscriptores de novedades y promociones
+// ═══════════════════════════════════════════════════════════════════════
+
+model NewsletterSubscriber {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String   @unique
+  source     String   @default("footer") // "footer" | "checkout" | "popup"
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@index([email])
+  @@index([is_active])
+  @@map("newsletter_subscribers")
+}

@@ -2968,3 +2968,104 @@ export async function createOrderReview(input: {
 
   return order;
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// NEWSLETTER SUBSCRIBERS
+// ═══════════════════════════════════════════════════════════════════════
+
+export interface NewsletterSubscriberRecord {
+  id: string;
+  email: string;
+  source: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function subscribeNewsletter(
+  email: string,
+  source: string = "footer",
+): Promise<{ success: boolean; isNew: boolean; subscriber: NewsletterSubscriberRecord }> {
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (isDatabaseConfigured()) {
+    const existing = await prisma.newsletterSubscriber.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (existing) {
+      if (!existing.is_active) {
+        const updated = await prisma.newsletterSubscriber.update({
+          where: { email: cleanEmail },
+          data: { is_active: true, source },
+        });
+        return {
+          success: true,
+          isNew: false,
+          subscriber: {
+            ...updated,
+            created_at: updated.created_at.toISOString(),
+            updated_at: updated.updated_at.toISOString(),
+          },
+        };
+      }
+      return {
+        success: true,
+        isNew: false,
+        subscriber: {
+          ...existing,
+          created_at: existing.created_at.toISOString(),
+          updated_at: existing.updated_at.toISOString(),
+        },
+      };
+    }
+
+    const created = await prisma.newsletterSubscriber.create({
+      data: {
+        email: cleanEmail,
+        source,
+        is_active: true,
+      },
+    });
+
+    return {
+      success: true,
+      isNew: true,
+      subscriber: {
+        ...created,
+        created_at: created.created_at.toISOString(),
+        updated_at: created.updated_at.toISOString(),
+      },
+    };
+  }
+
+  // Fallback si la base de datos no estuviera configurada
+  const subscriber: NewsletterSubscriberRecord = {
+    id: `sub_${Date.now()}`,
+    email: cleanEmail,
+    source,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  return {
+    success: true,
+    isNew: true,
+    subscriber,
+  };
+}
+
+export async function getNewsletterSubscribers(): Promise<NewsletterSubscriberRecord[]> {
+  if (isDatabaseConfigured()) {
+    const rows = await prisma.newsletterSubscriber.findMany({
+      orderBy: { created_at: "desc" },
+    });
+    return rows.map((r) => ({
+      ...r,
+      created_at: r.created_at.toISOString(),
+      updated_at: r.updated_at.toISOString(),
+    }));
+  }
+  return [];
+}
