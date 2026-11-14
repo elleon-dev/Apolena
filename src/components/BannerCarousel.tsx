@@ -1,478 +1,210 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  ShieldCheck,
   Palette,
   ArrowRight,
-  Check,
+  CheckCircle2,
+  Truck,
+  MessageCircle,
+  Frame,
 } from "lucide-react";
 
-const SLIDE_MS = 6500;
-const TILT_MAX_X = 14;
-const TILT_MAX_Y = 18;
-
-interface BannerSlide {
-  id: string;
-  tag: string;
-  tagIcon: React.ReactNode;
-  headline: string;
-  subheadline: string;
-  bullets: string[];
-  ctaText: string;
-  ctaLink: string;
-  secondaryCtaText: string;
-  secondaryCtaLink: string;
-  imageSrc: string;
-  imageAlt: string;
-  badge: {
-    title: string;
-    subtitle: string;
-  };
-}
-
-const BANNERS: BannerSlide[] = [
-  {
-    id: "banner-living-room",
-    tag: "ATELIER DIGITAL PARA MASCOTAS",
-    tagIcon: <Sparkles className="w-3.5 h-3.5 text-[#174B3D]" />,
-    headline: "El retrato de tu mascota en un lienzo de museo",
-    subheadline:
-      "Lienzo de tela canvas de bellas artes tensado a mano sobre bastidor de madera (Full Screen sin marco). Listo para colgar con orgullo en tu sala o dormitorio.",
-    bullets: [
-      "Cuadros elaborados en lienzo de tela canvas",
-      "Impresión Fine Art a 300 DPI con preservación total de mirada",
-      "Envío seguro: 3 a 5 días hábiles en Lima y 5 a 7 días hábiles a provincias",
-    ],
-    ctaText: "Crear Retrato Ahora",
-    ctaLink: "/products/cuadros-personalizados",
-    secondaryCtaText: "Ver Cómo Funciona",
-    secondaryCtaLink: "#como-funciona",
-    imageSrc: "/banners/canvas-living-room.jpg",
-    imageAlt:
-      "Cuadros personalizados de mascotas en bastidor de madera montados en sala",
-    badge: {
-      title: "Full Screen de Galería",
-      subtitle: "Lienzo de tela canvas · Listo para colgar",
-    },
-  },
-  {
-    id: "banner-split-payment",
-    tag: "CONFIANZA Y PAGO SEGURO",
-    tagIcon: <ShieldCheck className="w-3.5 h-3.5 text-[#174B3D]" />,
-    headline: "Pagas 50% de adelanto y 50% contraentrega al recibir",
-    subheadline:
-      "Aprobación previa garantizada: elaboramos 2 propuestas artísticas exclusivas por cada pedido antes de enviar a imprenta y empaque.",
-    bullets: [
-      "50% al ordenar para iniciar la fabricación artesanal",
-      "50% restante contraentrega al recibir tu cuadro en casa",
-      "Seguimiento en vivo en 3 etapas con tu Tracking ID único",
-    ],
-    ctaText: "Personalizar Mi Cuadro",
-    ctaLink: "/products/cuadros-personalizados",
-    secondaryCtaText: "Rastrear Pedido",
-    secondaryCtaLink: "/track",
-    imageSrc: "/fusions/inca-empire-cats.jpg",
-    imageAlt: "Retrato personalizado de mascota en traje imperial inca",
-    badge: {
-      title: "Modalidad 50% / 50%",
-      subtitle: "Pagas el saldo al recibir tu cuadro",
-    },
-  },
-  {
-    id: "banner-collections",
-    tag: "COLECCIONES EXCLUSIVAS",
-    tagIcon: <Palette className="w-3.5 h-3.5 text-[#174B3D]" />,
-    headline: "De soberanos andinos a leyendas del cine",
-    subheadline:
-      "Explora nuestra cuidada galería de personajes históricos, reyes y cineastas, o sube tu propia fotografía temática para personalizar el vestuario.",
-    bullets: [
-      "Colecciones: Imperio Inca, Egipto, Cine Clásico y Época",
-      "Disponible para 1 o 2 mascotas (individual o dúo)",
-      "Medidas desde formato escritorio (S) hasta sala principal (XL)",
-    ],
-    ctaText: "Explorar la Colección",
-    ctaLink: "/products/cuadros-personalizados",
-    secondaryCtaText: "Quiénes Somos",
-    secondaryCtaLink: "#quienes-somos",
-    imageSrc: "/fusions/jack-sparrow-cat.jpg",
-    imageAlt: "Retrato personalizado de mascota en estilo Capitán Jack Sparrow",
-    badge: {
-      title: "2 Propuestas Artísticas",
-      subtitle: "Técnica óleo y claroscuro en cada orden",
-    },
-  },
-];
-
-function GoldOrnament() {
+export default function BannerCarousel() {
   return (
-    <svg
-      viewBox="0 0 240 28"
-      className="w-44 sm:w-52 h-6 text-[#c6a26c]"
-      fill="none"
-      aria-hidden="true"
+    <section
+      aria-label="Presentación Principal de Apolena"
+      className="relative w-full overflow-hidden bg-[#FAF7F2] text-[#141414]"
     >
-      <path
-        d="M8 14H88M152 14H232"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M95 14C102 6 110 6 120 14C130 6 138 6 145 14C138 22 130 22 120 14C110 22 102 22 95 14Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="120" cy="14" r="3" fill="currentColor" />
-      <circle cx="88" cy="14" r="2" fill="currentColor" />
-      <circle cx="152" cy="14" r="2" fill="currentColor" />
-    </svg>
-  );
-}
+      {/* ========================================================= */}
+      {/* 1. VERSIÓN DESKTOP: La primera imagen como fondo completo */}
+      {/* ========================================================= */}
+      <div className="hidden lg:flex relative w-full overflow-hidden min-h-[540px] xl:min-h-[580px] 2xl:min-h-[620px] items-center">
+        {/* Imagen de Fondo Original del Slide */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/banners/hero-canvas-bg-2.png"
+            alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
+            fill
+            priority
+            className="object-cover object-right xl:object-center"
+            sizes="100vw"
+          />
+        </div>
 
-function TiltCard({
-  banner,
-  priorityImage,
-}: {
-  banner: BannerSlide;
-  priorityImage: boolean;
-}) {
-  const tiltRef = useRef<HTMLDivElement>(null);
+        {/* Contenido Editorial alineado a la izquierda sobre la pared iluminada */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
+          <div className="max-w-lg xl:max-w-xl text-left space-y-4 xl:space-y-5">
+            {/* Tag / Kicker Superior */}
+            <div className="inline-block">
+              <span className="text-xs sm:text-sm font-bold tracking-[0.14em] text-[#174B3D] uppercase">
+                Retratos personalizados de mascotas
+              </span>
+            </div>
 
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = tiltRef.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            {/* Titular Serif Principal */}
+            <h1 className="font-serif text-4xl lg:text-5xl xl:text-[54px] font-bold text-[#174B3D] leading-[1.12] tracking-tight">
+              Tu mascota, la protagonista de tu hogar.
+            </h1>
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
+            {/* Subtítulo Descriptivo */}
+            <p className="text-stone-700 text-base lg:text-lg font-normal leading-relaxed max-w-lg">
+              Transformamos su foto en un cuadro único en canvas, listo para colgar.
+            </p>
 
-    el.style.transition = "transform 120ms ease-out";
-    el.style.setProperty("--rx", ((0.5 - py) * TILT_MAX_X).toFixed(2));
-    el.style.setProperty("--ry", ((px - 0.5) * TILT_MAX_Y).toFixed(2));
-    el.style.setProperty("--gx", (px * 100).toFixed(1));
-    el.style.setProperty("--gy", (py * 100).toFixed(1));
-    el.style.setProperty("--go", "1");
-  };
+            {/* Contenedor de Precio y Delivery */}
+            <div className="pt-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex items-center bg-[#FAF0E4]/95 backdrop-blur-xs border border-[#DECFBE] px-4 py-2 rounded-xl text-[#174B3D] shadow-xs">
+                  <span className="font-extrabold text-base lg:text-lg tracking-tight">
+                    Desde S/ 180.00
+                  </span>
+                </div>
 
-  const handleLeave = () => {
-    const el = tiltRef.current;
-    if (!el) return;
-    el.style.transition = "transform 700ms cubic-bezier(.22,1,.36,1)";
-    el.style.setProperty("--rx", "0");
-    el.style.setProperty("--ry", "0");
-    el.style.setProperty("--go", "0");
-  };
+                <div className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-xs border border-[#DECFBE] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#174B3D] shadow-xs">
+                  <Truck className="w-3.5 h-3.5 text-[#174B3D]" />
+                  <span>Delivery incluido</span>
+                </div>
+              </div>
 
-  return (
-    <div
-      className="ap-m ap-card-in w-full max-w-[360px] sm:max-w-[440px] mx-auto"
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-    >
-      <div className="ap-m ap-float" style={{ perspective: "1100px" }}>
-        <div
-          ref={tiltRef}
-          className="relative w-full aspect-[4/3] sm:aspect-square"
-          style={{
-            transformStyle: "preserve-3d",
-            transform:
-              "rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg))",
-            willChange: "transform",
-          }}
-        >
-          <div
-            className="absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-[#c6a26c]/45 bg-[#174B3D]"
-            style={{
-              boxShadow:
-                "calc(var(--ry, 0) * -2px) calc(var(--rx, 0) * 2px + 18px) 40px rgba(23, 75, 61, 0.22)",
-            }}
-          >
-            <Image
-              src={banner.imageSrc}
-              alt={banner.imageAlt}
-              fill
-              priority={priorityImage}
-              loading={priorityImage ? undefined : "eager"}
-              className="ap-m ap-kenburns object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 440px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-
-            <div
-              className="absolute inset-0 pointer-events-none transition-opacity duration-300 hidden sm:block"
-              style={{
-                opacity: "var(--go, 0)",
-                background:
-                  "radial-gradient(circle at calc(var(--gx, 50) * 1%) calc(var(--gy, 50) * 1%), rgba(255,255,255,.30), transparent 55%)",
-              }}
-            />
-          </div>
-
-          <div
-            className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#174B3D]/95 backdrop-blur-md border border-[#c6a26c]/40 text-left flex items-center justify-between gap-3 shadow-lg"
-            style={{ transform: "translateZ(60px)" }}
-          >
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">
-                {banner.badge.title}
-              </p>
-              <p className="text-[11px] text-[#FFFBF2]/80 truncate">
-                {banner.badge.subtitle}
+              <p className="text-xs text-stone-600 mt-2 font-medium">
+                Elige tamaño y acabado para ver tu precio final.
               </p>
             </div>
-            <span className="w-7 h-7 rounded-full bg-[#c6a26c] text-[#174B3D] flex items-center justify-center flex-shrink-0">
-              <Check className="w-4 h-4 text-[#174B3D]" />
-            </span>
+
+            {/* CTAs y Enlaces de Confianza */}
+            <div className="pt-2 xl:pt-4 flex flex-col items-start gap-3.5">
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="#estilos"
+                  className="inline-flex items-center justify-center gap-2.5 bg-[#174B3D] hover:bg-[#0E2F26] text-white px-8 py-3.5 rounded-full font-bold text-sm lg:text-base shadow-md hover:shadow-lg transition-all active:scale-95 group"
+                >
+                  <span>Elegir mi estilo</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+
+              <a
+                href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c] transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                <span>¿Dudas? Escríbenos por WhatsApp</span>
+              </a>
+
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-stone-700 pt-1">
+                <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                <span>Apruebas el diseño antes de imprimir</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function DrawnCheck({ delay }: { delay: number }) {
-  const style = { animationDelay: `${delay}ms` };
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-4 h-4 flex-shrink-0 mt-0.5"
-      fill="none"
-      stroke="#174B3D"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        pathLength={1}
-        className="ap-m ap-draw"
-        stroke="#c6a26c"
-        style={style}
-      />
-      <path
-        d="m8.5 12.5 2.5 2.5 4.5-5"
-        pathLength={1}
-        className="ap-m ap-draw"
-        style={{ animationDelay: `${delay + 250}ms` }}
-      />
-    </svg>
-  );
-}
-
-export default function BannerCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % BANNERS.length);
-  }, []);
-
-  const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + BANNERS.length) % BANNERS.length);
-  }, []);
-
-  return (
-    <section
-      aria-label="Carrusel de Banners Apolena"
-      className="relative w-full overflow-hidden bg-[#FFFBF2] text-[#141414] select-none border-b border-[#c6a26c]/30"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="relative min-h-[580px] sm:min-h-[560px] lg:min-h-[600px] flex items-center py-6 sm:py-8 lg:py-0">
-        {/* Resplandores ambientales sutiles sobre fondo Tertiary #FFFBF2 */}
-        <div
-          aria-hidden="true"
-          className="ap-m ap-blob-a absolute top-1/4 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-[#c6a26c]/15 rounded-full blur-3xl pointer-events-none"
-        />
-        <div
-          aria-hidden="true"
-          className="ap-m ap-blob-b absolute bottom-10 right-10 w-72 sm:w-96 h-72 sm:h-96 bg-[#174B3D]/8 rounded-full blur-3xl pointer-events-none"
-        />
-
-        {BANNERS.map((banner, index) => {
-          const isActive = index === currentIndex;
-          const words = banner.headline.split(" ");
-
-          const tagDelay = 0;
-          const titleStart = 180;
-          const subDelay = titleStart + words.length * 70 + 60;
-          const bulletsStart = subDelay + 180;
-          const ctaDelay = bulletsStart + banner.bullets.length * 130 + 80;
-
-          return (
-            <div
-              key={banner.id}
-              aria-hidden={!isActive}
-              className={`w-full z-10 transition-all duration-500 ${
-                isActive
-                  ? "relative opacity-100 pointer-events-auto flex items-center"
-                  : "absolute inset-0 opacity-0 pointer-events-none hidden"
-              }`}
-            >
-              <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
-                <div className="lg:col-span-7 space-y-4 sm:space-y-5 text-left">
-                  {/* Ornamento Dorado Editorial + Tag Pill */}
-                  <div
-                    className="ap-m ap-rise space-y-2"
-                    style={{ animationDelay: `${tagDelay}ms` }}
-                  >
-                    <GoldOrnament />
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#c6a26c]/20 border border-[#c6a26c]/45 text-[11px] sm:text-xs font-extrabold tracking-widest uppercase text-[#174B3D]">
-                      {banner.tagIcon}
-                      <span>{banner.tag}</span>
-                    </div>
-                  </div>
-
-                  {/* Titular en Primary #174B3D */}
-                  <h1
-                    aria-label={banner.headline}
-                    className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#174B3D] leading-tight tracking-tight"
-                  >
-                    {words.map((word, wIdx) => (
-                      <span
-                        key={wIdx}
-                        aria-hidden="true"
-                        className="ap-m ap-word inline-block mr-[0.25em]"
-                        style={{
-                          animationDelay: `${titleStart + wIdx * 70}ms`,
-                        }}
-                      >
-                        {word}
-                      </span>
-                    ))}
-                  </h1>
-
-                  {/* Subtítulo en Negro / Carbón */}
-                  <p
-                    className="ap-m ap-rise text-xs sm:text-base text-[#141414]/85 font-normal leading-relaxed max-w-xl"
-                    style={{ animationDelay: `${subDelay}ms` }}
-                  >
-                    {banner.subheadline}
-                  </p>
-
-                  {/* Bullets */}
-                  <ul className="space-y-2 sm:space-y-2.5 pt-1">
-                    {banner.bullets.map((bullet, bIdx) => {
-                      const d = bulletsStart + bIdx * 130;
-                      return (
-                        <li
-                          key={bIdx}
-                          className="ap-m ap-rise flex items-start sm:items-center gap-2.5 text-xs sm:text-sm font-medium text-[#141414]"
-                          style={{ animationDelay: `${d}ms` }}
-                        >
-                          <DrawnCheck delay={d + 150} />
-                          <span>{bullet}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-
-                  {/* Botones de Acción (Secondary #c6a26c con texto #174B3D, igual a la referencia) */}
-                  <div className="pt-2 sm:pt-3 flex flex-col xs:flex-row items-stretch xs:items-center gap-3 sm:gap-4">
-                    <Link
-                      href={banner.ctaLink}
-                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-md transition-all hover:scale-[1.02] active:scale-95 text-center"
-                      style={{ animationDelay: `${ctaDelay}ms` }}
-                    >
-                      <span>{banner.ctaText}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-
-                    <Link
-                      href={banner.secondaryCtaLink}
-                      className="ap-m ap-pop inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-[#174B3D] text-[#174B3D] hover:text-white border border-[#174B3D]/25 font-bold text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-95 text-center"
-                      style={{ animationDelay: `${ctaDelay + 120}ms` }}
-                    >
-                      <span>{banner.secondaryCtaText}</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Columna de imagen */}
-                <div className="lg:col-span-5 flex justify-center items-center mt-2 lg:mt-0">
-                  <TiltCard banner={banner} priorityImage={index === 0} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Flechas de navegación */}
-      <button
-        type="button"
-        onClick={prevSlide}
-        aria-label="Banner anterior"
-        className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#174B3D]/90 hover:bg-[#174B3D] border border-[#c6a26c]/40 text-white flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
-      >
-        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-      </button>
-
-      <button
-        type="button"
-        onClick={nextSlide}
-        aria-label="Siguiente banner"
-        className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#174B3D]/90 hover:bg-[#174B3D] border border-[#c6a26c]/40 text-white flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
-      >
-        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-      </button>
-
-      {/* Dots con barra de progreso */}
-      <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-2.5">
-        {BANNERS.map((banner, index) => {
-          const isActive = index === currentIndex;
-          return (
-            <button
-              key={banner.id}
-              type="button"
-              onClick={() => setCurrentIndex(index)}
-              aria-label={`Ir al banner ${index + 1}: ${banner.tag}`}
-              className={`relative h-2 sm:h-2.5 rounded-full overflow-hidden transition-all duration-500 ${
-                isActive
-                  ? "w-8 sm:w-12 bg-[#174B3D]/20"
-                  : "w-2 sm:w-2.5 bg-[#174B3D]/30 hover:bg-[#174B3D]/60"
-              }`}
-            >
-              {isActive && (
-                <span
-                  className="ap-progress absolute inset-0 rounded-full bg-[#174B3D]"
-                  style={{
-                    animationDuration: `${SLIDE_MS}ms`,
-                    animationPlayState: isPaused ? "paused" : "running",
-                  }}
-                  onAnimationEnd={nextSlide}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Contador */}
-      <div
-        aria-hidden="true"
-        className="absolute bottom-3 right-3 sm:right-8 z-20 flex items-center gap-1.5 text-[11px] sm:text-xs font-bold tracking-widest text-[#174B3D]"
-      >
-        <span className="inline-block overflow-hidden h-4 leading-4">
-          <span
-            key={currentIndex}
-            className="ap-m ap-num inline-block text-[#c6a26c]"
-          >
-            {String(currentIndex + 1).padStart(2, "0")}
+      {/* ========================================================= */}
+      {/* 2. VERSIÓN MÓVIL / TABLET: Fiel a la maqueta del iPhone   */}
+      {/* ========================================================= */}
+      <div className="block lg:hidden px-4 sm:px-6 py-8 sm:py-10 bg-[#FAF7F2]">
+        <div className="max-w-lg mx-auto text-left">
+          {/* Tag / Kicker Superior */}
+          <span className="text-xs font-bold tracking-[0.14em] text-[#174B3D] uppercase block mb-2">
+            Retratos personalizados de mascotas
           </span>
-        </span>
-        <span className="text-[#174B3D]/40">/</span>
-        <span>{String(BANNERS.length).padStart(2, "0")}</span>
+
+          {/* Titular */}
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#174B3D] leading-tight tracking-tight mb-3">
+            Tu mascota, la protagonista de tu hogar.
+          </h1>
+
+          {/* Subtítulo */}
+          <p className="text-stone-600 text-sm sm:text-base font-normal leading-relaxed mb-6">
+            Transformamos su foto en un cuadro único en canvas, listo para colgar.
+          </p>
+
+          {/* Imagen de la composición en sala (recorte del cuadro sobre la credenza) */}
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
+            <Image
+              src="/banners/hero-canvas-mobile.jpg"
+              alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
+              width={694}
+              height={501}
+              priority
+              className="w-full h-auto object-cover"
+            />
+          </div>
+
+          {/* Píldora de Precio y Delivery */}
+          <div className="flex flex-wrap items-center gap-2.5 mb-2">
+            <div className="inline-flex items-center bg-[#FAF0E4] border border-[#DECFBE] px-4 py-2 rounded-xl text-[#174B3D]">
+              <span className="font-extrabold text-base tracking-tight">
+                Desde S/ 180.00
+              </span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 bg-white border border-[#DECFBE] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#174B3D] shadow-xs">
+              <Truck className="w-3.5 h-3.5 text-[#174B3D]" />
+              <span>Delivery incluido</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-stone-500 font-medium mb-5">
+            Elige tamaño y acabado para ver tu precio final.
+          </p>
+
+          {/* Botón CTA Elegir mi estilo */}
+          <Link
+            href="#estilos"
+            className="w-full inline-flex items-center justify-center gap-2.5 bg-[#174B3D] hover:bg-[#0E2F26] text-white py-3.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all mb-3.5"
+          >
+            <span>Elegir mi estilo</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          {/* Enlace WhatsApp */}
+          <div className="mb-3">
+            <a
+              href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c]"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+              <span>¿Dudas? Escríbenos por WhatsApp</span>
+            </a>
+          </div>
+
+          {/* Garantía */}
+          <div className="flex items-center gap-2 text-xs font-semibold text-stone-700">
+            <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+            <span>Apruebas el diseño antes de imprimir</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* 3. FRANJA DE VALOR: 3 Columnas sin emojis                 */}
+      {/* ========================================================= */}
+      <div className="w-full bg-[#FAF7F2] border-y border-[#E8DEC8] py-4 sm:py-5 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0 md:divide-x divide-[#E8DEC8] text-center">
+          <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
+            <Palette className="w-5 h-5 text-[#174B3D] shrink-0" />
+            <span>Diseño personalizado</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
+            <Frame className="w-5 h-5 text-[#174B3D]" />
+            <span>Canvas listo para colgar</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
+            <Truck className="w-5 h-5 text-[#174B3D]" />
+            <span>Delivery incluido</span>
+          </div>
+        </div>
       </div>
     </section>
   );

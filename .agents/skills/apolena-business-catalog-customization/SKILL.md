@@ -36,6 +36,10 @@ Este skill define la arquitectura de productos y personalizaciones en Apolena, g
   - Índices: `[is_available]`, `[universe]`, `[position]` para búsquedas y paginación ultra rápidas.
   - Sincronización transparente: Las APIs de catálogo (`/api/products`, `/api/templates`) y el dashboard administrativo leen y sincronizan atómicamente con esta tabla manteniendo compatibilidad completa con el personalizador.
 
+- **Sección Home "Encuentra su estilo" y Deep-linking (`?character=<slug>`)**:
+  - La página de inicio (`/`) cuenta con la sección destacada **"Encuentra su estilo"** (`#estilos`), que presenta tarjetas visuales directas a las temáticas más solicitadas del catálogo (ej. `sapa-inca-imperial`, `chef`, `realeza`, `jack-sparrow`, `faraon-de-las-arenas-eternas`, `godfather`).
+  - Al hacer clic en cualquier tarjeta, el cliente es redirigido directamente al estudio de personalización (`/products/cuadros-personalizados?character=<id>`), donde el personaje seleccionado se carga automáticamente en el Paso 2 listo para personalizar.
+
 - **`ProductImage` (`@@map("product_images")`)**:
   - Galería de imágenes de muestra del producto (`product_id`, `url`, `position`, `alt_text`).
 

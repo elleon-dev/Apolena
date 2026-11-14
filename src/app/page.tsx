@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import BannerCarousel from "@/components/BannerCarousel";
+import StyleSelectionSection from "@/components/StyleSelectionSection";
 import StepsSection from "@/components/StepsSection";
 import AboutSection from "@/components/AboutSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
@@ -11,19 +12,21 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#FFFBF2] text-[#141414]">
       <Header />
-      {/* 1. Carrusel de Banners Principal después del Header */}
+      {/* 1. Carrusel de Banners / Hero con Franja de Propuesta de Valor */}
       <BannerCarousel />
-      {/* 2. Cómo Funciona (Pasos) */}
+      {/* 2. Nueva Sección Oficial: Encuentra su estilo */}
+      <StyleSelectionSection />
+      {/* 3. Cómo Funciona (Pasos) */}
       <StepsSection />
-      {/* 3. Quiénes Somos (Fondo Primary #174B3D con Logo Blanco) */}
+      {/* 4. Quiénes Somos (Fondo Primary #174B3D con Logo Blanco) */}
       <AboutSection />
-      {/* 4. Testimonios & Reseñas de Clientes */}
+      {/* 5. Testimonios & Reseñas de Clientes */}
       <TestimonialsSection />
-      {/* 5. Contacto & Atención al Cliente */}
+      {/* 6. Contacto & Atención al Cliente */}
       <ContactSection />
-      {/* 6. Preguntas Frecuentes */}
+      {/* 7. Preguntas Frecuentes */}
       <FaqSection />
-      {/* 7. Footer (Fondo Primary #174B3D con Logo Blanco) */}
+      {/* 8. Footer (Fondo Primary #174B3D con Logo Blanco) */}
       <Footer />
     </main>
   );

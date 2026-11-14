@@ -107,6 +107,40 @@ export const FAMOUS_CHARACTERS: FamousCharacter[] = [
     isAvailable: true,
   },
   {
+    id: "chef",
+    name: "Chef Gourmet",
+    characterTitle: "Maestro de Alta Cocina",
+    universe: "Colección Profesiones & Pasiones",
+    description:
+      "Gorro blanco clásico de alta cocina, chaquetilla de chef y una cálida atmósfera culinaria con detalles en cobre.",
+    characterImageUrl: "/characters/style-chef-clean.jpg",
+    maskUrl: "/masks/default-mask.png",
+    fusionSampleUrl: "/characters/style-chef-2x.jpg",
+    accentColor: "bg-terracotta-500",
+    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+    prompt: "",
+    negativePrompt:
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
+  },
+  {
+    id: "realeza",
+    name: "Realeza Renacentista",
+    characterTitle: "Corona de Oro & Gorguera de Época",
+    universe: "Colección Época Clásica",
+    description:
+      "Corona dorada tallada a mano con gorguera renacentista de encaje sobre terciopelo bermellón, capturando la nobleza eterna.",
+    characterImageUrl: "/characters/style-realeza-clean.jpg",
+    maskUrl: "/masks/default-mask.png",
+    fusionSampleUrl: "/characters/style-realeza-2x.jpg",
+    accentColor: "bg-terracotta-500",
+    tagColor: "bg-white/90 text-stone-800 border-stone-200/80",
+    prompt: "",
+    negativePrompt:
+      "human face, human hands, deformed anatomy, blurry, cartoon, 3d render, watermark, extra limbs, low quality",
+    isAvailable: true,
+  },
+  {
     id: "godfather",
     name: "Don Vito Corleone",
     characterTitle: "Sastrería Clásica Italiana",

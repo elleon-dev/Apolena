@@ -218,6 +218,25 @@ export default function personalizedWallArt() {
     }, 100);
   };
 
+  // Auto-selección de personaje desde URL (ej. ?character=sapa-inca-imperial o ?character=chef)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const charParam = params.get("character");
+      if (charParam) {
+        const found = FAMOUS_CHARACTERS.find(
+          (c) =>
+            c.id === charParam ||
+            c.id.toLowerCase().includes(charParam.toLowerCase()),
+        );
+        if (found) {
+          setSelectedCharacter(found);
+          setUseCustomTheme(false);
+        }
+      }
+    }
+  }, []);
+
   // Cerrar lightbox / modal de confirmación con tecla Escape
   useEffect(() => {
     if (!previewCharacterModal && !showNoCustomizationModal) return;
