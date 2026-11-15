@@ -160,6 +160,18 @@ export default function StyleSelectionSection({
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 text-[#c6a26c]" />
           </Link>
         </div>
+
+        {/* Mensaje Editorial: Manos artesanas detrás de cada retrato */}
+        <div className="mt-8 sm:mt-12 flex items-center justify-center gap-3 sm:gap-6 text-center">
+          <div className="hidden sm:block h-px w-12 lg:w-20 bg-gradient-to-r from-transparent to-[#c6a26c]/60" />
+          <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-white/95 border border-[#E8DEC8] shadow-xs">
+            <Sparkles className="w-4 h-4 text-[#c6a26c] shrink-0" />
+            <span className="font-serif text-sm sm:text-base lg:text-lg font-bold text-[#174B3D] tracking-tight">
+              Manos artesanas detrás de cada retrato
+            </span>
+          </div>
+          <div className="hidden sm:block h-px w-12 lg:w-20 bg-gradient-to-l from-transparent to-[#c6a26c]/60" />
+        </div>
       </div>
     </section>
   );

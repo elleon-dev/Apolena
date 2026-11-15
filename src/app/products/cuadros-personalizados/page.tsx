@@ -2189,10 +2189,14 @@ export default function personalizedWallArt() {
                         })}
                     </div>
 
-                    <div className="p-3 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center text-xs">
+                    <div className="p-3 rounded-2xl border border-cream-200 bg-cream-50/60 space-y-1.5 text-xs">
                       <p className="flex items-center gap-2 text-[11px] font-medium text-stone-700">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
                         <span>Los cuadros son elaborados en lienzo de tela canvas de alta resistencia con acabado de galería.</span>
+                      </p>
+                      <p className="flex items-center gap-2 text-[11px] font-medium text-stone-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
+                        <span>Canvas montado a mano · Acabados cuidados al detalle</span>
                       </p>
                     </div>
                   </div>
