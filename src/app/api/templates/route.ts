@@ -23,7 +23,7 @@ export async function GET() {
             description: c.description || "",
             characterImageUrl: c.character_image_url,
             maskUrl: c.mask_url || "",
-            fusionSampleUrl: c.fusion_sample_url || "",
+            fusionSampleUrl: c.fusion_sample_url || c.character_image_url || "",
             accentColor: c.accent_color || "bg-terracotta-500",
             tagColor:
               c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",

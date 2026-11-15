@@ -69,8 +69,8 @@ function CheckoutContent() {
     lima_metropolitana_pen: number;
     provincias_pen: number;
   }>({
-    lima_metropolitana_pen: 15,
-    provincias_pen: 25,
+    lima_metropolitana_pen: 0,
+    provincias_pen: 20,
   });
 
   // Contact & Delivery Location State

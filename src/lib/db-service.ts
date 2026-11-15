@@ -293,8 +293,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     },
   },
   SHIPPING_RATES_CONFIG: {
-    lima_metropolitana_pen: 15,
-    provincias_pen: 25,
+    lima_metropolitana_pen: 0,
+    provincias_pen: 20,
     estimated_manufacturing_days: "3 a 5 días hábiles",
     delivery_lima_days: "3 a 5 días hábiles luego de realizada la compra",
     delivery_provincias_days: "5 a 7 días hábiles luego de realizada la compra",
@@ -1168,6 +1168,50 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
     };
   }
   return fallbackMapped;
+}
+
+export async function getWallArtCharacters(
+  onlyActive = true,
+): Promise<FamousCharacter[]> {
+  if (isDatabaseConfigured()) {
+    try {
+      const rows = await prisma.characterTemplate.findMany({
+        where: onlyActive ? { is_available: true } : undefined,
+        orderBy: { position: "asc" },
+      });
+      if (rows && rows.length > 0) {
+        return rows.map((c) => ({
+          id: c.slug,
+          name: c.name,
+          characterTitle: c.character_title || "",
+          universe: c.universe,
+          description: c.description || "",
+          characterImageUrl: c.character_image_url,
+          maskUrl: c.mask_url || "",
+          fusionSampleUrl: c.fusion_sample_url || c.character_image_url,
+          accentColor: c.accent_color || "bg-terracotta-500",
+          tagColor:
+            c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+          prompt: c.prompt || "",
+          negativePrompt: c.negative_prompt || "",
+          isAvailable: c.is_available,
+        }));
+      }
+    } catch (e) {
+      console.warn("getWallArtCharacters db error:", e);
+    }
+  }
+
+  const products = await getProducts(onlyActive);
+  const wallArt =
+    products.find(
+      (p) =>
+        p.slug === "cuadros-personalizados" ||
+        p.slug === "personalized-wall-art" ||
+        p.category === "wall_art",
+    ) || products[0];
+  const chars = wallArt?.customization_config?.characters || [];
+  return onlyActive ? chars.filter((c) => c.isAvailable !== false) : chars;
 }
 
 export async function getWallArtCharacterById(

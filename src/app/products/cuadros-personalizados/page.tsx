@@ -316,6 +316,20 @@ export default function personalizedWallArt() {
           if (activeChars.length > 0) {
             setCatalogCharacters(activeChars);
             setSelectedCharacter((prev) => {
+              if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                const charParam = params.get("character");
+                if (charParam) {
+                  const match = activeChars.find(
+                    (c) =>
+                      c.id === charParam ||
+                      c.id.toLowerCase() === charParam.toLowerCase() ||
+                      c.id.toLowerCase().includes(charParam.toLowerCase()) ||
+                      charParam.toLowerCase().includes(c.id.toLowerCase()),
+                  );
+                  if (match) return match;
+                }
+              }
               const found = activeChars.find((c) => c.id === prev.id);
               return found || activeChars[0];
             });

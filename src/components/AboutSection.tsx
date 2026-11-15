@@ -42,8 +42,7 @@ export default function AboutSection() {
           </h2>
 
           <p className="text-white/80 text-sm sm:text-base leading-relaxed">
-            Inmortalizamos a tu mejor amigo en lienzos de tela canvas de bellas
-            artes, tensados a mano sobre bastidores de madera y listos para
+            Inmortalizamos a tu mejor amigo en lienzos de tela canvas, tensados a mano sobre bastidores de madera y listos para
             colgar en tu hogar.
           </p>
         </div>
@@ -82,11 +81,9 @@ export default function AboutSection() {
           {/* Right Column: Brief Story & 4 Pillars */}
           <div className="lg:col-span-7 space-y-6 text-left">
             <p className="text-white/90 text-sm sm:text-base leading-relaxed">
-              <strong className="text-[#c6a26c]">Apolena</strong> es un atelier
+              <strong className="text-[#c6a26c]">Apolena</strong> es un estudio
               digital dedicado a celebrar el amor por todo tipo de mascotas.
-              Transformamos fotografías cotidianas en retratos de calidad museo
-              a 300 DPI, envolviendo el bastidor en formato continuo para un
-              acabado elegante sin necesidad de marcos tradicionales.
+              Transformamos fotografías de tu mascota en retratos únicos, envolviendo la tela canva en un bastidor de madera para un acabado elegante.
             </p>
 
             {/* 4 Pillars Grid */}
@@ -115,7 +112,7 @@ export default function AboutSection() {
                     Bastidor Full Screen
                   </h3>
                   <p className="text-xs text-white/75 leading-snug mt-0.5">
-                    Lienzo de algodón tensado artesanalmente, listo para colgar.
+                    Lienzo tensado artesanalmente, listo para colgar.
                   </p>
                 </div>
               </div>
@@ -159,45 +156,6 @@ export default function AboutSection() {
                 <ArrowRight className="w-4 h-4 text-[#174B3D]" />
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Concise Metrics Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-6 border-t border-white/15">
-          <div className="p-4 rounded-2xl bg-[#123B30] border border-[#c6a26c]/30 text-center space-y-0.5">
-            <span className="font-serif text-2xl sm:text-3xl font-extrabold text-[#c6a26c] block">
-              +1,250
-            </span>
-            <p className="text-[11px] font-semibold text-white uppercase tracking-wider">
-              Cuadros Entregados
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#123B30] border border-[#c6a26c]/30 text-center space-y-0.5">
-            <span className="font-serif text-2xl sm:text-3xl font-extrabold text-[#c6a26c] block">
-              100%
-            </span>
-            <p className="text-[11px] font-semibold text-white uppercase tracking-wider">
-              Lienzo de Algodón
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#123B30] border border-[#c6a26c]/30 text-center space-y-0.5">
-            <span className="font-serif text-2xl sm:text-3xl font-extrabold text-[#c6a26c] block">
-              300 DPI
-            </span>
-            <p className="text-[11px] font-semibold text-white uppercase tracking-wider">
-              Resolución Giclée
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#123B30] border border-[#c6a26c]/30 text-center space-y-0.5">
-            <span className="font-serif text-2xl sm:text-3xl font-extrabold text-[#c6a26c] block">
-              4.9 / 5.0
-            </span>
-            <p className="text-[11px] font-semibold text-white uppercase tracking-wider">
-              Satisfacción de Clientes
-            </p>
           </div>
         </div>
       </div>
