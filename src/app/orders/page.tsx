@@ -412,6 +412,18 @@ export default function CommonUserOrdersPage() {
                             50% Adelanto · 50% Contraentrega
                           </span>
                         )}
+
+                        {order.packages?.[0]?.courier && (
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 font-semibold border border-stone-200 inline-flex items-center gap-1">
+                            <Truck className="w-3 h-3 text-[#174B3D]" />
+                            <span>{order.packages[0].courier}</span>
+                            {order.packages[0].tracking_number && (
+                              <span className="font-mono text-stone-500">
+                                ({order.packages[0].tracking_number})
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
 
                       <p className="text-xs text-stone-500">

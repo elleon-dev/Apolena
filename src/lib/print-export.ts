@@ -9,6 +9,7 @@ export interface PrintPreset {
   baseHeightPx: number;
   recommendedUse: string;
   pricePen: number;
+  compareAtPricePen?: number;
   isAvailable?: boolean;
 }
 
@@ -22,121 +23,164 @@ export interface FrameOption {
 }
 
 /**
- * Extensible Frame Options for Personalized Wall Art (escalable desde platform_settings / products.customization_config)
+ * Opciones oficiales de Marcos y Bastidores en Apolena (Tabla de Precios Oficial)
+ * - Foto Lienzo - Estilo 3D (Bastidor incluido, + S/ 0)
+ * - Marco Minimalista (Negro / Natural / Blanco, + S/ 45)
+ * - Marco Madera Gold (Dorado Imperial, + S/ 55)
  */
 export const FRAME_OPTIONS: FrameOption[] = [
   {
     id: "canvas-bastidor",
-    name: "Lienzo en Bastidor de Madera",
+    name: "Foto Lienzo - Estilo 3D",
     description:
-      "Elaborado en lienzo de tela canvas tensado sobre bastidor de madera (listo para colgar)",
+      "Lienzo canvas de algodón tensado sobre bastidor de madera maciza (listo para colgar sin marco adicional)",
     colorHex: "#E8E2D9",
     priceModifierPen: 0,
     isAvailable: true,
   },
   {
-    id: "frame-oak",
-    name: "Marco de Madera Roble Natural",
-    description:
-      "Moldura flotante de madera natural con acabado satinado cálido",
-    colorHex: "#B6895B",
-    priceModifierPen: 35,
-    isAvailable: true,
-  },
-  {
-    id: "frame-black",
-    name: "Marco Negro Galería Mate",
-    description:
-      "Moldura minimalista en negro mate de museo con vidrio antirreflejo",
+    id: "frame-minimalist-black",
+    name: "Marco Minimalista Negro",
+    description: "Moldura minimalista en negro mate de galería (+ S/ 45.00)",
     colorHex: "#1C1917",
-    priceModifierPen: 40,
+    priceModifierPen: 45,
     isAvailable: true,
   },
   {
-    id: "frame-gold",
-    name: "Marco Dorado Clásico Imperial",
+    id: "frame-minimalist-natural",
+    name: "Marco Minimalista Natural",
     description:
-      "Moldura tallada en tono bronce/dorado envejecido ideal para retratos reales",
+      "Moldura minimalista en madera natural cálida escandinava (+ S/ 45.00)",
+    colorHex: "#B6895B",
+    priceModifierPen: 45,
+    isAvailable: true,
+  },
+  {
+    id: "frame-minimalist-white",
+    name: "Marco Minimalista Blanco",
+    description: "Moldura minimalista en blanco mate de museo (+ S/ 45.00)",
+    colorHex: "#FFFFFF",
+    priceModifierPen: 45,
+    isAvailable: true,
+  },
+  {
+    id: "frame-wood-gold",
+    name: "Marco Madera (Gold)",
+    description:
+      "Moldura clásica en madera con acabado dorado imperial (+ S/ 55.00)",
     colorHex: "#C59B27",
-    priceModifierPen: 50,
+    priceModifierPen: 55,
     isAvailable: true,
   },
 ];
 
 /**
- * Predefined print sizes (Guía de tamaños oficial Apolena a 300 DPI)
- * Proporción 3:2 armónica para cuadros en lienzo de tela canvas sobre bastidor
+ * Medidas oficiales y precios de imprenta Apolena a 300 DPI
+ * Actualizadas según la tabla oficial "PRICE AND SIZES"
+ * Las medidas sin precio se marcan con isAvailable: false
  */
 export const PRINT_PRESETS: PrintPreset[] = [
   {
-    id: "size-30x20",
+    id: "size-20x30",
     tier: "Pequeño (S)",
-    label: "30 × 20 cm",
-    cmDimensions: "30 × 20 cm",
+    label: "20 × 30 cm",
+    cmDimensions: "20 × 30 cm",
     inchDimensions: '8 × 12"',
     dpi: 300,
     baseWidthPx: 2400,
     baseHeightPx: 3600,
     recommendedUse:
-      "Ideal para espacios reducidos, repisas o composiciones con varios cuadros. Un detalle decorativo sutil y versátil.",
-    pricePen: 180,
+      "Ideal para espacios reducidos, repisas, escritorios o composiciones de varios cuadros. Detalle sutil y versátil.",
+    pricePen: 160,
+    compareAtPricePen: 190,
     isAvailable: true,
   },
   {
-    id: "size-45x30",
+    id: "size-30x40",
     tier: "Mediano (M)",
+    label: "30 × 40 cm",
+    cmDimensions: "30 × 40 cm",
+    inchDimensions: '12 × 16"',
+    dpi: 300,
+    baseWidthPx: 3000,
+    baseHeightPx: 4000,
+    recommendedUse:
+      "Ideal para paredes pequeñas o medianas y composiciones tipo galería. Gran equilibrio y presencia.",
+    pricePen: 190,
+    compareAtPricePen: 210,
+    isAvailable: true,
+  },
+  {
+    id: "size-40x60",
+    tier: "Grande (L)",
+    label: "40 × 60 cm",
+    cmDimensions: "40 × 60 cm",
+    inchDimensions: '16 × 24"',
+    dpi: 300,
+    baseWidthPx: 3200,
+    baseHeightPx: 4800,
+    recommendedUse:
+      "La medida más popular. Excelente visibilidad y tamaño ideal para salas, dormitorios y oficinas.",
+    pricePen: 210,
+    compareAtPricePen: 230,
+    isAvailable: true,
+  },
+  {
+    id: "size-50x70",
+    tier: "Extra Grande (XL)",
+    label: "50 × 70 cm",
+    cmDimensions: "50 × 70 cm",
+    inchDimensions: '20 × 28"',
+    dpi: 300,
+    baseWidthPx: 3600,
+    baseHeightPx: 5000,
+    recommendedUse:
+      "Ideal para aportar carácter y presencia en salas o comedores sin saturar el ambiente.",
+    pricePen: 240,
+    compareAtPricePen: 270,
+    isAvailable: true,
+  },
+  {
+    id: "size-60x90",
+    tier: "Doble Extra Grande (2XL)",
+    label: "60 × 90 cm",
+    cmDimensions: "60 × 90 cm",
+    inchDimensions: '24 × 36"',
+    dpi: 300,
+    baseWidthPx: 4000,
+    baseHeightPx: 6000,
+    recommendedUse:
+      "Ideal como cuadro principal protagónico. Gran impacto visual sobre sillones, camas y pasillos amplios.",
+    pricePen: 275,
+    compareAtPricePen: 295,
+    isAvailable: true,
+  },
+  // ── Medidas sin precio en la tabla oficial (desactivadas) ──
+  {
+    id: "size-45x30",
+    tier: "Intermedio (45×30)",
     label: "45 × 30 cm",
     cmDimensions: "45 × 30 cm",
     inchDimensions: '12 × 18"',
     dpi: 300,
     baseWidthPx: 3000,
     baseHeightPx: 4500,
-    recommendedUse:
-      "Ideal para paredes pequeñas o para complementar otros elementos decorativos. También funciona muy bien en galerías de cuadros.",
+    recommendedUse: "Medida fuera de catálogo actual.",
     pricePen: 210,
-    isAvailable: true,
-  },
-  {
-    id: "size-60x40",
-    tier: "Grande (L)",
-    label: "60 × 40 cm",
-    cmDimensions: "60 × 40 cm",
-    inchDimensions: '16 × 24"',
-    dpi: 300,
-    baseWidthPx: 3200,
-    baseHeightPx: 4800,
-    recommendedUse:
-      "Ideal para espacios pequeños y medianos. Tiene buena presencia sin dominar la decoración.",
-    pricePen: 240,
-    isAvailable: true,
+    isAvailable: false,
   },
   {
     id: "size-75x50",
-    tier: "Extra Grande (XL)",
+    tier: "Intermedio (75×50)",
     label: "75 × 50 cm",
     cmDimensions: "75 × 50 cm",
     inchDimensions: '20 × 30"',
     dpi: 300,
     baseWidthPx: 3600,
     baseHeightPx: 5400,
-    recommendedUse:
-      "Ideal para aportar carácter y presencia sin convertirse en el foco principal del ambiente.",
+    recommendedUse: "Medida fuera de catálogo actual.",
     pricePen: 270,
-    isAvailable: true,
-  },
-  {
-    id: "size-90x60",
-    tier: "Doble Extra Grande (2XL)",
-    label: "90 × 60 cm",
-    cmDimensions: "90 × 60 cm",
-    inchDimensions: '24 × 36"',
-    dpi: 300,
-    baseWidthPx: 4000,
-    baseHeightPx: 6000,
-    recommendedUse:
-      "Ideal como cuadro principal. Destaca visualmente sin ocupar demasiado espacio.",
-    pricePen: 300,
-    isAvailable: true,
+    isAvailable: false,
   },
   {
     id: "size-105x70",
@@ -147,10 +191,9 @@ export const PRINT_PRESETS: PrintPreset[] = [
     dpi: 300,
     baseWidthPx: 4200,
     baseHeightPx: 6300,
-    recommendedUse:
-      "Ideal para crear un punto focal. Perfecto sobre sofás, camas, escritorios y otros muebles pequeños.",
+    recommendedUse: "Medida fuera de catálogo actual.",
     pricePen: 360,
-    isAvailable: true,
+    isAvailable: false,
   },
   {
     id: "size-120x80",
@@ -161,10 +204,9 @@ export const PRINT_PRESETS: PrintPreset[] = [
     dpi: 300,
     baseWidthPx: 4800,
     baseHeightPx: 7200,
-    recommendedUse:
-      "Ideal para paredes amplias y espacios donde el cuadro será protagonista. Una pieza de gran presencia e impacto visual. Perfecto para cabeceras de camas y muebles medianos y grandes.",
+    recommendedUse: "Medida fuera de catálogo actual.",
     pricePen: 420,
-    isAvailable: true,
+    isAvailable: false,
   },
 ];
 

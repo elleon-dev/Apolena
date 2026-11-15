@@ -58,6 +58,7 @@ import {
   Gift,
   Truck,
   Home,
+  Palette,
 } from "lucide-react";
 
 /**
@@ -68,11 +69,16 @@ const ROOM_SCALE_COORDINATES: Record<
   string,
   { width: number; height: number; left: number; bottom: number }
 > = {
+  "size-20x30": { width: 10.62, height: 12.4, left: 28.69, bottom: 41.41 },
   "size-30x20": { width: 10.62, height: 12.4, left: 28.69, bottom: 41.41 },
-  "size-45x30": { width: 15.99, height: 18.55, left: 28.69, bottom: 41.41 },
+  "size-30x40": { width: 14.5, height: 16.5, left: 28.69, bottom: 41.41 },
+  "size-40x60": { width: 21.25, height: 24.71, left: 28.69, bottom: 41.41 },
   "size-60x40": { width: 21.25, height: 24.71, left: 28.69, bottom: 41.41 },
-  "size-75x50": { width: 26.62, height: 30.96, left: 28.69, bottom: 41.41 },
+  "size-50x70": { width: 25.5, height: 29.5, left: 28.69, bottom: 41.41 },
+  "size-60x90": { width: 31.87, height: 37.01, left: 28.69, bottom: 41.41 },
   "size-90x60": { width: 31.87, height: 37.01, left: 28.69, bottom: 41.41 },
+  "size-45x30": { width: 15.99, height: 18.55, left: 28.69, bottom: 41.41 },
+  "size-75x50": { width: 26.62, height: 30.96, left: 28.69, bottom: 41.41 },
   "size-105x70": { width: 37.24, height: 43.36, left: 28.69, bottom: 41.41 },
   "size-120x80": { width: 42.49, height: 49.51, left: 28.69, bottom: 41.41 },
 };
@@ -174,8 +180,10 @@ export default function personalizedWallArt() {
   // Print Size, Finish & Extensible Frame state (Guía de tamaños oficial Apolena a 300 DPI)
   const [selectedPrintPreset, setSelectedPrintPreset] = useState<PrintPreset>(
     () =>
-      PRINT_PRESETS.find((p) => p.cmDimensions.includes("60 × 40")) ||
-      PRINT_PRESETS[2] ||
+      PRINT_PRESETS.find(
+        (p) => p.isAvailable !== false && p.cmDimensions.includes("40 × 60"),
+      ) ||
+      PRINT_PRESETS.find((p) => p.isAvailable !== false) ||
       PRINT_PRESETS[0],
   );
 
@@ -605,7 +613,8 @@ export default function personalizedWallArt() {
       ? "Referencia Personalizada"
       : selectedCharacter.name;
 
-  const currentUnitPrice = selectedPrintPreset.pricePen;
+  const currentUnitPrice =
+    selectedPrintPreset.pricePen + (selectedFrame?.priceModifierPen || 0);
   const currentAdvance50 = Number((currentUnitPrice * 0.5).toFixed(2));
 
   const handleProceedToCheckout = () => {
@@ -628,9 +637,10 @@ export default function personalizedWallArt() {
         dpi: selectedPrintPreset.dpi,
         finish_mode: "full-bleed",
         finish_label: "Lienzo Completo (Full Screen)",
-        frame_id: "canvas-bastidor",
-        frame_name: "Lienzo en Bastidor de Madera (Full Screen)",
-        frame_price_pen: 0,
+        frame_id: selectedFrame?.id || "canvas-bastidor",
+        frame_name:
+          selectedFrame?.name || "Foto Lienzo - Estilo 3D (Bastidor)",
+        frame_price_pen: selectedFrame?.priceModifierPen || 0,
         pet_count: secondPetImage ? 2 : 1,
         selected_variant_id: selectedVariantId || "variant-1",
         notes: customPrompt.trim() || null,
@@ -2033,80 +2043,142 @@ export default function personalizedWallArt() {
 
                   {/* Dynamic Size List: Grid de 2 columnas compacto y optimizado */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {catalogSizes.map((preset, idx) => {
-                      const isSelected = selectedPrintPreset.id === preset.id;
-                      const isLastOdd =
-                        idx === catalogSizes.length - 1 &&
-                        catalogSizes.length % 2 !== 0;
+                    {catalogSizes
+                      .filter((preset) => preset.isAvailable !== false)
+                      .map((preset, idx, arr) => {
+                        const isSelected = selectedPrintPreset.id === preset.id;
+                        const isLastOdd =
+                          idx === arr.length - 1 && arr.length % 2 !== 0;
+                        const hasDiscount =
+                          preset.compareAtPricePen &&
+                          preset.compareAtPricePen > preset.pricePen;
+                        const savings = hasDiscount
+                          ? preset.compareAtPricePen! - preset.pricePen
+                          : 0;
 
-                      return (
-                        <div
-                          key={preset.id}
-                          onClick={() => setSelectedPrintPreset(preset)}
-                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
-                            isLastOdd ? "sm:col-span-2" : ""
-                          } ${
-                            isSelected
-                              ? "border-terracotta-500 bg-terracotta-50/40 ring-1 ring-terracotta-500/20 shadow-xs"
-                              : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-start justify-between gap-1.5">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <Frame
-                                  className={`w-3.5 h-3.5 shrink-0 ${
-                                    isSelected
-                                      ? "text-terracotta-600"
-                                      : "text-stone-400"
-                                  }`}
-                                />
-                                <span className="text-xs font-bold text-stone-900 truncate">
-                                  {preset.tier}
-                                </span>
+                        return (
+                          <div
+                            key={preset.id}
+                            onClick={() => setSelectedPrintPreset(preset)}
+                            className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                              isLastOdd ? "sm:col-span-2" : ""
+                            } ${
+                              isSelected
+                                ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25 shadow-xs"
+                                : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-1.5">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <Frame
+                                    className={`w-3.5 h-3.5 shrink-0 ${
+                                      isSelected
+                                        ? "text-[#174B3D]"
+                                        : "text-stone-400"
+                                    }`}
+                                  />
+                                  <span className="text-xs font-bold text-stone-900 truncate">
+                                    {preset.tier}
+                                  </span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="text-xs font-bold text-[#174B3D] block">
+                                    S/ {preset.pricePen.toFixed(2)}
+                                  </span>
+                                  {hasDiscount && (
+                                    <span className="text-[10px] line-through text-red-500 font-semibold block">
+                                      Antes S/{" "}
+                                      {preset.compareAtPricePen!.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <span className="text-xs font-bold text-terracotta-600 shrink-0">
-                                S/ {preset.pricePen.toFixed(2)}
-                              </span>
+                              <div className="flex items-center justify-between text-[11px] font-medium text-stone-500 mt-0.5">
+                                <span>
+                                  {preset.cmDimensions} · {preset.inchDimensions}
+                                </span>
+                                {hasDiscount && (
+                                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                                    Ahorras S/ {savings.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-[11px] font-medium text-stone-500 mt-0.5">
-                              {preset.cmDimensions} · {preset.inchDimensions}
-                            </div>
-                          </div>
 
-                          <p className="text-[11px] text-stone-600 mt-2 leading-relaxed">
-                            {preset.recommendedUse}
-                          </p>
-                        </div>
-                      );
-                    })}
+                            <p className="text-[11px] text-stone-600 mt-2 leading-relaxed">
+                              {preset.recommendedUse}
+                            </p>
+                          </div>
+                        );
+                      })}
                   </div>
 
-                  {/* Formato, Presentación y Material en 2 Columnas */}
-                  <div className="pt-3 border-t border-cream-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-stone-900 text-[#c6a26c] flex items-center justify-center flex-shrink-0">
-                          <Frame className="w-4 h-4 text-[#c6a26c]" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-stone-900">
-                            Bastidor de Madera
-                          </p>
-                          <p className="text-[10px] text-stone-600 truncate">
-                            Full Screen · Listo para colgar
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-semibold text-[#174B3D] bg-white px-2 py-0.5 rounded-full border border-sage-200 whitespace-nowrap">
-                        Incluido
-                      </span>
+                  {/* Selector de Marco / Presentación (Foto Lienzo vs Marco Minimalista vs Marco Madera Gold) */}
+                  <div className="pt-4 border-t border-cream-200 space-y-3">
+                    <div>
+                      <h4 className="font-serif text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                        <Palette className="w-4 h-4 text-[#c6a26c]" />
+                        <span>Presentación y Marco del Cuadro</span>
+                      </h4>
+                      <p className="text-[11px] text-stone-500">
+                        Elige entre lienzo en bastidor estilo 3D o marco con moldura listo para colgar.
+                      </p>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center text-xs">
-                      <p className="flex items-center gap-2 text-[11px] font-medium text-stone-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                      {catalogFrames
+                        .filter((frame) => frame.isAvailable !== false)
+                        .map((frame) => {
+                          const isFrameSelected = selectedFrame.id === frame.id;
+                          return (
+                            <button
+                              key={frame.id}
+                              type="button"
+                              onClick={() => setSelectedFrame(frame)}
+                              className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                                isFrameSelected
+                                  ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25 shadow-xs"
+                                  : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-1">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span
+                                      className="w-3.5 h-3.5 rounded-full border border-stone-300 shrink-0"
+                                      style={{ backgroundColor: frame.colorHex }}
+                                    />
+                                    <span className="text-xs font-bold text-stone-900 truncate">
+                                      {frame.name}
+                                    </span>
+                                  </div>
+                                  {isFrameSelected && (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-stone-500 mt-1 leading-relaxed line-clamp-2">
+                                  {frame.description}
+                                </p>
+                              </div>
+
+                              <div className="mt-2 pt-1.5 border-t border-cream-200/60 flex items-center justify-between text-[11px]">
+                                <span className="text-stone-500 text-[10px]">Moldura:</span>
+                                <span className="font-bold text-[#174B3D]">
+                                  {frame.priceModifierPen === 0
+                                    ? "Incluido (S/ 0)"
+                                    : `+ S/ ${frame.priceModifierPen.toFixed(2)}`}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                    </div>
+
+                    <div className="p-3 rounded-2xl border border-cream-200 bg-cream-50/60 flex items-center text-xs">
+                      <p className="flex items-center gap-2 text-[11px] font-medium text-stone-700">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#174B3D] shrink-0" />
-                        <span>Los cuadros son elaborados en lienzo de tela canvas.</span>
+                        <span>Los cuadros son elaborados en lienzo de tela canvas de alta resistencia con acabado de galería.</span>
                       </p>
                     </div>
                   </div>
@@ -2140,16 +2212,38 @@ export default function personalizedWallArt() {
                   </div>
 
                   {/* Price & 50% Split Payment Box */}
-                  <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-1.5 text-xs">
+                  <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2 text-xs">
                     <div className="flex items-center justify-between text-stone-600">
                       <span>Precio del cuadro personalizado:</span>
-                      <span className="font-semibold text-stone-900">
-                        S/ {currentUnitPrice.toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <span className="font-bold text-stone-900 text-sm block">
+                          S/ {currentUnitPrice.toFixed(2)}
+                        </span>
+                        {selectedPrintPreset.compareAtPricePen &&
+                          selectedPrintPreset.compareAtPricePen >
+                            selectedPrintPreset.pricePen && (
+                            <div className="flex items-center gap-1.5 justify-end text-[10px] mt-0.5">
+                              <span className="text-stone-400 line-through">
+                                Antes S/{" "}
+                                {(
+                                  selectedPrintPreset.compareAtPricePen +
+                                  (selectedFrame?.priceModifierPen || 0)
+                                ).toFixed(2)}
+                              </span>
+                              <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                Ahorras S/{" "}
+                                {(
+                                  selectedPrintPreset.compareAtPricePen -
+                                  selectedPrintPreset.pricePen
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-terracotta-700 font-semibold">
+                    <div className="flex items-center justify-between text-terracotta-700 font-semibold pt-1 border-t border-cream-200/80">
                       <span>Adelanto hoy (50% iniciar fabricación):</span>
-                      <span>S/ {currentAdvance50.toFixed(2)}</span>
+                      <span className="font-bold">S/ {currentAdvance50.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-stone-500 text-[11px]">
                       <span>Restante 50% (Contraentrega al recibir):</span>

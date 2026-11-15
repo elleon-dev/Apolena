@@ -68,3 +68,23 @@ _(Estado adicional de excepción: `cancelled` si una orden es anulada por admini
   - Despachar múltiples cuadros o productos personalizados en uno o varios paquetes.
   - Escalar en el futuro a múltiples talleres o proveedores aliados sin rediseñar la base de datos.
 - Cuando el administrador actualiza el paso logístico de la orden (`manufacturing` → `in_transit` → `delivered` → `completed`), se sincroniza el estado en `order_packages` y `order_items` dentro de una misma transacción Prisma (`prisma.$transaction`).
+
+---
+
+## 4. Edición de Tracking ID y Gestión de Empresa Courier
+
+Los administradores pueden editar el `tracking_id` generado y gestionar los datos del operador logístico a través del modal de Tracking & Courier (`EditTrackingModal`):
+
+- **Edición de `tracking_id`:**
+  - Puede ser personalizado por el administrador.
+  - La plataforma valida de forma obligatoria que el nuevo `tracking_id` sea único en toda la base de datos (tanto en PostgreSQL como en el almacenamiento de desarrollo) antes de persistirlo.
+- **Modalidades de Despacho:**
+  1. **Transporte Propio Apolena:** Se marca que el transporte es realizado directamente por el equipo interno de Apolena (`courier = "Apolena (Transporte Propio)"`), permitiendo registrar el celular del repartidor (`carrier_phone`), fecha estimada de entrega (`estimated_delivery`) e instrucciones de entrega (`notes`).
+  2. **Empresa Courier Externa:** Con accesos directos para couriers en Perú (`Shalom`, `DiDi Entrega`, `inDrive`, `Olva Courier`, `Uber Flash`, u otro operador), registrando:
+     - Nombre del operador (`courier`).
+     - Nro. de guía o código de envío (`tracking_number`).
+     - Enlace web de seguimiento (`tracking_url`).
+     - Teléfono de contacto (`carrier_phone`).
+     - Fecha estimada de entrega (`estimated_delivery`).
+- **Transición inmediata a "En Camino":** El modal incluye la opción de avanzar la orden de `manufacturing` a `in_transit` al momento de registrar los datos del despacho, sincronizando `orders`, `order_packages` y `order_items`.
+- **Visibilidad:** Los datos del courier se exponen en las tarjetas de órdenes del dashboard (`/dashboard`), en el expediente completo de la orden, en el listado de pedidos del cliente (`/orders`) y en la página pública de rastreo (`/track/[trackingId]`).

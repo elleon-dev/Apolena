@@ -312,7 +312,7 @@ export const DEFAULT_WALL_ART_PRODUCT: ProductRecord = {
   description:
     "Retrato de alta definición a 300 DPI fusionando a tu mascota con personajes históricos o temáticas exclusivas, elaborado en lienzo de tela canvas sobre bastidor de madera.",
   category: "wall_art",
-  base_price: 180,
+  base_price: 160,
   status: "active",
   stock: 999,
   specifications: {
@@ -2507,9 +2507,15 @@ export async function updateOrderAdminLifecycle(input: {
     | "set_step_delivered"
     | "complete_final_50_payment"
     | "cancel_order"
-    | "edit_order_details";
+    | "edit_order_details"
+    | "edit_tracking_courier";
+  tracking_id?: string;
   courier?: string;
+  tracking_number?: string;
+  tracking_url?: string;
   carrierPhone?: string;
+  estimated_delivery?: string | null;
+  changeStatusToInTransit?: boolean;
   finalPaymentMethod?: PaymentMethod;
   finalOperationNumber?: string;
   notes?: string;
@@ -2691,6 +2697,108 @@ export async function updateOrderAdminLifecycle(input: {
         created_at: now,
       });
     }
+  } else if (input.action === "edit_tracking_courier") {
+    // 1. Validar y actualizar Tracking ID si cambió
+    if (input.tracking_id && input.tracking_id.trim() !== order.tracking_id) {
+      const cleanTracking = input.tracking_id.trim().toUpperCase();
+      if (!cleanTracking) {
+        throw new Error("El Tracking ID no puede estar vacío.");
+      }
+
+      // Validar que no pertenezca a otra orden en base de datos
+      if (isDatabaseConfigured()) {
+        const dupPrisma = await prisma.order.findFirst({
+          where: {
+            tracking_id: { equals: cleanTracking, mode: "insensitive" },
+            NOT: { id: order.id },
+          },
+          select: { id: true, order_code: true },
+        });
+        if (dupPrisma) {
+          throw new Error(
+            `El Tracking ID "${cleanTracking}" ya está asignado a la orden ${dupPrisma.order_code}. Debe ser único.`,
+          );
+        }
+      }
+
+      // Validar en espejo local
+      const localDb = await readLocalDb();
+      const dupLocal = localDb.orders.find(
+        (o) =>
+          o.tracking_id.toUpperCase() === cleanTracking && o.id !== order.id,
+      );
+      if (dupLocal) {
+        throw new Error(
+          `El Tracking ID "${cleanTracking}" ya está asignado a la orden ${dupLocal.order_code}. Debe ser único.`,
+        );
+      }
+
+      order.tracking_id = cleanTracking;
+    }
+
+    // 2. Si se solicitó avanzar a "in_transit" (En Camino)
+    if (
+      input.changeStatusToInTransit &&
+      (order.status === "manufacturing" || (order.status as string) === "pending")
+    ) {
+      order.status = "in_transit";
+      order.shipped_at = order.shipped_at || now;
+    }
+
+    // 3. Actualizar datos del paquete logístico (courier, guía, url, teléfono chofer, fecha estimada)
+    if (!order.packages || order.packages.length === 0) {
+      order.packages = [
+        {
+          id: crypto.randomUUID(),
+          order_id: order.id,
+          package_number: 1,
+          total_packages: 1,
+          status: order.status,
+          courier: input.courier ?? "Apolena (Transporte Propio)",
+          tracking_number: input.tracking_number ?? order.tracking_id,
+          tracking_url: input.tracking_url ?? null,
+          carrier_phone: input.carrierPhone ?? null,
+          estimated_delivery: input.estimated_delivery
+            ? new Date(input.estimated_delivery).toISOString()
+            : null,
+          destination_address: order.shipping?.address || null,
+          subtotal: order.subtotal,
+          items: [],
+        },
+      ];
+    } else {
+      order.packages.forEach((pkg) => {
+        if (input.changeStatusToInTransit) {
+          pkg.status = "in_transit";
+          pkg.items.forEach((it) => (it.status = "in_transit"));
+        }
+        if (input.courier !== undefined) {
+          pkg.courier = input.courier ? input.courier.trim() : null;
+        }
+        if (input.tracking_number !== undefined) {
+          pkg.tracking_number = input.tracking_number
+            ? input.tracking_number.trim()
+            : null;
+        }
+        if (input.tracking_url !== undefined) {
+          pkg.tracking_url = input.tracking_url ? input.tracking_url.trim() : null;
+        }
+        if (input.carrierPhone !== undefined) {
+          pkg.carrier_phone = input.carrierPhone
+            ? input.carrierPhone.trim()
+            : null;
+        }
+        if (input.estimated_delivery !== undefined) {
+          pkg.estimated_delivery = input.estimated_delivery
+            ? new Date(input.estimated_delivery).toISOString()
+            : null;
+        }
+      });
+    }
+
+    if (input.notes !== undefined) {
+      order.notes = input.notes ? input.notes.trim() : null;
+    }
   }
 
   order.updated_at = now;
@@ -2698,12 +2806,15 @@ export async function updateOrderAdminLifecycle(input: {
   // 1. Persistir en un solo batch transaccional en PostgreSQL (sin round-trips secuenciales)
   if (isDatabaseConfigured()) {
     try {
+      const pkg0 = order.packages?.[0];
       const batchOps: any[] = [
         prisma.order.update({
           where: { id: order.id },
           data: {
             status: order.status,
             payment_status: order.payment_status,
+            tracking_id: order.tracking_id,
+            notes: order.notes,
             manufacturing_started_at: order.manufacturing_started_at
               ? new Date(order.manufacturing_started_at)
               : null,
@@ -2720,10 +2831,13 @@ export async function updateOrderAdminLifecycle(input: {
           where: { order_id: order.id },
           data: {
             status: order.status,
-            ...(input.courier ? { courier: input.courier } : {}),
-            ...(input.carrierPhone
-              ? { carrier_phone: input.carrierPhone }
-              : {}),
+            courier: pkg0?.courier ?? null,
+            tracking_number: pkg0?.tracking_number ?? null,
+            tracking_url: pkg0?.tracking_url ?? null,
+            carrier_phone: pkg0?.carrier_phone ?? null,
+            estimated_delivery: pkg0?.estimated_delivery
+              ? new Date(pkg0.estimated_delivery)
+              : null,
           },
         }),
       ];
@@ -2870,7 +2984,12 @@ export async function updateOrderAdminLifecycle(input: {
   });
 
   // 3. Encolar email de notificación de cambio de estado al comprador en segundo plano
-  if (order.shipping?.email) {
+  const shouldNotifyCustomer =
+    order.shipping?.email &&
+    input.action !== "edit_order_details" &&
+    (input.action !== "edit_tracking_courier" || input.changeStatusToInTransit);
+
+  if (shouldNotifyCustomer && order.shipping?.email) {
     const stepLabels: Record<OrderStatus, string> = {
       manufacturing: "En Fabricación (Paso 1 de 3)",
       in_transit: "En Camino a tu Domicilio (Paso 2 de 3)",

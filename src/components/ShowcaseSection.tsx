@@ -100,17 +100,17 @@ const CHARACTER_GALLERY = [
 ];
 
 const SIZES_SUMMARY = [
-  { code: "S", name: "Escritorio", dims: "20 × 30 cm", price: "S/ 90" },
-  { code: "Sq", name: "Cuadrado", dims: "30 × 30 cm", price: "S/ 130" },
-  { code: "M", name: "Mediano", dims: "30 × 40 cm", price: "S/ 140" },
+  { code: "S", name: "Pequeño", dims: "20 × 30 cm", price: "S/ 160" },
+  { code: "M", name: "Mediano", dims: "30 × 40 cm", price: "S/ 190" },
   {
     code: "L",
     name: "Grande",
-    dims: "40 × 50 cm",
-    price: "S/ 180",
+    dims: "40 × 60 cm",
+    price: "S/ 210",
     popular: true,
   },
-  { code: "XL", name: "Extra Grande", dims: "50 × 70 cm", price: "S/ 220" },
+  { code: "XL", name: "Extra Grande", dims: "50 × 70 cm", price: "S/ 240" },
+  { code: "2XL", name: "Doble Extra Grande", dims: "60 × 90 cm", price: "S/ 275" },
 ];
 
 export default function ShowcaseSection() {

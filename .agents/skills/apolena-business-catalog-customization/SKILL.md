@@ -91,15 +91,27 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
         - Al crearse una orden (`POST /api/orders`), el servidor vincula el archivo maestro limpio en `customizations.master_art_url`.
         - Los administradores en `/dashboard` siempre visualizan y descargan el archivo maestro limpio (`master_art_url`) para enviarlo a imprenta a 300 DPI.
         - Para el comprador (`/orders` y `/track/[trackingId]`), las APIs filtran y ocultan `master_art_url` mientras el pedido está en curso. Únicamente cuando la orden alcanza el estado **`completed`** (entregada físicamente y con el 100% pagado, `payment_status === 'paid_full'`), el sistema desbloquea automáticamente el botón **"Descargar Recuerdo Digital HD (Sin Marca de Agua)"** como beneficio exclusivo post-compra.
-   - El cliente selecciona la medida de imprenta (300 DPI) según la **Guía de Tamaños y Precios Oficial Apolena**:
-     - **30 × 20 cm (S/ 180.00):** Ideal para espacios reducidos, repisas o composiciones con varios cuadros. Un detalle decorativo sutil y versátil.
-     - **45 × 30 cm (S/ 210.00):** Ideal para paredes pequeñas o para complementar otros elementos decorativos. También funciona muy bien en galerías de cuadros.
-     - **60 × 40 cm (S/ 240.00):** Ideal para espacios pequeños y medianos. Tiene buena presencia sin dominar la decoración.
-     - **75 × 50 cm (S/ 270.00):** Ideal para aportar carácter y presencia sin convertirse en el foco principal del ambiente.
-     - **90 × 60 cm (S/ 300.00):** Ideal como cuadro principal. Destaca visualmente sin ocupar demasiado espacio.
-     - **105 × 70 cm (S/ 360.00):** Ideal para crear un punto focal. Perfecto sobre sofás, camas, escritorios y otros muebles pequeños.
-     - **120 × 80 cm (S/ 420.00):** Ideal para paredes amplias y espacios donde el cuadro será protagonista. Una pieza de gran presencia e impacto visual. Perfecto para cabeceras de camas y muebles medianos y grandes.
-   - **Detalles del Producto y Material:** Los cuadros son elaborados en **lienzo de tela canvas**, tensados artesanalmente sobre bastidor de madera maciza (listos para colgar con acabado Full Screen sin marco).
+   - El cliente selecciona la medida de imprenta (300 DPI) según la **Guía de Tamaños y Precios Oficial Apolena** (Tabla "PRICE AND SIZES"):
+     - **Foto Lienzo - Estilo 3D (Bastidor de madera maciza incluido, +S/ 0.00):**
+       - **20 × 30 cm (`size-20x30`):** Precio **S/ 160.00** | Precio Antes S/ 190.00 | Ahorras S/ 30.00. Ideal para espacios reducidos, repisas o escritorios.
+       - **30 × 40 cm (`size-30x40`):** Precio **S/ 190.00** | Precio Antes S/ 210.00 | Ahorras S/ 20.00. Ideal para paredes pequeñas o composiciones tipo galería.
+       - **40 × 60 cm (`size-40x60`):** Precio **S/ 210.00** | Precio Antes S/ 230.00 | Ahorras S/ 20.00. La medida más popular. Excelente visibilidad para salas y dormitorios.
+       - **50 × 70 cm (`size-50x70`):** Precio **S/ 240.00** | Precio Antes S/ 270.00 | Ahorras S/ 30.00. Gran carácter y presencia sobre sofás y comedores.
+       - **60 × 90 cm (`size-60x90`):** Precio **S/ 275.00** | Precio Antes S/ 295.00 | Ahorras S/ 20.00. Cuadro principal protagónico de gran impacto visual.
+     - **Medidas Faltantes Desactivadas (`isAvailable: false`):**
+       - `45 × 30 cm` (`size-45x30`): Desactivado (fuera de catálogo).
+       - `75 × 50 cm` (`size-75x50`): Desactivado (fuera de catálogo).
+       - `105 × 70 cm` (`size-105x70`): Desactivado (fuera de catálogo).
+       - `120 × 80 cm` (`size-120x80`): Desactivado (fuera de catálogo).
+     - **Opciones Oficiales de Marcos y Modificadores de Precio:**
+       - **Foto Lienzo - Estilo 3D (`canvas-bastidor`):** + S/ 0.00 (Incluido).
+       - **Marco Minimalista Negro / Natural / Blanco (`frame-minimalist-black`, `frame-minimalist-natural`, `frame-minimalist-white`):** + S/ 45.00.
+       - **Marco Madera Gold (`frame-wood-gold`):** + S/ 55.00.
+     - **Fórmula de Precio Total de Cuadro:**
+       - `unit_price = precio_base_medida + modificador_marco`
+       - `adelanto_50% = unit_price * 0.5`
+       - `contraentrega_50% = unit_price - adelanto_50%`
+   - **Detalles del Producto y Material:** Los cuadros son elaborados en **lienzo de tela canvas**, tensados artesanalmente sobre bastidor de madera maciza (listos para colgar).
    - Al continuar a checkout, la obra elegida viaja en el borrador de orden (`apolena_checkout_draft`) como `generated_art_url`.
 
 ---

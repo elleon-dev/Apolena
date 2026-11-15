@@ -19,6 +19,8 @@ import {
   Download,
   Lock,
   Gift,
+  Truck,
+  ExternalLink,
 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
 
@@ -46,12 +48,12 @@ export default function TrackingDetailPage({
               tracking_id: "APO-2026-849201",
               status: "completed",
               payment_status: "paid_full",
-              subtotal: 180,
+              subtotal: 160,
               shipping_cost: 0,
               tax_amount: 0,
-              total_amount: 180,
-              advance_amount: 90,
-              remaining_amount: 90,
+              total_amount: 160,
+              advance_amount: 80,
+              remaining_amount: 80,
               payment_method: "bank_transfer",
               buyer_id: "demo_buyer",
               notes: null,
@@ -91,7 +93,7 @@ export default function TrackingDetailPage({
                   carrier_phone: "987654321",
                   estimated_delivery: "2026-11-06T12:00:00Z",
                   destination_address: "Av. José Larco 812",
-                  subtotal: 180,
+                  subtotal: 160,
                   items: [
                     {
                       id: "item_1",
@@ -100,16 +102,16 @@ export default function TrackingDetailPage({
                       generation_job_id: null,
                       pet_photo_url: "/samples/cat-sample.jpg",
                       generated_art_url: "/samples/cat-suit.jpg",
-                      unit_price: 180,
+                      unit_price: 160,
                       quantity: 1,
-                      subtotal: 180,
+                      subtotal: 160,
                       status: "delivered",
                       customizations: {
                         theme_id: "inca-emperor",
                         theme_name: "Sapa Inca Imperial",
-                        size_id: "lg-40x50",
-                        size_label: "Grande (L) · 40 × 50 cm",
-                        cm_dimensions: "40 × 50 cm",
+                        size_id: "size-20x30",
+                        size_label: "Pequeño (S) · 20 × 30 cm",
+                        cm_dimensions: "20 × 30 cm",
                         dpi: 300,
                         finish_mode: "full-bleed",
                         finish_label: "Full Screen (Sin Marco)",
@@ -225,6 +227,61 @@ export default function TrackingDetailPage({
                 deliveredAt={order.delivered_at}
                 completedAt={order.completed_at}
               />
+
+              {/* Courier & Despacho Badge / Card */}
+              {order.packages?.[0]?.courier && (
+                <div className="pt-4 border-t border-[#E8DEC8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#174B3D]/10 text-[#174B3D] flex items-center justify-center shrink-0">
+                      <Truck className="w-4 h-4 text-[#174B3D]" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94713F] block">
+                        Operador de Despacho
+                      </span>
+                      <strong className="text-sm text-[#174B3D]">
+                        {order.packages[0].courier}
+                      </strong>
+                      {order.packages[0].tracking_number && (
+                        <p className="text-stone-600 font-mono text-[11px]">
+                          Guía / Código de Envío:{" "}
+                          <strong>{order.packages[0].tracking_number}</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {order.packages[0].tracking_url && (
+                      <a
+                        href={order.packages[0].tracking_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold shadow-xs transition-all"
+                      >
+                        <span>Rastrear en Courier</span>
+                        <ExternalLink className="w-3 h-3 text-[#c6a26c]" />
+                      </a>
+                    )}
+                    {order.packages[0].carrier_phone && (
+                      <span className="text-[11px] text-stone-600 bg-white px-3 py-1.5 rounded-full border border-[#E8DEC8]">
+                        Contacto: {order.packages[0].carrier_phone}
+                      </span>
+                    )}
+                    {order.packages[0].estimated_delivery && (
+                      <span className="text-[11px] text-[#174B3D] bg-white px-3 py-1.5 rounded-full border border-[#E8DEC8] font-medium">
+                        Entrega estimada:{" "}
+                        {new Date(
+                          order.packages[0].estimated_delivery,
+                        ).toLocaleDateString("es-PE", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Product & Payment Split Details */}

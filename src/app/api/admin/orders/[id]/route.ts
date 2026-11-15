@@ -38,6 +38,33 @@ export async function PATCH(
       return NextResponse.json({ order: updated });
     }
 
+    // Caso 2: Edición de Tracking ID y datos del Courier / Transporte
+    if (body.action === "edit_tracking_courier") {
+      const updated = await updateOrderAdminLifecycle({
+        orderId: params.id,
+        adminId: user.id,
+        action: "edit_tracking_courier",
+        tracking_id: body.tracking_id,
+        courier: body.courier,
+        tracking_number: body.tracking_number,
+        tracking_url: body.tracking_url,
+        carrierPhone: body.carrierPhone,
+        estimated_delivery: body.estimated_delivery,
+        notes: body.notes,
+        changeStatusToInTransit: Boolean(body.changeStatusToInTransit),
+        app_url: getRequestOrigin(request),
+      });
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: "No se pudo actualizar los datos de tracking y courier." },
+          { status: 400 },
+        );
+      }
+
+      return NextResponse.json({ order: updated });
+    }
+
     // Caso 2: Transiciones de estado originales (Ciclo de vida)
     const updated = await updateOrderAdminLifecycle({
       orderId: params.id,

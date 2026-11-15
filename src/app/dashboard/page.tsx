@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { EditOrderModal } from "@/components/EditOrderModal";
+import { EditTrackingModal } from "@/components/EditTrackingModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
 import {
@@ -228,6 +229,8 @@ export default function AdminDashboardPage() {
   const [copiedDedicationId, setCopiedDedicationId] = useState<string | null>(null);
 
   const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
+  const [editingTrackingOrder, setEditingTrackingOrder] =
+    useState<OrderRecord | null>(null);
 
   const handleOrderUpdated = (updatedOrder: OrderRecord) => {
     setOrders((prev) =>
@@ -950,7 +953,8 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
       baseWidthPx: 5315,
       baseHeightPx: 7087,
       recommendedUse: "Salas principales y dormitorios amplios",
-      pricePen: 250,
+      pricePen: 210,
+      compareAtPricePen: 230,
       isAvailable: true,
     });
     setShowSizeModal(true);
@@ -960,6 +964,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
     setEditingSizeId(preset.id);
     setSizeForm({
       ...preset,
+      compareAtPricePen: preset.compareAtPricePen,
       isAvailable: preset.isAvailable !== false,
     });
     setShowSizeModal(true);
@@ -983,6 +988,10 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
       baseWidthPx: Number(sizeForm.baseWidthPx) || 3543,
       baseHeightPx: Number(sizeForm.baseHeightPx) || 4724,
       pricePen: Number(sizeForm.pricePen) || 0,
+      compareAtPricePen: sizeForm.compareAtPricePen
+        ? Number(sizeForm.compareAtPricePen)
+        : undefined,
+      isAvailable: sizeForm.isAvailable !== false,
     };
 
     const nextSizes = editingSizeId
@@ -1706,6 +1715,28 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             </span>
                           </div>
                         </div>
+
+                        {/* Fila de Courier / Despacho si ya está asignado */}
+                        {order.packages?.[0]?.courier && (
+                          <div className="col-span-2 sm:col-span-3 pt-1.5 mt-0.5 border-t border-cream-200/70 flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                            <div className="flex items-center gap-1.5 text-stone-700 min-w-0">
+                              <Truck className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
+                              <span className="font-semibold text-[#174B3D] truncate">
+                                {order.packages[0].courier}
+                              </span>
+                              {order.packages[0].tracking_number && (
+                                <span className="text-stone-500 font-mono text-[10px] truncate">
+                                  (Guía: {order.packages[0].tracking_number})
+                                </span>
+                              )}
+                            </div>
+                            {order.packages[0].carrier_phone && (
+                              <span className="text-stone-500 text-[10px] shrink-0">
+                                Tel: {order.packages[0].carrier_phone}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Dedicatoria para regalo (preview + copiar rápido para el taller) */}
@@ -1837,6 +1868,20 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           >
                             <Pencil className="w-3 h-3" />
                             <span>Editar Orden</span>
+                          </button>
+
+                          {/* Botón Editar Tracking & Courier */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTrackingOrder(order);
+                            }}
+                            className="px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all cursor-pointer"
+                            title="Editar Tracking ID y datos del Courier (Shalom, DiDi, inDrive, etc.)"
+                          >
+                            <Truck className="w-3 h-3 text-[#c6a26c]" />
+                            <span>Tracking & Courier</span>
                           </button>
                         </div>
 
@@ -2624,9 +2669,25 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             </p>
                           </div>
 
-                          <span className="px-3.5 py-1.5 rounded-full bg-stone-900 text-white text-xs font-bold whitespace-nowrap">
-                            S/ {preset.pricePen.toFixed(2)}
-                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="px-3.5 py-1.5 rounded-full bg-stone-900 text-white text-xs font-bold whitespace-nowrap">
+                              S/ {preset.pricePen.toFixed(2)}
+                            </span>
+                            {preset.compareAtPricePen &&
+                              preset.compareAtPricePen > preset.pricePen && (
+                                <div className="flex items-center gap-1.5 text-[10px]">
+                                  <span className="text-stone-400 line-through">
+                                    Antes S/ {preset.compareAtPricePen.toFixed(2)}
+                                  </span>
+                                  <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                    Ahorras S/{" "}
+                                    {(
+                                      preset.compareAtPricePen - preset.pricePen
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-cream-100 text-xs">
@@ -3272,7 +3333,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
 
                       <div className="space-y-1">
                         <label className="font-semibold text-stone-800 block">
-                          Precio Base en Soles (S/)
+                          Precio de Venta / Base (S/)
                         </label>
                         <input
                           type="number"
@@ -3286,6 +3347,27 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             })
                           }
                           className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 font-bold text-stone-900"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-semibold text-stone-800 block">
+                          Precio Antes / Comparativo (S/)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={sizeForm.compareAtPricePen || ""}
+                          onChange={(e) =>
+                            setSizeForm({
+                              ...sizeForm,
+                              compareAtPricePen: e.target.value
+                                ? Number(e.target.value)
+                                : undefined,
+                            })
+                          }
+                          placeholder="Ej. 190.00"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-700"
                         />
                       </div>
 
@@ -3819,6 +3901,15 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       <span>Vista Pública</span>
                       <ExternalLink className="w-3 h-3" />
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => setEditingTrackingOrder(selectedOrder)}
+                      className="text-xs font-semibold px-3 py-1 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white border border-[#174B3D] inline-flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                      title="Editar Tracking ID y datos del Courier"
+                    >
+                      <Truck className="w-3 h-3 text-[#c6a26c]" />
+                      <span>Editar Courier & Tracking</span>
+                    </button>
                   </div>
                   <p className="text-xs text-stone-500">
                     Registrada el{" "}
@@ -4149,6 +4240,81 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       </div>
                     </div>
 
+                    {/* 2.5 Datos de Courier, Tracking y Despacho */}
+                    <div className="p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#174B3D] flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5 text-[#c6a26c]" />
+                          <span>Empresa Courier y Despacho</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTrackingOrder(selectedOrder)}
+                          className="px-3 py-1 rounded-full bg-[#174B3D] text-white hover:bg-[#134034] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <Pencil className="w-3 h-3 text-[#c6a26c]" />
+                          <span>Editar</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 text-stone-700 text-xs">
+                        <p className="flex items-center gap-2">
+                          <strong>Operador:</strong>{" "}
+                          <span className="font-bold text-[#174B3D]">
+                            {selectedOrder.packages?.[0]?.courier ||
+                              "Apolena (Transporte Propio)"}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Tracking ID Oficial:</strong>{" "}
+                          <span className="font-mono font-bold text-stone-900">
+                            {selectedOrder.tracking_id}
+                          </span>
+                        </p>
+                        {selectedOrder.packages?.[0]?.tracking_number && (
+                          <p>
+                            <strong>Nro. de Guía / Código Courier:</strong>{" "}
+                            <span className="font-mono font-semibold text-stone-800">
+                              {selectedOrder.packages[0].tracking_number}
+                            </span>
+                          </p>
+                        )}
+                        {selectedOrder.packages?.[0]?.carrier_phone && (
+                          <p>
+                            <strong>Teléfono del Chofer / Courier:</strong>{" "}
+                            <span>
+                              {selectedOrder.packages[0].carrier_phone}
+                            </span>
+                          </p>
+                        )}
+                        {selectedOrder.packages?.[0]?.estimated_delivery && (
+                          <p>
+                            <strong>Entrega Estimada:</strong>{" "}
+                            <span>
+                              {new Date(
+                                selectedOrder.packages[0].estimated_delivery,
+                              ).toLocaleDateString("es-PE", {
+                                dateStyle: "long",
+                              })}
+                            </span>
+                          </p>
+                        )}
+                        {selectedOrder.packages?.[0]?.tracking_url && (
+                          <p className="pt-1">
+                            <a
+                              href={selectedOrder.packages[0].tracking_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#174B3D] hover:underline"
+                            >
+                              <span>Rastrear en página web del Courier</span>
+                              <ExternalLink className="w-3 h-3 text-[#c6a26c]" />
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
                     {/* 3. Desglose Financiero 50%/50%, Transacciones y Comprobante */}
                     <div className="p-5 rounded-2xl bg-cream-50 border border-cream-200 space-y-3">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600 flex items-center gap-1.5">
@@ -4283,6 +4449,19 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
           open={!!editingOrder}
           onClose={() => setEditingOrder(null)}
           onOrderUpdated={handleOrderUpdated}
+        />
+        {/* Modal de edición de Tracking ID y Courier */}
+        <EditTrackingModal
+          order={editingTrackingOrder}
+          open={!!editingTrackingOrder}
+          onClose={() => setEditingTrackingOrder(null)}
+          onOrderUpdated={(updated) => {
+            handleOrderUpdated(updated);
+            showToast(
+              "success",
+              `Tracking y Courier de la orden ${updated.order_code} actualizados correctamente.`,
+            );
+          }}
         />
       </main>
     </div>

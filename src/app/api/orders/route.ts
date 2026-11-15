@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       pet_photo_url: body.pet_photo_url || null,
       generated_art_url: body.generated_art_url || "/samples/cat-suit.jpg",
       quantity: Number(body.quantity) || 1,
-      unit_price: Number(body.unit_price) || 180,
+      unit_price: Number(body.unit_price) || 160,
       shipping_cost: Number(body.shipping_cost) || 15,
       payment_method: paymentMethod,
       operation_number: body.operation_number,

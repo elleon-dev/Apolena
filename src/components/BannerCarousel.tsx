@@ -59,7 +59,7 @@ export default function BannerCarousel() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center bg-[#FAF0E4]/95 backdrop-blur-xs border border-[#DECFBE] px-4 py-2 rounded-xl text-[#174B3D] shadow-xs">
                   <span className="font-extrabold text-base lg:text-lg tracking-tight">
-                    Desde S/ 180.00
+                    Desde S/ 160.00
                   </span>
                 </div>
 
@@ -141,7 +141,7 @@ export default function BannerCarousel() {
           <div className="flex flex-wrap items-center gap-2.5 mb-2">
             <div className="inline-flex items-center bg-[#FAF0E4] border border-[#DECFBE] px-4 py-2 rounded-xl text-[#174B3D]">
               <span className="font-extrabold text-base tracking-tight">
-                Desde S/ 180.00
+                Desde S/ 160.00
               </span>
             </div>
 
