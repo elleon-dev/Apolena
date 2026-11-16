@@ -975,10 +975,11 @@ function CheckoutContent() {
                   {/* Campo 2: Captura del Voucher */}
                   <div className="space-y-1.5">
                     <label className="font-extrabold text-[#174B3D] block">
-                      Captura del Voucher (Opcional)
+                      Captura del Voucher
                     </label>
                     <input
                       type="file"
+                      required
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
