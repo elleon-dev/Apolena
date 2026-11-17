@@ -47,16 +47,15 @@ const NAV_ITEMS = [
   { label: "Estilos", href: "/#estilos" },
   { label: "Cómo funciona", href: "/#como-funciona" },
   { label: "Preguntas frecuentes", href: "/#faq" },
-  { label: "Visión", href: "/vision" },
+  { label: "Quiénes Somos", href: "/quienes-somos" },
 ];
 
 const MOBILE_NAV_ITEMS = [
   { label: "Estilos", href: "/#estilos" },
   { label: "Cómo funciona", href: "/#como-funciona" },
   { label: "Preguntas frecuentes", href: "/#faq" },
-  { label: "Visión", href: "/vision" },
+  { label: "Quiénes Somos", href: "/quienes-somos" },
   { label: "Rastrear Pedido (Tracking)", href: "/track" },
-  { label: "Quiénes Somos", href: "/#quienes-somos" },
   { label: "Contacto", href: "/#contacto" },
 ];
 

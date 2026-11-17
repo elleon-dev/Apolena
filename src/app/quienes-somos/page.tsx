@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Navbar from "@/components/Header"; // <-- ajusta el nombre si es Header.tsx
+import Navbar from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   Heart,
@@ -13,6 +13,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Award,
+  Compass,
+  Eye,
+  Gem,
+  CheckCircle2,
 } from "lucide-react";
 
 const PILLARS = [
@@ -47,6 +51,29 @@ const PILLARS = [
     title: "De nuestra familia a la tuya",
     description:
       "APOLENA nace del cariño por Apolo y Athena, nuestros gatos y la inspiración detrás de este proyecto. Ese vínculo nos mueve a crear algo que otros amantes de los animales puedan disfrutar en sus propios hogares.",
+  },
+];
+
+const CORE_VALUES = [
+  {
+    title: "Amor por los animales",
+    detail:
+      "Cada retrato nace desde el respeto y la admiración por el vínculo genuino que compartes con tu mascota.",
+  },
+  {
+    title: "Calidad artesanal",
+    detail:
+      "Cuidamos cada trazo digital, impresión en lienzo Fine Art y acabado para que tu cuadro perdure en el tiempo.",
+  },
+  {
+    title: "Identidad y creatividad",
+    detail:
+      "Fusionamos arte clásico, tendencias actuales y esencia peruana en piezas únicas pensadas a medida.",
+  },
+  {
+    title: "Cercanía y confianza",
+    detail:
+      "Te acompañamos en todo el proceso y revisas tu diseño antes de imprimir para garantizar tu satisfacción.",
   },
 ];
 
@@ -95,7 +122,7 @@ function RevealOnScroll({
   );
 }
 
-export default function VisionPage() {
+export default function QuienesSomosPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -126,7 +153,7 @@ export default function VisionPage() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1B3B2B]/10 border border-[#1B3B2B]/15 text-[#1B3B2B] text-xs font-semibold tracking-[0.18em] uppercase">
                 <PawPrint className="w-3.5 h-3.5 text-[#9A7438]" />
-                <span>Nuestra Misión</span>
+                <span>Quiénes Somos</span>
               </div>
 
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.35rem] font-bold text-[#1B3B2B] leading-[1.12] tracking-tight">
@@ -151,9 +178,9 @@ export default function VisionPage() {
                 <Link
                   href="/products/cuadros-personalizados"
                   className="group inline-flex items-center justify-center gap-3 px-7 py-4 rounded-full bg-[#1B3B2B] hover:bg-[#142D20] text-[#FAF6F0] font-semibold text-base shadow-lg shadow-[#1B3B2B]/20 transition-all duration-300 hover:-translate-y-0.5"
->
+                >
                   <span>Crear el retrato de mi mascota</span>
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </div>
 
@@ -215,9 +242,111 @@ export default function VisionPage() {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════
+            MISIÓN, VISIÓN Y VALORES
+        ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-12 bg-white/80 border-t border-[#E7E0CE]">
+          <div className="max-w-7xl mx-auto space-y-12">
+            <RevealOnScroll className="max-w-2xl mx-auto text-center space-y-3">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#9A7438]">
+                Nuestro Propósito
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#1B3B2B]">
+                Misión, Visión y Valores
+              </h2>
+              <p className="text-base text-[#4D5750]">
+                Los principios que guían cada retrato personalizado que creamos
+                para tu hogar.
+              </p>
+            </RevealOnScroll>
+
+            {/* Tarjetas de Misión y Visión */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              <RevealOnScroll delayMs={80}>
+                <div className="h-full rounded-3xl bg-[#FAF6F0] p-8 sm:p-10 border border-[#E5DEC9] shadow-sm hover:shadow-lg transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-[#1B3B2B] text-[#FAF6F0] flex items-center justify-center mb-6 shadow-md shadow-[#1B3B2B]/15">
+                    <Compass className="w-6 h-6 text-[#E3C184]" />
+                  </div>
+                  <span className="inline-block text-xs font-semibold uppercase tracking-widest text-[#9A7438] mb-2">
+                    Lo que hacemos hoy
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1B3B2B] mb-4">
+                    Nuestra Misión
+                  </h3>
+                  <p className="text-[#3F4942] text-base sm:text-lg leading-relaxed">
+                    Inmortalizar el amor y la personalidad única de cada mascota
+                    a través de retratos artísticos personalizados de alta
+                    calidad, brindando una experiencia cercana, creativa y
+                    memorable que convierta cada recuerdo en una pieza especial
+                    para el hogar.
+                  </p>
+                </div>
+              </RevealOnScroll>
+
+              <RevealOnScroll delayMs={180}>
+                <div className="h-full rounded-3xl bg-[#FAF6F0] p-8 sm:p-10 border border-[#E5DEC9] shadow-sm hover:shadow-lg transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-[#1B3B2B] text-[#FAF6F0] flex items-center justify-center mb-6 shadow-md shadow-[#1B3B2B]/15">
+                    <Eye className="w-6 h-6 text-[#E3C184]" />
+                  </div>
+                  <span className="inline-block text-xs font-semibold uppercase tracking-widest text-[#9A7438] mb-2">
+                    Hacia dónde vamos
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1B3B2B] mb-4">
+                    Nuestra Visión
+                  </h3>
+                  <p className="text-[#3F4942] text-base sm:text-lg leading-relaxed">
+                    Ser la marca referente en arte personalizado de mascotas en
+                    el Perú y Latinoamérica, reconocida por fusionar el cariño
+                    por los animales, el diseño contemporáneo y nuestras raíces
+                    culturales en cada obra creada.
+                  </p>
+                </div>
+              </RevealOnScroll>
+            </div>
+
+            {/* Bloque de Valores */}
+            <RevealOnScroll delayMs={220}>
+              <div className="rounded-3xl bg-[#FAF6F0] p-8 sm:p-10 border border-[#E5DEC9] shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-[#E5DEC9]">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1B3B2B] text-[#FAF6F0] flex items-center justify-center shrink-0">
+                      <Gem className="w-6 h-6 text-[#E3C184]" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-widest text-[#9A7438]">
+                        Lo que nos define
+                      </span>
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1B3B2B]">
+                        Nuestros Valores
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {CORE_VALUES.map((val) => (
+                    <div
+                      key={val.title}
+                      className="rounded-2xl bg-white/90 p-5 border border-[#E7E0CE] hover:border-[#C6A26C] transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-[#1B3B2B] font-bold text-base mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#9A7438] shrink-0" />
+                        <span>{val.title}</span>
+                      </div>
+                      <p className="text-sm text-[#4B554E] leading-relaxed">
+                        {val.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </RevealOnScroll>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
             SECCIÓN DE PILARES: Tarjetas animadas con toda la historia
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-12 bg-white/70 border-y border-[#E7E0CE]">
+        <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-12 bg-white/50 border-y border-[#E7E0CE]">
           <div className="max-w-7xl mx-auto">
             <RevealOnScroll className="max-w-2xl mx-auto text-center mb-14 space-y-3">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#9A7438]">
@@ -301,10 +430,10 @@ export default function VisionPage() {
                   <Link
                     href="/products/cuadros-personalizados"
                     className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#E3C184] hover:bg-[#d6b170] text-[#1B3B2B] font-bold text-base sm:text-lg shadow-xl transition-all duration-300 hover:scale-[1.03]"
->
+                  >
                     <span>Crear el retrato de mi mascota</span>
                     <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
+                  </Link>
                 </div>
               </div>
             </div>
