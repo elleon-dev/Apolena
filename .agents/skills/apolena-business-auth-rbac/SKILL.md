@@ -20,6 +20,11 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
   2. **Proveedor Google OAuth (vía Supabase Auth):** El botón _"Continuar con Google"_ en `/auth/login` y `/auth/register` inicia `supabaseBrowser.auth.signInWithOAuth({ provider: "google" })`, redirige a `/auth/callback` y sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `POST /api/auth/oauth/google` y `upsertOAuthProfile`.
 - **Recuperación Segura de Contraseña:** Flujo con token criptográfico HMAC SHA-256 (`signPasswordResetToken` / `verifyPasswordResetToken` con TTL de 60 min) enviado a la cola `email_queue` (`template: "password_reset"`), procesado en `/auth/forgot-password`, `/auth/reset-password` y `/api/auth/reset-password`.
 - **Autenticación Obligatoria en Checkout:** Queda prohibida la generación de órdenes anónimas o la creación silenciosa de cuentas con contraseñas por defecto (`"cliente123"`). Todo comprador debe identificarse o registrarse previamente en `/checkout` antes de emitir la orden en `/api/orders`.
+- **Sincronización en Tiempo Real de Roles y Cookie de Sesión (`getAuthoritativeSessionUser` + `/api/auth/me` + `middleware.ts`):**
+  - Cuando un usuario cambia de rol en PostgreSQL (`user` ↔ `admin` ↔ `super_admin`), su acceso se actualiza de forma **inmediata** sin requerir cerrar sesión:
+    - `GET /api/auth/me` consulta siempre PostgreSQL en tiempo real y, si el rol, ID o nombre difiere del token en la cookie `apolena_session`, re-firma y actualiza automáticamente la cookie `Set-Cookie: apolena_session=...`.
+    - `src/middleware.ts` verifica en tiempo real contra `/api/auth/me` en navegaciones a `/dashboard`, `/admin` o cuando el token en cookie aún indica `"user"`, propagando la nueva cookie `Set-Cookie` para evitar redirecciones erróneas a `/orders`.
+    - Todas las rutas `/api/admin/*` y `/api/orders` utilizan `getAuthoritativeSessionUser()` (`src/lib/db-service.ts`), resolviendo el rol y estado `is_active` directamente desde PostgreSQL en cada petición.
 - Campos clave de `Profile` (`@@map("profiles")`):
   - `id`: UUID (`@id @default(dbgenerated("gen_random_uuid()")) @db.Uuid`).
   - `email`: Único (`@unique`).

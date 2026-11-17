@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getSessionUser,
   hashPassword,
   isAdminRole,
   UserRole,
@@ -9,11 +8,12 @@ import {
   createProfile,
   findProfileByEmail,
   getAllProfiles,
+  getAuthoritativeSessionUser,
   updateProfileByAdmin,
 } from "@/lib/db-service";
 
-export async function GET() {
-  const actor = await getSessionUser();
+export async function GET(request: NextRequest) {
+  const actor = await getAuthoritativeSessionUser(request);
   if (!actor || !isAdminRole(actor.role)) {
     return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
   }
@@ -25,7 +25,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const actor = await getSessionUser();
+    const actor = await getAuthoritativeSessionUser(request);
     if (!actor || !isAdminRole(actor.role)) {
       return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
     }
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const actor = await getSessionUser();
+    const actor = await getAuthoritativeSessionUser(request);
     if (!actor || !isAdminRole(actor.role)) {
       return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
     }

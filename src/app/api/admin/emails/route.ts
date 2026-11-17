@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSessionUser, isAdminRole } from "@/lib/auth";
+import { isAdminRole } from "@/lib/auth";
+import { getAuthoritativeSessionUser } from "@/lib/db-service";
 import { prisma } from "@/lib/prisma";
 import { processEmailQueue } from "@/lib/email-worker";
 import { isResendConfigured } from "@/lib/email-service";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const user = await getSessionUser();
+    const user = await getAuthoritativeSessionUser(req);
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Acceso denegado. Exclusivo para administradores." },
@@ -41,7 +42,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getSessionUser();
+    const user = await getAuthoritativeSessionUser(req);
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Acceso denegado. Exclusivo para administradores." },

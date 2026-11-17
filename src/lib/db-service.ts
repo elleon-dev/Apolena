@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 import {
+  getSessionUser,
   hashPassword,
   resolveUserRole,
+  SessionUser,
   SUPER_ADMIN_EMAIL,
   UserRole,
 } from "@/lib/auth";
@@ -678,10 +680,6 @@ export async function findProfileById(
   if (!memCache.profilesById) {
     memCache.profilesById = new Map();
   }
-  const cached = memCache.profilesById.get(id);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
-  }
 
   if (isDatabaseConfigured()) {
     try {
@@ -700,10 +698,17 @@ export async function findProfileById(
         });
         return record;
       }
+      return null;
     } catch (e) {
       console.warn("Prisma findProfileById fallback:", e);
     }
   }
+
+  const cached = memCache.profilesById.get(id);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
   const db = await readLocalDb();
   const local = db.profiles.find((p) => p.id === id) || null;
   if (local) {
@@ -714,6 +719,35 @@ export async function findProfileById(
     });
   }
   return local;
+}
+
+/**
+ * Obtiene el usuario en sesión verificando siempre su rol y estado activo en tiempo real
+ * contra la tabla `profiles` de PostgreSQL. Garantiza que cambios de rol (user <-> admin <-> super_admin)
+ * tengan efecto inmediato en todas las rutas de servidor sin depender de cookies desactualizadas.
+ */
+export async function getAuthoritativeSessionUser(
+  request?: Request,
+): Promise<SessionUser | null> {
+  const session = await getSessionUser(request);
+  if (!session) return null;
+
+  const profile =
+    (await findProfileById(session.id)) ||
+    (await findProfileByEmail(session.email));
+
+  if (!profile) return session;
+  if (profile.is_active === false) return null;
+
+  return {
+    ...session,
+    id: profile.id,
+    email: profile.email,
+    name: profile.name || session.name,
+    phone: profile.phone ?? session.phone,
+    avatar_url: profile.avatar_url ?? session.avatar_url ?? null,
+    role: resolveUserRole(profile.email, profile.role),
+  };
 }
 
 export async function createProfile(input: {

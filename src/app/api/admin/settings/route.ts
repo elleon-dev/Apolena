@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSessionUser, isAdminRole } from "@/lib/auth";
+import { isAdminRole } from "@/lib/auth";
 import {
+  getAuthoritativeSessionUser,
   getPlatformSettings,
   updatePlatformSettings,
   updateProductCustomizationConfig,
 } from "@/lib/db-service";
 
 export async function GET(request: Request) {
-  const user = await getSessionUser(request);
+  const user = await getAuthoritativeSessionUser(request);
   if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
   }
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const user = await getSessionUser(request);
+    const user = await getAuthoritativeSessionUser(request);
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json(
         {

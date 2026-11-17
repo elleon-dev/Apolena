@@ -66,6 +66,7 @@ import type {
 import type { FamousCharacter } from "@/data/characters";
 import type { PrintPreset, FrameOption } from "@/lib/print-export";
 import type { UserRole } from "@/lib/auth";
+import { setCachedSessionUser } from "@/lib/client-session";
 
 const SUPER_ADMIN_EMAIL = "nmoriano26@gmail.com";
 
@@ -295,6 +296,7 @@ export default function AdminDashboardPage() {
         return;
       }
       setCurrentUser(data.currentUser);
+      setCachedSessionUser(data.currentUser);
       setOrders(data.orders || []);
       setUsers(data.users || []);
       setEmailQueue(data.emailQueue || []);

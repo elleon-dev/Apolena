@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSessionUser, isAdminRole } from "@/lib/auth";
+import { isAdminRole } from "@/lib/auth";
+import { getAuthoritativeSessionUser } from "@/lib/db-service";
 import { sanitizeCharacterPromptToSpeciesNeutral } from "@/lib/ai-providers";
 import fs from "fs";
 import path from "path";
@@ -171,7 +172,7 @@ function getLocalHeuristicAnalysis(fileName?: string): CharacterAnalysisResult {
 
 export async function POST(request: Request) {
   try {
-    const user = await getSessionUser(request);
+    const user = await getAuthoritativeSessionUser(request);
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Acceso denegado. Se requiere rol de Administrador." },
