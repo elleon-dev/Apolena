@@ -123,10 +123,10 @@ export default function AboutSection() {
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-xs sm:text-sm">
-                    Modalidad 50% / 50%
+                    Pago Seguro y Verificado
                   </h3>
                   <p className="text-xs text-white/75 leading-snug mt-0.5">
-                    Abonas 50% al ordenar y el 50% restante al recibir en casa.
+                    Paga fácilmente con Yape, Plin o transferencia bancaria al ordenar.
                   </p>
                 </div>
               </div>

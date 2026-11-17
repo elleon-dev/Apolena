@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Ingresa el número de operación o referencia de tu pago del 50% de adelanto.",
+            "Ingresa el número de operación o referencia de tu pago.",
         },
         { status: 400 },
       );

@@ -364,10 +364,14 @@ export default function AdminDashboardPage() {
       orders.find((o) => o.id === orderId)?.order_code || "esta orden";
 
     if (action === "verify_advance_50") {
+      const targetOrder = orders.find((o) => o.id === orderId);
+      const isFullOrder = Number(targetOrder?.remaining_amount || 0) <= 0;
       setConfirmModalData({
         open: true,
         title: "Aprobar Pago",
-        description: `¿Confirmas que el adelanto del 50% de la orden ${orderCode} fue recibido y deseas aprobarlo?`,
+        description: isFullOrder
+          ? `¿Confirmas que el pago del 100% (S/ ${Number(targetOrder?.total_amount || 0).toFixed(2)}) de la orden ${orderCode} fue recibido y deseas aprobarlo?`
+          : `¿Confirmas que el adelanto del 50% de la orden ${orderCode} fue recibido y deseas aprobarlo?`,
         variant: "success",
         action: async () => {
           await executeOrderLifecycleAction(orderId, action);
@@ -1438,7 +1442,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         : "órdenes activas pendientes"}{" "}
                       de gestión hasta su entrega
                       {totalUnverifiedAdvance > 0 &&
-                        ` (${totalUnverifiedAdvance} por verificar adelanto del 50%)`}
+                        ` (${totalUnverifiedAdvance} por verificar pago)`}
                       .
                     </p>
                     <p className="text-stone-600 mt-0.5">
@@ -1581,7 +1585,11 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           }
                         : order.status === "delivered"
                           ? {
-                              label: "Paso 3 · Entregado (Cobrar 50%)",
+                              label:
+                                order.remaining_amount > 0 &&
+                                order.payment_status !== "paid_full"
+                                  ? "Paso 3 · Entregado (Cobrar Saldo)"
+                                  : "Paso 3 · Entregado",
                               cls: "bg-terracotta-50 text-terracotta-700 border-terracotta-200",
                               progress: 3,
                             }
@@ -1713,7 +1721,9 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                 ? "100% Pagado"
                                 : order.payment_status === "partial_paid"
                                   ? "50% Verificado"
-                                  : "50% Por Verificar"}
+                                  : order.remaining_amount > 0
+                                    ? "50% Por Verificar"
+                                    : "Pago Por Verificar"}
                             </span>
                           </div>
                         </div>
@@ -1798,7 +1808,11 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               className="px-3 py-1.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all"
                             >
                               <Check className="w-3 h-3" />
-                              <span>Verificar 50%</span>
+                              <span>
+                                {order.remaining_amount > 0
+                                  ? "Verificar 50%"
+                                  : "Verificar Pago 100%"}
+                              </span>
                             </button>
                           )}
 
@@ -1853,8 +1867,10 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             >
                               <CheckCircle2 className="w-3 h-3" />
                               <span>
-                                Confirmar 2do 50% (S/{" "}
-                                {order.remaining_amount.toFixed(0)})
+                                {order.remaining_amount > 0 &&
+                                order.payment_status !== "paid_full"
+                                  ? `Confirmar Saldo (S/ ${order.remaining_amount.toFixed(0)})`
+                                  : "Marcar Exitoso"}
                               </span>
                             </button>
                           )}
@@ -4024,9 +4040,10 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>
-                          Confirmar 2do 50% (S/{" "}
-                          {selectedOrder.remaining_amount.toFixed(2)}) y Marcar
-                          EXITOSO
+                          {selectedOrder.remaining_amount > 0 &&
+                          selectedOrder.payment_status !== "paid_full"
+                            ? `Confirmar Saldo (S/ ${selectedOrder.remaining_amount.toFixed(2)}) y Marcar EXITOSO`
+                            : "Confirmar Entrega y Marcar EXITOSO"}
                         </span>
                       </button>
                     )}
@@ -4317,11 +4334,15 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       </div>
                     </div>
 
-                    {/* 3. Desglose Financiero 50%/50%, Transacciones y Comprobante */}
+                    {/* 3. Desglose Financiero, Transacciones y Comprobante */}
                     <div className="p-5 rounded-2xl bg-cream-50 border border-cream-200 space-y-3">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600 flex items-center gap-1.5">
                         <CreditCard className="w-3.5 h-3.5" />
-                        <span>Finanzas 50% / 50% y Facturación</span>
+                        <span>
+                          {selectedOrder.remaining_amount > 0
+                            ? "Finanzas 50% / 50% y Facturación"
+                            : "Finanzas (Pago 100%) y Facturación"}
+                        </span>
                       </span>
 
                       <div className="p-3 rounded-xl bg-white border border-cream-200 space-y-1">
@@ -4341,18 +4362,29 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             S/ {selectedOrder.total_amount.toFixed(2)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-[11px] text-sage-700 font-semibold pt-1">
-                          <span>1er 50% Adelanto:</span>
-                          <span>
-                            S/ {selectedOrder.advance_amount.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-terracotta-700 font-semibold">
-                          <span>2do 50% Contraentrega:</span>
-                          <span>
-                            S/ {selectedOrder.remaining_amount.toFixed(2)}
-                          </span>
-                        </div>
+                        {selectedOrder.remaining_amount > 0 ? (
+                          <>
+                            <div className="flex justify-between text-[11px] text-sage-700 font-semibold pt-1">
+                              <span>1er 50% Adelanto:</span>
+                              <span>
+                                S/ {selectedOrder.advance_amount.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-[11px] text-terracotta-700 font-semibold">
+                              <span>2do 50% Contraentrega:</span>
+                              <span>
+                                S/ {selectedOrder.remaining_amount.toFixed(2)}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between text-[11px] text-sage-700 font-semibold pt-1">
+                            <span>Pago Único al Ordenar (100%):</span>
+                            <span>
+                              S/ {selectedOrder.advance_amount.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">
@@ -4367,7 +4399,9 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             <div className="flex items-center justify-between font-semibold text-stone-900">
                               <span>
                                 {tx.payment_stage === "advance_50"
-                                  ? "1er 50% (Adelanto)"
+                                  ? selectedOrder.remaining_amount > 0
+                                    ? "1er 50% (Adelanto)"
+                                    : "Pago Total (100%)"
                                   : "2do 50% (Contraentrega)"}{" "}
                                 · {tx.payment_method.toUpperCase()}
                               </span>
@@ -4403,7 +4437,11 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             className="w-full py-2 px-3 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-soft transition-all mt-1"
                           >
                             <Check className="w-3.5 h-3.5" />
-                            <span>Marcar 50% de Adelanto como Verificado</span>
+                            <span>
+                              {selectedOrder.remaining_amount > 0
+                                ? "Marcar 50% de Adelanto como Verificado"
+                                : "Marcar Pago 100% como Verificado"}
+                            </span>
                           </button>
                         )}
                       </div>

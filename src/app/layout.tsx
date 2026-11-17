@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | Apolena Atelier",
   },
   description:
-    "Convierte la foto de tu perro o gato en un cuadro de museo al óleo. Impresión fine art 300 DPI sobre lienzo 100% algodón tensado en bastidor de madera de 3.5 cm. Envío a todo el Perú con 50% de adelanto y 50% contraentrega.",
+    "Convierte la foto de tu perro o gato en un cuadro único en canvas. Impresión fine art 300 DPI sobre lienzo tensado en bastidor de madera listo para colgar. Delivery incluido en Lima Metropolitana y envíos a todo el Perú.",
   applicationName: "Apolena Atelier",
   authors: [{ name: "Apolena Atelier", url: baseUrl }],
   generator: "Next.js",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "cuadro al oleo mascota",
     "regalo para amantes de perros",
     "fine art giclee mascotas",
-    "cuadro personalizado lima contraentrega",
+    "cuadro personalizado lima peru",
   ],
   creator: "Apolena Atelier",
   publisher: "Apolena Atelier",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "Apolena Atelier",
     title: "Apolena Atelier — Retratos Personalizados para Mascotas en Lienzo de Museo",
     description:
-      "Lienzo 100% algodón tensado a mano sobre bastidor de madera de 3.5 cm. Impresión Fine Art Giclée a 300 DPI. 50% de adelanto y saldo 50% contraentrega.",
+      "Lienzo tensado a mano sobre bastidor de madera, listo para colgar. Impresión Fine Art a 300 DPI con delivery incluido en Lima Metropolitana y envíos a todo el Perú.",
     images: [
       {
         url: "/og-image.jpg",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Apolena Atelier — Retratos de Mascotas en Lienzo de Museo",
     description:
-      "Convierte la foto de tu mascota en un retrato al óleo giclée sobre bastidor de madera. Paga el 50% de adelanto y 50% contraentrega.",
+      "Convierte la foto de tu mascota en un retrato único en canvas sobre bastidor de madera. Delivery incluido en Lima Metropolitana.",
     images: ["/og-image.jpg"],
     creator: "@apolena_shop",
   },

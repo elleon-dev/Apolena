@@ -56,20 +56,20 @@ export default function TerminosPage() {
           {/* Cláusula 2 */}
           <section className="space-y-2">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">2.</span> Modalidad Financiera: 50% Adelanto y 50% Contraentrega
+              <span className="text-[#c6a26c]">2.</span> Modalidad Financiera: Pago Total (100%) al Ordenar
             </h2>
             <p>
-              Para garantizar la exclusividad y reserva de materiales de bellas artes, Apolena opera bajo el modelo de pagos fraccionados:
+              Para garantizar la exclusividad, reserva de insumos y el inicio inmediato de la confección de tu cuadro personalizado, Apolena opera bajo la modalidad de pago único al confirmar la orden:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone-700">
               <li>
-                <strong>50% de Adelanto Inicial:</strong> Exigible al confirmar la orden en el checkout a través de Yape, Plin o Transferencia Bancaria. Este monto cubre los costos inmediatos de insumos, renderizado en alta resolución, tintas pigmentadas y armado del bastidor. Dicho adelanto tiene carácter no reembolsable una vez iniciado el proceso de confección.
+                <strong>Pago del 100% al Ordenar:</strong> Exigible al confirmar la orden en el checkout a través de Yape, Plin o Transferencia Bancaria. Este importe cubre el total del producto, impresión en alta resolución, armado artesanal del bastidor y envío según el destino seleccionado.
               </li>
               <li>
-                <strong>50% Saldo Restante Contraentrega:</strong> Pagadero únicamente en efectivo, Yape o Plin al momento de recibir el producto en la dirección de entrega designada por el comprador.
+                <strong>Sin cobros adicionales al recibir:</strong> Una vez validado el pago total por nuestro equipo, no existirán saldos pendientes al momento de la entrega en tu domicilio o agencia.
               </li>
               <li>
-                En caso de que el comprador se niegue injustificadamente a recibir el pedido o abonar el saldo restante acordado, Apolena se reserva el derecho de resolver la orden sin derecho a restitución del adelanto inicial y disponer del soporte físico según convenga a sus intereses.
+                Al tratarse de productos personalizados elaborados a medida, el pago tiene carácter no reembolsable una vez iniciado el proceso de confección e impresión.
               </li>
             </ul>
           </section>
@@ -114,7 +114,7 @@ export default function TerminosPage() {
               <span className="text-[#c6a26c]">5.</span> Plazos de Fabricación y Despacho Logístico
             </h2>
             <p>
-              Los plazos oficiales de entrega tras confirmarse la compra y validarse el adelanto del 50% son:
+              Los plazos oficiales de entrega tras confirmarse la compra y validarse el pago son:
             </p>
             <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700">
               <li><strong>Envíos a Lima Metropolitana:</strong> Tu pedido llegará en <strong>3 a 5 días hábiles</strong> luego de realizada la compra.</li>

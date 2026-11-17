@@ -629,7 +629,6 @@ export default function personalizedWallArt() {
 
   const currentUnitPrice =
     selectedPrintPreset.pricePen + (selectedFrame?.priceModifierPen || 0);
-  const currentAdvance50 = Number((currentUnitPrice * 0.5).toFixed(2));
 
   const handleProceedToCheckout = () => {
     const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
@@ -2229,7 +2228,7 @@ export default function personalizedWallArt() {
                     </ul>
                   </div>
 
-                  {/* Price & 50% Split Payment Box */}
+                  {/* Price & 100% Payment Summary Box */}
                   <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2 text-xs">
                     <div className="flex items-center justify-between text-stone-600">
                       <span>Precio del cuadro personalizado:</span>
@@ -2259,13 +2258,9 @@ export default function personalizedWallArt() {
                           )}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-terracotta-700 font-semibold pt-1 border-t border-cream-200/80">
-                      <span>Adelanto hoy (50% iniciar fabricación):</span>
-                      <span className="font-bold">S/ {currentAdvance50.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-stone-500 text-[11px]">
-                      <span>Restante 50% (Contraentrega al recibir):</span>
-                      <span>S/ {currentAdvance50.toFixed(2)}</span>
+                    <div className="flex items-center justify-between text-[#174B3D] font-semibold pt-1.5 border-t border-cream-200/80">
+                      <span>Total a abonar al ordenar (100%):</span>
+                      <span className="font-bold text-sm">S/ {currentUnitPrice.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -2276,8 +2271,7 @@ export default function personalizedWallArt() {
                   >
                     <ShoppingBag className="w-4 h-4 text-[#c6a26c]" />
                     <span>
-                      Ordenar Cuadro · Adelanto 50% (S/{" "}
-                      {currentAdvance50.toFixed(2)})
+                      Ordenar Cuadro · S/ {currentUnitPrice.toFixed(2)}
                     </span>
                   </button>
 

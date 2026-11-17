@@ -69,7 +69,7 @@ export default function PrivacidadPage() {
                 <strong>Fotografías de Mascotas:</strong> Imágenes digitales que el usuario carga voluntariamente en el simulador para la generación artística del retrato.
               </li>
               <li>
-                <strong>Datos de Transacción:</strong> Número de comprobante de operación bancaria o captura de transferencia del 50% de adelanto. Apolena <strong>no almacena números de tarjetas de crédito o débito</strong>, ya que las operaciones se efectúan mediante canales bancarios externos verificables (Yape, Plin o Transferencia).
+                <strong>Datos de Transacción:</strong> Número de comprobante de operación bancaria o captura de transferencia del pago de tu pedido. Apolena <strong>no almacena números de tarjetas de crédito o débito</strong>, ya que las operaciones se efectúan mediante canales bancarios externos verificables (Yape, Plin o Transferencia).
               </li>
             </ul>
           </section>

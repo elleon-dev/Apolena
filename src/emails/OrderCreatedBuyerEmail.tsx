@@ -42,8 +42,8 @@ export default function OrderCreatedBuyerEmail({
   tracking_id = "TRK-2026-94812",
   buyer_name = "Valeria",
   total_amount = 195,
-  advance_amount = 97.5,
-  remaining_amount = 97.5,
+  advance_amount = 195,
+  remaining_amount = 0,
   payment_method = "yape",
   shipping_address = "Av. Pardo 450, Dpto 802, Miraflores, Lima",
   customizations = {
@@ -70,7 +70,7 @@ export default function OrderCreatedBuyerEmail({
                 <Text style={brandTag}>APOLENA ATELIER</Text>
                 <Heading style={mainHeading}>¡Gracias por tu compra, {buyer_name}!</Heading>
                 <Text style={subheading}>
-                  Hemos recibido tu orden <strong>#{order_code}</strong> y tu adelanto del 50%.
+                  Hemos recibido tu orden <strong>#{order_code}</strong> y el registro de tu pago total (100%).
                   Nuestro taller artesanal ya inició el <strong>Paso 1: Fabricación</strong> de tu cuadro personalizado.
                 </Text>
               </Column>
@@ -123,19 +123,25 @@ export default function OrderCreatedBuyerEmail({
 
             <Hr style={divider} />
 
-            {/* Financial Breakdown 50% / 50% */}
+            {/* Financial Breakdown */}
             <Row style={itemRow}>
               <Column style={itemKey}>Total de la Orden:</Column>
               <Column style={itemValueBold}>S/ {total_amount.toFixed(2)}</Column>
             </Row>
             <Row style={itemRow}>
-              <Column style={itemKeyGreen}>1er Pago Adelanto (50% abonado vía {payment_method.toUpperCase()}):</Column>
+              <Column style={itemKeyGreen}>
+                {remaining_amount > 0
+                  ? `1er Pago Adelanto (50% abonado vía ${payment_method.toUpperCase()}):`
+                  : `Pago Total Registrado (100% vía ${payment_method.toUpperCase()}):`}
+              </Column>
               <Column style={itemValueGreen}>S/ {advance_amount.toFixed(2)} ✓</Column>
             </Row>
-            <Row style={itemRow}>
-              <Column style={itemKey}>2do Pago Contraentrega (al recibir tu cuadro):</Column>
-              <Column style={itemValueBold}>S/ {remaining_amount.toFixed(2)}</Column>
-            </Row>
+            {remaining_amount > 0 && (
+              <Row style={itemRow}>
+                <Column style={itemKey}>2do Pago Contraentrega (al recibir tu cuadro):</Column>
+                <Column style={itemValueBold}>S/ {remaining_amount.toFixed(2)}</Column>
+              </Row>
+            )}
           </Section>
 
           {/* Reassurance Banner */}
