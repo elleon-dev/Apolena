@@ -244,6 +244,49 @@ export default function personalizedWallArt() {
           setUseCustomTheme(false);
         }
       }
+
+      // Restaurar el Paso 3 al volver desde /checkout (?step=3)
+      if (params.get("step") === "3") {
+        try {
+          const raw = sessionStorage.getItem("apolena_studio_state");
+          if (raw) {
+            const saved = JSON.parse(raw);
+            if (saved.petImage !== undefined) setPetImage(saved.petImage);
+            if (saved.secondPetImage !== undefined)
+              setSecondPetImage(saved.secondPetImage);
+            if (saved.petSpecies) setPetSpecies(saved.petSpecies);
+            if (saved.selectedCharacter)
+              setSelectedCharacter(saved.selectedCharacter);
+            if (saved.useCustomTheme !== undefined)
+              setUseCustomTheme(saved.useCustomTheme);
+            if (saved.customThemeImage !== undefined)
+              setCustomThemeImage(saved.customThemeImage);
+            if (typeof saved.fusedResultUrl === "string")
+              setFusedResultUrl(saved.fusedResultUrl);
+            if (Array.isArray(saved.generatedVariants))
+              setGeneratedVariants(saved.generatedVariants);
+            if (saved.selectedVariantId)
+              setSelectedVariantId(saved.selectedVariantId);
+            if (saved.activeGenerationJobId !== undefined)
+              setActiveGenerationJobId(saved.activeGenerationJobId);
+            if (saved.modelUsedLabel) setModelUsedLabel(saved.modelUsedLabel);
+            if (saved.isSimulationJob !== undefined)
+              setIsSimulationJob(saved.isSimulationJob);
+            if (saved.simulationNotice !== undefined)
+              setSimulationNotice(saved.simulationNotice);
+            if (saved.selectedPrintPreset)
+              setSelectedPrintPreset(saved.selectedPrintPreset);
+            if (saved.selectedFrame) setSelectedFrame(saved.selectedFrame);
+            if (saved.includePetInscription !== undefined)
+              setIncludePetInscription(saved.includePetInscription);
+            if (typeof saved.petInscriptionName === "string")
+              setPetInscriptionName(saved.petInscriptionName);
+            if (typeof saved.dedicationNote === "string")
+              setDedicationNote(saved.dedicationNote);
+            setStep(3);
+          }
+        } catch {}
+      }
     }
   }, []);
 
@@ -614,6 +657,16 @@ export default function personalizedWallArt() {
     setIncludePetInscription(false);
     setPetInscriptionName("");
     setDedicationNote("");
+    setGeneratedVariants([]);
+    try {
+      sessionStorage.removeItem("apolena_studio_state");
+      if (
+        typeof window !== "undefined" &&
+        window.location.search.includes("step=")
+      ) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } catch {}
   };
 
   const activeThemeImageUrl =
@@ -668,6 +721,29 @@ export default function personalizedWallArt() {
     };
     try {
       localStorage.setItem("apolena_checkout_draft", JSON.stringify(draft));
+      sessionStorage.setItem(
+        "apolena_studio_state",
+        JSON.stringify({
+          petImage,
+          secondPetImage,
+          petSpecies,
+          selectedCharacter,
+          useCustomTheme,
+          customThemeImage,
+          fusedResultUrl: finalArtUrl,
+          generatedVariants,
+          selectedVariantId,
+          activeGenerationJobId,
+          modelUsedLabel,
+          isSimulationJob,
+          simulationNotice,
+          selectedPrintPreset,
+          selectedFrame,
+          includePetInscription,
+          petInscriptionName,
+          dedicationNote,
+        }),
+      );
     } catch {}
     router.push("/checkout");
   };
