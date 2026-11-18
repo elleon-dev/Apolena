@@ -213,6 +213,8 @@ export default function personalizedWallArt() {
     useState<FamousCharacter | null>(null);
   const [showNoCustomizationModal, setShowNoCustomizationModal] =
     useState<boolean>(false);
+  const [showPhotoGuideModal, setShowPhotoGuideModal] =
+    useState<boolean>(false);
 
   const scrollToCreatePortrait = () => {
     setTimeout(() => {
@@ -257,6 +259,16 @@ export default function personalizedWallArt() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [previewCharacterModal, showNoCustomizationModal]);
+
+  // Cerrar modal de guía de foto con tecla Escape
+  useEffect(() => {
+    if (!showPhotoGuideModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowPhotoGuideModal(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showPhotoGuideModal]);
 
   const scrollCharacters = (direction: "left" | "right") => {
     if (charactersScrollRef.current) {
@@ -981,28 +993,36 @@ export default function personalizedWallArt() {
                     )}
                   </div>
 
-                  {/* Fotografías de Muestra Rápida */}
+                  {/* Guía de la foto correcta a subir */}
                   <div className="pt-3 border-t border-cream-200 space-y-2">
                     <span className="text-xs font-semibold text-stone-700 block">
-                      Probar con fotografía de muestra:
+                      Imagen de foto correcta a subir:
                     </span>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <button
-                        type="button"
-                        onClick={loadDemoDog}
-                        className="py-2 px-3 rounded-xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-terracotta-400 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
-                      >
-                        <Dog className="w-4 h-4 text-terracotta-600" />
-                        <span>Perro de Muestra</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={loadDemoCat}
-                        className="py-2 px-3 rounded-xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-terracotta-400 text-stone-700 hover:text-stone-900 font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
-                      >
-                        <Cat className="w-4 h-4 text-terracotta-600" />
-                        <span>Gato de Muestra</span>
-                      </button>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setShowPhotoGuideModal(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setShowPhotoGuideModal(true);
+                        }
+                      }}
+                      className="group/guide flex items-center gap-3 p-2.5 rounded-2xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-[#c6a26c] cursor-pointer transition-colors shadow-xs"
+                    >
+                      {/* Guía de la foto correcta a subir */}
+                  <div className="pt-3 border-t border-cream-200 space-y-2">
+                    <span className="text-xs font-semibold text-stone-700 block">
+                      Imagen de foto correcta a subir:
+                    </span>
+                    <div className="w-full rounded-2xl overflow-hidden border border-cream-200 bg-cream-50 shadow-xs">
+                      <img
+                        src="/images/ejemplo.jpg"
+                        alt="Ejemplo de foto correcta de mascota"
+                        className="w-full h-auto max-h-[260px] object-contain mx-auto block"
+                      />
+                    </div>
+                  </div>
                     </div>
                   </div>
                 </div>
@@ -1058,37 +1078,12 @@ export default function personalizedWallArt() {
                   Elige el vestuario y escenario
                 </h2>
                 <p className="text-xs sm:text-sm text-stone-600">
-                  Selecciona una obra de nuestra colección o sube tu propia
-                  fotografía de referencia temática.
+                  Selecciona una obra de nuestra colección para convertir a tu mascota en protagonista.
                 </p>
               </div>
 
-              {/* Dynamic Curated Collection Cards (1 Línea Horizontal Flexible & Responsive) */}
-              <div className="relative group">
-                {/* Flechas de Navegación Horizontal */}
-                <button
-                  type="button"
-                  onClick={() => scrollCharacters("left")}
-                  aria-label="Ver estilos anteriores"
-                  className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 border border-cream-200 text-stone-700 shadow-card flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-stone-900"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollCharacters("right")}
-                  aria-label="Ver siguientes estilos"
-                  className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 border border-cream-200 text-stone-700 shadow-card flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-stone-900"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                {/* Track Horizontal de Personajes en 1 sola línea */}
-                <div
-                  ref={charactersScrollRef}
-                  className="flex items-stretch gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-none"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                >
+              {/* Dynamic Curated Collection Cards (Grid Responsivo) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                   {catalogCharacters.map((char) => {
                     const isSelected =
                       !useCustomTheme && selectedCharacter.id === char.id;
@@ -1101,7 +1096,7 @@ export default function personalizedWallArt() {
                           setUseCustomTheme(false);
                           scrollToCreatePortrait();
                         }}
-                        className={`group/card relative rounded-2xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between flex-1 min-w-[210px] max-w-[270px] sm:max-w-none flex-shrink-0 snap-start ${
+                        className={`group/card relative rounded-2xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
                           isSelected
                             ? "border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
                             : "border-cream-200 hover:border-stone-300 shadow-soft"
@@ -1178,96 +1173,9 @@ export default function personalizedWallArt() {
                       </div>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Custom Reference Theme Upload Box + Optional Custom Notes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white border border-cream-200 rounded-3xl p-6 shadow-soft">
-                {/* Upload Custom Theme Reference Image */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-stone-800 flex items-center gap-2">
-                      <ImagePlus className="w-4 h-4 text-terracotta-500" />
-                      <span>Referencia temática propia (Opcional)</span>
-                    </span>
-                    {useCustomTheme && customThemeImage && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseCustomTheme(false);
-                          setCustomThemeImage(null);
-                        }}
-                        className="text-xs text-stone-500 hover:text-terracotta-600 underline"
-                      >
-                        Usar colección del estudio
-                      </button>
-                    )}
-                  </div>
-
-                  <div
-                    onClick={() => themeFileInputRef.current?.click()}
-                    className={`p-4 rounded-2xl border border-dashed cursor-pointer transition-all flex items-center gap-4 ${
-                      useCustomTheme && customThemeImage
-                        ? "border-terracotta-500 bg-terracotta-50/40"
-                        : "border-cream-300 hover:border-stone-400 bg-cream-50/60"
-                    }`}
-                  >
-                    <input
-                      ref={themeFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          readAndCompressImage(e.target.files[0], (url) => {
-                            setCustomThemeImage(url);
-                            setUseCustomTheme(true);
-                            scrollToCreatePortrait();
-                          });
-                        }
-                      }}
-                      className="hidden"
-                    />
-                    {customThemeImage ? (
-                      <img
-                        src={customThemeImage}
-                        alt="Temática personalizada"
-                        className="w-16 h-16 rounded-xl object-cover border border-cream-200 flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-white border border-cream-200 flex items-center justify-center text-stone-600 flex-shrink-0 shadow-soft">
-                        <Upload className="w-5 h-5" />
-                      </div>
-                    )}
-                    <div className="text-xs">
-                      <p className="font-medium text-stone-900">
-                        {customThemeImage
-                          ? "Imagen de referencia cargada"
-                          : "Subir otra imagen de vestuario o época"}
-                      </p>
-                      <p className="text-stone-500 text-[11px] mt-0.5 leading-relaxed">
-                        Sube cualquier fotografía de referencia para vestir a
-                        tus mascotas con esa temática.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Custom Prompt / Extra Notes */}
-                <div className="space-y-2.5">
-                  <label className="text-xs font-semibold text-stone-800 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-stone-500" />
-                    <span>Notas de dirección fotográfica (Opcional)</span>
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="Detalles específicos: iluminación cálida de atardecer, mantos tejidos andinos, paisaje de Machu Picchu al fondo..."
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-cream-50 border border-cream-200 text-xs text-stone-900 placeholder:text-stone-400 focus:border-terracotta-500 focus:bg-white focus:outline-none transition-colors"
-                  />
-                </div>
               </div>
             </div>
+
 
             {/* Launch Dual Artistic Portrait Generation CTA */}
             <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
@@ -1290,6 +1198,98 @@ export default function personalizedWallArt() {
                 </strong>{" "}
                 para que elijas tu favorita.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Modal informativo: guía de la foto correcta a subir */}
+        {showPhotoGuideModal && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Guía para tomar la foto correcta de tu mascota"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-950/80 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setShowPhotoGuideModal(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-3xl w-full bg-white border border-cream-200 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
+            >
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-cream-200 bg-cream-50">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#c6a26c] block">
+                    Guía y consejos
+                  </span>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900">
+                    Cómo tomar la foto correcta de tu mascota
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoGuideModal(false)}
+                  aria-label="Cerrar guía"
+                  className="p-2 rounded-full bg-cream-100 hover:bg-cream-200 text-stone-600 hover:text-stone-900 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-5 p-5">
+                <div className="rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex items-center justify-center">
+                  <img
+                    src="/images/ejemplo.jpg"
+                    alt="Ejemplo de foto correcta de mascota"
+                    className="w-full h-full max-h-[60vh] object-contain"
+                  />
+                </div>
+
+                <div className="flex flex-col justify-between gap-5">
+                  <ul className="space-y-3 text-sm text-stone-700">
+                    {[
+                      {
+                        title: "Luz natural",
+                        text: "Toma la foto cerca de una ventana o al aire libre, evita el flash y las sombras duras.",
+                      },
+                      {
+                        title: "Rostro de frente",
+                        text: "Ubica la cámara a la altura de sus ojos y que mire hacia el lente, con el rostro completo visible.",
+                      },
+                      {
+                        title: "Sin accesorios",
+                        text: "Quita collares, gorros, lentes o ropa que tapen sus rasgos; así conservamos sus facciones exactas.",
+                      },
+                      {
+                        title: "Foto nítida",
+                        text: "Mantén el celular firme y enfoca bien los ojos; evita fotos borrosas o muy lejanas.",
+                      },
+                    ].map((tip) => (
+                      <li key={tip.title} className="flex items-start gap-2.5">
+                        <span className="mt-0.5 w-5 h-5 rounded-full bg-[#174B3D] text-[#c6a26c] flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                        <span className="leading-snug">
+                          <strong className="text-stone-900 font-semibold">
+                            {tip.title}:
+                          </strong>{" "}
+                          {tip.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPhotoGuideModal(false);
+                      fileInput1Ref.current?.click();
+                    }}
+                    className="w-full py-3 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
+                  >
+                    <Upload className="w-4 h-4 text-[#c6a26c]" />
+                    <span>Subir foto de mi mascota ahora</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
