@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import {
+  ArrowLeft,
   MapPin,
   CreditCard,
   CheckCircle2,
@@ -433,6 +434,19 @@ function CheckoutContent() {
           >
             {/* Left 7 Columns: Contact, Delivery Location & Payment Method */}
             <div className="lg:col-span-7 space-y-6">
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/products/cuadros-personalizados?step=3")
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:text-stone-900 hover:border-stone-300 text-xs font-medium transition-colors shadow-soft cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Volver al resultado del retrato</span>
+                </button>
+              </div>
+
               <div>
                 <h1 className="font-serif text-3xl font-semibold text-stone-900">
                   Finalizar Orden de Compra
@@ -960,10 +974,11 @@ function CheckoutContent() {
                   {/* Campo 2: Captura del Voucher */}
                   <div className="space-y-1.5">
                     <label className="font-extrabold text-[#174B3D] block">
-                      Captura del Voucher (Opcional)
+                      Captura del Voucher
                     </label>
                     <input
                       type="file"
+                      required
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
