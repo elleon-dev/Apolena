@@ -53,6 +53,7 @@ import {
   SlidersHorizontal,
   PenTool,
   Gift,
+  Maximize2,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -64,7 +65,13 @@ import type {
   ProfileRecord,
 } from "@/lib/db-service";
 import type { FamousCharacter } from "@/data/characters";
-import type { PrintPreset, FrameOption } from "@/lib/print-export";
+import {
+  exportPrintReadyImage,
+  resolvePrintBleedSpec,
+  CANVAS_WRAP_BLEED_CM,
+  type PrintPreset,
+  type FrameOption,
+} from "@/lib/print-export";
 import type { UserRole } from "@/lib/auth";
 import { setCachedSessionUser } from "@/lib/client-session";
 
@@ -156,6 +163,11 @@ export default function AdminDashboardPage() {
 
   // Character Modal State
   const [showCharacterModal, setShowCharacterModal] = useState(false);
+  const [previewCharacterImage, setPreviewCharacterImage] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(
     null,
   );
@@ -228,6 +240,77 @@ export default function AdminDashboardPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
   const [copiedDedicationId, setCopiedDedicationId] = useState<string | null>(null);
+  const [downloadingMasterOrderId, setDownloadingMasterOrderId] = useState<
+    string | null
+  >(null);
+
+  const handleDownloadMasterWithBleed = async (order: OrderRecord) => {
+    const item = order.packages?.[0]?.items?.[0];
+    if (!item) return;
+
+    const imageSrc =
+      item.customizations?.master_art_url ||
+      item.generated_art_url ||
+      "/samples/cat-suit.jpg";
+
+    const bleedSpec = resolvePrintBleedSpec(
+      {
+        sizeId: item.customizations?.size_id,
+        cmDimensions:
+          item.customizations?.cm_dimensions || item.customizations?.size_label,
+      },
+      CANVAS_WRAP_BLEED_CM,
+    );
+
+    const finishMode =
+      item.customizations?.finish_mode === "museum-matte"
+        ? "museum-matte"
+        : "full-bleed";
+
+    setDownloadingMasterOrderId(order.id);
+    try {
+      const exported = await exportPrintReadyImage(
+        imageSrc,
+        bleedSpec.preset,
+        finishMode,
+        CANVAS_WRAP_BLEED_CM,
+      );
+
+      const fileName = `Orden-${order.order_code}-cuadro-${bleedSpec.faceWidthCm}x${bleedSpec.faceHeightCm}cm-impresion-${bleedSpec.totalWidthCm}x${bleedSpec.totalHeightCm}cm-300DPI.png`;
+
+      if (exported.blob) {
+        const blobUrl = URL.createObjectURL(exported.blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      } else {
+        const link = document.createElement("a");
+        link.href = exported.dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      showToast(
+        "success",
+        `Archivo Maestro HD descargado en ${bleedSpec.totalCmLabel} (+${CANVAS_WRAP_BLEED_CM} cm en los 4 lados para remangado).`,
+      );
+    } catch {
+      // Fallback directo si la imagen externa tiene restricción CORS
+      window.open(imageSrc, "_blank", "noopener,noreferrer");
+      showToast(
+        "error",
+        "No se pudo procesar en navegador por CORS; se abrió la imagen original en una nueva pestaña.",
+      );
+    } finally {
+      setDownloadingMasterOrderId(null);
+    }
+  };
 
   const [editingOrder, setEditingOrder] = useState<OrderRecord | null>(null);
   const [editingTrackingOrder, setEditingTrackingOrder] =
@@ -2427,13 +2510,27 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewCharacterImage({
+                                url: char.characterImageUrl,
+                                title: char.name || "Personaje IA",
+                                subtitle: char.characterTitle || char.universe,
+                              })
+                            }
+                            title={`Ver imagen completa de ${char.name}`}
+                            className="group/thumb relative w-20 h-20 rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0 cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-terracotta-500"
+                          >
                             <img
                               src={char.characterImageUrl}
                               alt={char.name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover object-top group-hover/thumb:scale-105 transition-transform duration-300"
                             />
-                          </div>
+                            <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-colors flex items-center justify-center">
+                              <Maximize2 className="w-4 h-4 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity drop-shadow" />
+                            </div>
+                          </button>
 
                           <div className="flex-1 min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2974,11 +3071,33 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         </div>
                       ) : (
                         <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex flex-col sm:flex-row items-center gap-4">
-                          <img
-                            src={charForm.characterImageUrl}
-                            alt="Vestuario de referencia"
-                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border border-cream-200 shadow-soft bg-white shrink-0"
-                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewCharacterImage({
+                                url: charForm.characterImageUrl,
+                                title:
+                                  charForm.name ||
+                                  "Imagen de Referencia / Vestuario",
+                                subtitle:
+                                  charForm.characterTitle || charForm.universe,
+                              })
+                            }
+                            title="Haz clic para ver la imagen en su tamaño completo"
+                            className="group/preview relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-cream-200 shadow-soft bg-white shrink-0 cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-terracotta-500"
+                          >
+                            <img
+                              src={charForm.characterImageUrl}
+                              alt="Vestuario de referencia"
+                              className="w-full h-full object-cover object-top group-hover/preview:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover/preview:bg-black/45 transition-colors flex flex-col items-center justify-center gap-1">
+                              <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover/preview:opacity-100 transition-opacity drop-shadow" />
+                              <span className="text-[9px] font-bold text-white opacity-0 group-hover/preview:opacity-100 transition-opacity">
+                                Ver completa
+                              </span>
+                            </div>
+                          </button>
 
                           <div className="flex-1 space-y-2.5 w-full text-left">
                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2987,11 +3106,30 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                   Vestuario cargado exitosamente
                                 </span>
                                 <span className="text-[11px] text-stone-500">
-                                  Listo para procesar o personalizar.
+                                  Listo para procesar o personalizar. Haz clic en la imagen para verla completa.
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPreviewCharacterImage({
+                                      url: charForm.characterImageUrl,
+                                      title:
+                                        charForm.name ||
+                                        "Imagen de Referencia / Vestuario",
+                                      subtitle:
+                                        charForm.characterTitle ||
+                                        charForm.universe,
+                                    })
+                                  }
+                                  className="px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 text-stone-800 font-semibold text-[11px] flex items-center gap-1.5 border border-cream-200 shadow-2xs transition-colors"
+                                >
+                                  <Maximize2 className="w-3.5 h-3.5 text-terracotta-600" />
+                                  <span>Ver completa</span>
+                                </button>
+
                                 <button
                                   type="button"
                                   disabled={isAnalyzingCharacter}
@@ -3149,6 +3287,64 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* VISUALIZADOR DE IMAGEN COMPLETA DEL PERSONAJE / VESTUARIO */}
+            {previewCharacterImage && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Vista completa de ${previewCharacterImage.title}`}
+                onClick={() => setPreviewCharacterImage(null)}
+                className="fixed inset-0 z-[70] bg-stone-950/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative bg-white border border-cream-200 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
+                >
+                  <div className="flex items-center justify-between px-5 py-3.5 border-b border-cream-200 bg-cream-50">
+                    <div className="min-w-0 pr-3">
+                      {previewCharacterImage.subtitle && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta-600 block truncate">
+                          {previewCharacterImage.subtitle}
+                        </span>
+                      )}
+                      <h4 className="font-serif text-base sm:text-lg font-bold text-stone-900 truncate">
+                        {previewCharacterImage.title}
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={previewCharacterImage.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-stone-700 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-terracotta-600" />
+                        <span className="hidden sm:inline">Abrir original</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => setPreviewCharacterImage(null)}
+                        aria-label="Cerrar visualizador"
+                        className="w-8 h-8 rounded-full bg-cream-100 hover:bg-cream-200 flex items-center justify-center text-stone-700 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-6 bg-stone-950/95 flex items-center justify-center overflow-auto">
+                    <img
+                      src={previewCharacterImage.url}
+                      alt={previewCharacterImage.title}
+                      className="max-h-[75vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -4066,6 +4262,17 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
               {/* Complete Details Grid: Print Spec + Customer/Delivery + Financial/Invoice */}
               {(() => {
                 const modalItem = selectedOrder.packages?.[0]?.items?.[0];
+                const bleedSpec = modalItem
+                  ? resolvePrintBleedSpec(
+                      {
+                        sizeId: modalItem.customizations?.size_id,
+                        cmDimensions:
+                          modalItem.customizations?.cm_dimensions ||
+                          modalItem.customizations?.size_label,
+                      },
+                      CANVAS_WRAP_BLEED_CM,
+                    )
+                  : null;
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
                     {/* 1. Especificaciones de Imprenta y Arte HD */}
@@ -4104,10 +4311,28 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                 "Personalizado"}
                             </p>
                             <p>
-                              <strong>Medida:</strong>{" "}
+                              <strong>Medida del cuadro:</strong>{" "}
                               {modalItem.customizations?.size_label} (
-                              {modalItem.customizations?.cm_dimensions})
+                              {bleedSpec?.faceCmLabel ||
+                                modalItem.customizations?.cm_dimensions}
+                              )
                             </p>
+                            {bleedSpec && (
+                              <p className="text-[#174B3D] bg-[#174B3D]/8 px-2.5 py-1.5 rounded-xl border border-[#174B3D]/20 font-medium">
+                                <strong>
+                                  Medida de impresión (+{CANVAS_WRAP_BLEED_CM}{" "}
+                                  cm en 4 lados):
+                                </strong>{" "}
+                                <span className="font-bold">
+                                  {bleedSpec.totalCmLabel}
+                                </span>{" "}
+                                <span className="text-[10px] text-stone-600 block">
+                                  Incluye +{CANVAS_WRAP_BLEED_CM} cm arriba,
+                                  abajo, izquierda y derecha para remangar en el
+                                  bastidor de madera.
+                                </span>
+                              </p>
+                            )}
                             <p>
                               <strong>Acabado:</strong>{" "}
                               {modalItem.customizations?.finish_label}
@@ -4176,20 +4401,37 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             )}
                           </div>
 
-                          <a
-                            href={
-                              modalItem.customizations?.master_art_url ||
-                              modalItem.generated_art_url ||
-                              "/samples/cat-suit.jpg"
+                          <button
+                            type="button"
+                            disabled={
+                              downloadingMasterOrderId === selectedOrder.id
                             }
-                            download={`Orden-${selectedOrder.order_code}-300DPI.png`}
-                            className="w-full py-2.5 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all"
+                            onClick={() =>
+                              handleDownloadMasterWithBleed(selectedOrder)
+                            }
+                            className="w-full py-2.5 px-4 rounded-full bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5 text-terracotta-400" />
-                            <span>
-                              Descargar Archivo Maestro HD (Sin Marca)
-                            </span>
-                          </a>
+                            {downloadingMasterOrderId === selectedOrder.id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-terracotta-400" />
+                                <span>
+                                  Generando imprenta (+{CANVAS_WRAP_BLEED_CM} cm
+                                  en 4 lados)...
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5 text-terracotta-400" />
+                                <span>
+                                  Descargar Archivo Maestro HD (
+                                  {bleedSpec
+                                    ? `${bleedSpec.totalCmLabel} con +${CANVAS_WRAP_BLEED_CM} cm`
+                                    : "Sin Marca"}
+                                  )
+                                </span>
+                              </>
+                            )}
+                          </button>
                         </>
                       ) : (
                         <p className="text-stone-500">

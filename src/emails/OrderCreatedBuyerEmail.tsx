@@ -158,8 +158,6 @@ export default function OrderCreatedBuyerEmail({
               <Link href={`${app_url}/terminos`} style={footerLink}>Términos y Condiciones</Link>
               {" · "}
               <Link href={`${app_url}/privacidad`} style={footerLink}>Privacidad</Link>
-              {" · "}
-              <Link href={`${app_url}/libro-de-reclamaciones`} style={footerLink}>Libro de Reclamaciones</Link>
             </Text>
             <Text style={footerCopyright}>
               © {new Date().getFullYear()} Apolena Studio S.A.C. Todos los derechos reservados.

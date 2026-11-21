@@ -1148,7 +1148,7 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
             customization_config: isWallArtProductSlug(r.slug)
               ? {
                   ...normConfig,
-                  characters: dbCharacters && dbCharacters.length > 0 ? dbCharacters : normConfig.characters,
+                  characters: dbCharacters ?? [],
                 }
               : (r.customization_config as unknown as ProductCustomizationConfig) ||
                 DEFAULT_WALL_ART_PRODUCT.customization_config,
@@ -1187,20 +1187,12 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
   const fallbackMapped = list.map((p) => ({
     ...p,
     customization_config: isWallArtProductSlug(p.slug)
-      ? normalizeWallArtCustomizationConfig(p.customization_config)
+      ? {
+          ...normalizeWallArtCustomizationConfig(p.customization_config),
+          characters: [],
+        }
       : p.customization_config,
   }));
-  if (onlyActive) {
-    memCache.productsActive = {
-      data: fallbackMapped,
-      expiresAt: now + CACHE_TTL_MS,
-    };
-  } else {
-    memCache.productsAll = {
-      data: fallbackMapped,
-      expiresAt: now + CACHE_TTL_MS,
-    };
-  }
   return fallbackMapped;
 }
 
@@ -1213,39 +1205,28 @@ export async function getWallArtCharacters(
         where: onlyActive ? { is_available: true } : undefined,
         orderBy: { position: "asc" },
       });
-      if (rows && rows.length > 0) {
-        return rows.map((c) => ({
-          id: c.slug,
-          name: c.name,
-          characterTitle: c.character_title || "",
-          universe: c.universe,
-          description: c.description || "",
-          characterImageUrl: c.character_image_url,
-          maskUrl: c.mask_url || "",
-          fusionSampleUrl: c.fusion_sample_url || c.character_image_url,
-          accentColor: c.accent_color || "bg-terracotta-500",
-          tagColor:
-            c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
-          prompt: c.prompt || "",
-          negativePrompt: c.negative_prompt || "",
-          isAvailable: c.is_available,
-        }));
-      }
+      return rows.map((c) => ({
+        id: c.slug,
+        name: c.name,
+        characterTitle: c.character_title || "",
+        universe: c.universe,
+        description: c.description || "",
+        characterImageUrl: c.character_image_url,
+        maskUrl: c.mask_url || "",
+        fusionSampleUrl: c.fusion_sample_url || c.character_image_url,
+        accentColor: c.accent_color || "bg-terracotta-500",
+        tagColor:
+          c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+        prompt: c.prompt || "",
+        negativePrompt: c.negative_prompt || "",
+        isAvailable: c.is_available,
+      }));
     } catch (e) {
       console.warn("getWallArtCharacters db error:", e);
     }
   }
 
-  const products = await getProducts(onlyActive);
-  const wallArt =
-    products.find(
-      (p) =>
-        p.slug === "cuadros-personalizados" ||
-        p.slug === "personalized-wall-art" ||
-        p.category === "wall_art",
-    ) || products[0];
-  const chars = wallArt?.customization_config?.characters || [];
-  return onlyActive ? chars.filter((c) => c.isAvailable !== false) : chars;
+  return [];
 }
 
 export async function getWallArtCharacterById(

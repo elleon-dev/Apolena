@@ -104,7 +104,7 @@ export default function personalizedWallArt() {
     "00000000-0000-4000-8000-000000000101",
   );
   const [catalogCharacters, setCatalogCharacters] = useState<FamousCharacter[]>(
-    () => FAMOUS_CHARACTERS.filter((c) => c.isAvailable !== false),
+    [],
   );
   const [catalogSizes, setCatalogSizes] =
     useState<PrintPreset[]>(PRINT_PRESETS);
@@ -347,9 +347,44 @@ export default function personalizedWallArt() {
       })
       .catch(() => {});
 
+    const applyDbCharacters = (chars: FamousCharacter[]) => {
+      const activeChars = chars.filter((c) => c.isAvailable !== false);
+      if (activeChars.length > 0) {
+        setCatalogCharacters(activeChars);
+        setSelectedCharacter((prev) => {
+          if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const charParam = params.get("character");
+            if (charParam) {
+              const match = activeChars.find(
+                (c) =>
+                  c.id === charParam ||
+                  c.id.toLowerCase() === charParam.toLowerCase() ||
+                  c.id.toLowerCase().includes(charParam.toLowerCase()) ||
+                  charParam.toLowerCase().includes(c.id.toLowerCase()),
+              );
+              if (match) return match;
+            }
+          }
+          const found = activeChars.find((c) => c.id === prev.id);
+          return found || activeChars[0];
+        });
+      }
+    };
+
+    // Cargar personajes directamente desde la BD (vía /api/templates)
+    fetch("/api/templates", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.fromDatabase && Array.isArray(data.templates)) {
+          applyDbCharacters(data.templates);
+        }
+      })
+      .catch(() => {});
+
     // Load dynamic characters, frames, sizes, and finishes for cuadros-personalizados
     fetch("/api/products", { cache: "no-store" })
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const productsList: ProductRecord[] = data?.products || [];
         const wallArt =
@@ -364,31 +399,8 @@ export default function personalizedWallArt() {
         setWallArtProductId(wallArt.id);
         const cfg = wallArt.customization_config;
 
-        if (Array.isArray(cfg?.characters)) {
-          const activeChars = cfg.characters.filter(
-            (c) => c.isAvailable !== false,
-          );
-          if (activeChars.length > 0) {
-            setCatalogCharacters(activeChars);
-            setSelectedCharacter((prev) => {
-              if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                const charParam = params.get("character");
-                if (charParam) {
-                  const match = activeChars.find(
-                    (c) =>
-                      c.id === charParam ||
-                      c.id.toLowerCase() === charParam.toLowerCase() ||
-                      c.id.toLowerCase().includes(charParam.toLowerCase()) ||
-                      charParam.toLowerCase().includes(c.id.toLowerCase()),
-                  );
-                  if (match) return match;
-                }
-              }
-              const found = activeChars.find((c) => c.id === prev.id);
-              return found || activeChars[0];
-            });
-          }
+        if (Array.isArray(cfg?.characters) && cfg.characters.length > 0) {
+          applyDbCharacters(cfg.characters);
         }
 
         if (Array.isArray(cfg?.sizes)) {
@@ -1171,97 +1183,110 @@ export default function personalizedWallArt() {
                 </p>
               </div>
 
-              {/* Dynamic Curated Collection Cards (Grid Responsivo) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                  {catalogCharacters.map((char) => {
-                    const isSelected =
-                      !useCustomTheme && selectedCharacter.id === char.id;
-
-                    return (
-                      <div
-                        key={char.id}
-                        onClick={() => {
-                          setSelectedCharacter(char);
-                          setUseCustomTheme(false);
-                          scrollToCreatePortrait();
-                        }}
-                        className={`group/card relative rounded-2xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
-                          isSelected
-                            ? "border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
-                            : "border-cream-200 hover:border-stone-300 shadow-soft"
-                        }`}
-                      >
-                        {/* Imagen Compacta y Proporcional */}
-                        <div className="relative aspect-[16/11] w-full overflow-hidden bg-cream-100">
-                          <img
-                            src={char.characterImageUrl}
-                            alt={char.name}
-                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
-                          />
-
-                          <div className="absolute top-2 left-2">
-                            <span className="text-[9px] font-medium px-2 py-0.5 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
-                              {char.universe}
-                            </span>
+              {/* Dynamic Curated Collection Cards (Grid Compacto Vertical 2:3 o Skeleton si no hay conexión a BD) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+                  {catalogCharacters.length === 0
+                    ? Array.from({ length: 12 }).map((_, idx) => (
+                        <div
+                          key={`studio-char-skeleton-${idx}`}
+                          aria-hidden="true"
+                          className="rounded-xl overflow-hidden border border-cream-200 bg-white shadow-soft flex flex-col justify-between h-full"
+                        >
+                          <div className="relative aspect-[2/3] w-full bg-[#EFE6D5] animate-pulse">
+                            <div className="absolute top-1.5 left-1.5 h-3.5 w-16 rounded-full bg-white/70" />
                           </div>
+                          <div className="p-2 space-y-1.5 animate-pulse">
+                            <div className="h-3 w-3/4 rounded bg-stone-200" />
+                            <div className="h-2.5 w-1/2 rounded bg-stone-100" />
+                            <div className="h-5 w-full rounded-full bg-cream-100 mt-1" />
+                          </div>
+                        </div>
+                      ))
+                    : catalogCharacters.map((char) => {
+                        const isSelected =
+                          !useCustomTheme && selectedCharacter.id === char.id;
 
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-terracotta-500 text-white flex items-center justify-center shadow-soft">
-                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            </div>
-                          )}
-
-                          {/* Botón flotante para ver imagen en tamaño completo */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewCharacterModal(char);
+                        return (
+                          <div
+                            key={char.id}
+                            onClick={() => {
+                              setSelectedCharacter(char);
+                              setUseCustomTheme(false);
+                              scrollToCreatePortrait();
                             }}
-                            aria-label={`Ver imagen completa de ${char.name}`}
-                            title="Ver imagen en tamaño completo"
-                            className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all duration-150 hover:scale-110 z-10"
+                            title={char.description || char.name}
+                            className={`group/card relative rounded-xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                              isSelected
+                                ? "border-[#174B3D] ring-2 ring-[#174B3D]/25 shadow-card"
+                                : "border-cream-200 hover:border-stone-300 shadow-soft"
+                            }`}
                           >
-                            <Maximize2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                            {/* Imagen Vertical Completa (2:3) en tamaño compacto */}
+                            <div className="relative aspect-[2/3] w-full overflow-hidden bg-cream-100">
+                              <img
+                                src={char.characterImageUrl}
+                                alt={char.name}
+                                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
+                              />
 
-                        {/* Información Compacta */}
-                        <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
-                          <div>
-                            <span className="text-[9px] font-semibold uppercase tracking-wider text-terracotta-600 block truncate">
-                              {char.characterTitle}
-                            </span>
-                            <h3 className="font-serif text-sm sm:text-base font-bold text-stone-900 mt-0.5 truncate">
-                              {char.name}
-                            </h3>
-                            <p className="text-[11px] text-stone-500 leading-snug mt-1 line-clamp-2">
-                              {char.description}
-                            </p>
-                          </div>
+                              <div className="absolute top-1.5 left-1.5 right-8">
+                                <span className="inline-block max-w-full truncate text-[8px] font-medium px-1.5 py-0.5 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
+                                  {char.universe}
+                                </span>
+                              </div>
 
-                          <div className="pt-1.5">
-                            <span
-                              className={`w-full py-1.5 px-2.5 rounded-full text-[11px] font-medium flex items-center justify-center gap-1 transition-all ${
-                                isSelected
-                                  ? "bg-terracotta-50 text-terracotta-700 border border-terracotta-100"
-                                  : "bg-cream-100 text-stone-700 group-hover/card:bg-cream-200"
-                              }`}
-                            >
-                              {isSelected ? (
-                                <>
-                                  <Check className="w-3 h-3" />
-                                  <span>Seleccionado</span>
-                                </>
-                              ) : (
-                                <span>Seleccionar</span>
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow-soft">
+                                  <Check className="w-3 h-3 stroke-[2.5]" />
+                                </div>
                               )}
-                            </span>
+
+                              {/* Botón flotante para ver imagen en tamaño completo */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewCharacterModal(char);
+                                }}
+                                aria-label={`Ver imagen completa de ${char.name}`}
+                                title="Ver imagen en tamaño completo"
+                                className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all duration-150 hover:scale-110 z-10"
+                              >
+                                <Maximize2 className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            {/* Pie Compacto */}
+                            <div className="p-2 space-y-1.5 flex flex-col justify-between">
+                              <div className="min-w-0">
+                                <h3 className="font-serif text-xs font-bold text-stone-900 truncate leading-tight">
+                                  {char.name}
+                                </h3>
+                                <span className="text-[9px] font-medium text-stone-500 block truncate mt-0.5">
+                                  {char.characterTitle}
+                                </span>
+                              </div>
+
+                              <span
+                                className={`w-full py-1 px-2 rounded-full text-[10px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                                  isSelected
+                                    ? "bg-[#174B3D] text-white"
+                                    : "bg-cream-100 text-stone-700 group-hover/card:bg-cream-200"
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <Check className="w-2.5 h-2.5" />
+                                    <span>Elegido</span>
+                                  </>
+                                ) : (
+                                  <span>Seleccionar</span>
+                                )}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
               </div>
             </div>
 
@@ -1271,7 +1296,8 @@ export default function personalizedWallArt() {
               <button
                 ref={createPortraitBtnRef}
                 onClick={handleStartFusion}
-                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
+                disabled={!useCustomTheme && catalogCharacters.length === 0}
+                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
               >
                 <span>Crear Retrato Ahora</span>
                 <ArrowRight className="w-4 h-4 text-[#c6a26c]" />

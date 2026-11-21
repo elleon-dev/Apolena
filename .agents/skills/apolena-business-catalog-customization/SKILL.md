@@ -108,9 +108,9 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
        - **Marco Minimalista Negro / Natural / Blanco (`frame-minimalist-black`, `frame-minimalist-natural`, `frame-minimalist-white`):** + S/ 45.00.
        - **Marco Madera Gold (`frame-wood-gold`):** + S/ 55.00.
      - **Fórmula de Precio Total de Cuadro:**
-       - `unit_price = precio_base_medida + modificador_marco`
-       - `adelanto_50% = unit_price * 0.5`
-       - `contraentrega_50% = unit_price - adelanto_50%`
+       - `unit_price = precio_base_medida + modificador_marco` (Pago único del 100% al ordenar).
+   - **Margen de Remangado para Bastidor de Madera (+5 cm en los 4 lados al descargar para imprenta):**
+     - En todas las medidas (`20×30`, `30×40`, `40×60`, `50×70`, `60×90 cm`, etc.), al exportar o descargar el Archivo Maestro HD para imprenta (`exportPrintReadyImage` / `resolvePrintBleedSpec` en `src/lib/print-export.ts` con `CANVAS_WRAP_BLEED_CM = 5`), se agregan automáticamente **+5 cm en cada uno de los 4 lados** (arriba, abajo, izquierda y derecha, sumando $+10\text{ cm}$ al ancho total y $+10\text{ cm}$ al alto total) con extensión continua en espejo (*Mirror Gallery Wrap*) y línea guía sutil de encuadre para remangar el lienzo sobre el bastidor de madera sin recortar ni perder ninguna parte del retrato frontal.
    - **Detalles del Producto y Material:** Los cuadros son elaborados en **lienzo de tela canvas**, tensados artesanalmente sobre bastidor de madera maciza (listos para colgar).
    - Al continuar a checkout, la obra elegida viaja en el borrador de orden (`apolena_checkout_draft`) como `generated_art_url`.
 

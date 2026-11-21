@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Loader2, Instagram } from "lucide-react";
+import { CheckCircle2, Loader2, Instagram } from "lucide-react";
 
 function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -203,14 +203,6 @@ export function Footer() {
                     Política de Privacidad
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/libro-de-reclamaciones"
-                    className="hover:text-[#c6a26c] transition-colors"
-                  >
-                    Libro de Reclamaciones
-                  </Link>
-                </li>
               </ul>
             </div>
           </div>
@@ -280,14 +272,6 @@ export function Footer() {
             <span>·</span>
             <Link href="/privacidad" className="hover:text-[#c6a26c] transition-colors">
               Privacidad
-            </Link>
-            <span>·</span>
-            <Link
-              href="/libro-de-reclamaciones"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#11382D] border border-[#c6a26c]/50 text-[#c6a26c] hover:bg-[#11382D]/80 hover:border-[#c6a26c] transition-all font-semibold shadow-xs"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Libro de Reclamaciones Virtual</span>
             </Link>
 
             <span className="text-white/30">|</span>
