@@ -45,8 +45,8 @@ export default function OrderCreatedAdminEmail({
   shipping_address = "Av. Pardo 450, Dpto 802, Miraflores, Lima",
   payment_method = "yape",
   operation_number = "1928374",
-  advance_amount = 97.5,
-  remaining_amount = 97.5,
+  advance_amount = 195,
+  remaining_amount = 0,
   customizations = {
     size_label: "Grande (L) · 40 × 50 cm",
     frame_name: "Lienzo en Bastidor de Madera",
@@ -60,7 +60,7 @@ export default function OrderCreatedAdminEmail({
   return (
     <Html lang="es">
       <Head />
-      <Preview>[NUEVA ORDEN APOLENA] #{order_code} · Adelanto 50% abonado</Preview>
+      <Preview>[NUEVA ORDEN APOLENA] #{order_code} · Pago 100% registrado</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={headerSection}>
@@ -94,11 +94,17 @@ export default function OrderCreatedAdminEmail({
 
           {/* Financiero */}
           <Section style={infoCard}>
-            <Heading as="h2" style={cardTitle}>Validación de Pago 50%</Heading>
+            <Heading as="h2" style={cardTitle}>
+              {remaining_amount > 0 ? "Validación de Pago 50%" : "Validación de Pago 100%"}
+            </Heading>
             <Hr style={divider} />
             <Text style={line}><strong>Método:</strong> {payment_method.toUpperCase()} · <strong>Op / Ref:</strong> {operation_number || "Por verificar"}</Text>
-            <Text style={lineGreen}><strong>Adelanto 50% Recibido:</strong> S/ {advance_amount.toFixed(2)}</Text>
-            <Text style={line}><strong>Saldo 50% por cobrar Contraentrega:</strong> S/ {remaining_amount.toFixed(2)}</Text>
+            <Text style={lineGreen}>
+              <strong>{remaining_amount > 0 ? "Adelanto 50% Recibido:" : "Pago Total 100% Recibido:"}</strong> S/ {advance_amount.toFixed(2)}
+            </Text>
+            {remaining_amount > 0 && (
+              <Text style={line}><strong>Saldo 50% por cobrar Contraentrega:</strong> S/ {remaining_amount.toFixed(2)}</Text>
+            )}
           </Section>
 
           <Section style={actionSection}>

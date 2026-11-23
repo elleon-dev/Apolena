@@ -404,7 +404,7 @@ export default function ShowcaseSection() {
                     {sz.price}
                   </span>
                   <span className="text-[10px] font-bold text-[#94713F]">
-                    50% adelanto
+                    Delivery incluido
                   </span>
                 </div>
               </Link>

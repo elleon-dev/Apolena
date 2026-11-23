@@ -252,14 +252,93 @@ export const PRINT_PRESETS: PrintPreset[] = [
 export type PrintFinishMode = "full-bleed" | "museum-matte";
 
 /**
- * Exports the portrait scaled to the exact print preset dimensions at high interpolation quality.
- * Automatically respects the source image's orientation (landscape for 2 pets vs portrait/square).
+ * Margen obligatorio de remangado para bastidor/marco de madera:
+ * +5 cm en cada uno de los 4 lados (arriba, abajo, izquierda, derecha) = +10 cm al ancho y +10 cm al alto.
+ */
+export const CANVAS_WRAP_BLEED_CM = 5;
+
+export interface PrintBleedSpec {
+  faceWidthCm: number;
+  faceHeightCm: number;
+  bleedCm: number;
+  totalWidthCm: number;
+  totalHeightCm: number;
+  faceCmLabel: string;
+  totalCmLabel: string;
+  preset: PrintPreset;
+}
+
+/**
+ * Resuelve la especificación de medida visible y la medida total de impresión (+5 cm en los 4 lados)
+ * a partir de un PrintPreset, size_id o string de dimensiones en cm (ej. "40 × 60 cm").
+ */
+export function resolvePrintBleedSpec(
+  input?: {
+    sizeId?: string | null;
+    cmDimensions?: string | null;
+    preset?: PrintPreset | null;
+  },
+  bleedCm: number = CANVAS_WRAP_BLEED_CM,
+): PrintBleedSpec {
+  let matchedPreset: PrintPreset | undefined = input?.preset || undefined;
+
+  if (!matchedPreset && input?.sizeId) {
+    matchedPreset = PRINT_PRESETS.find((p) => p.id === input.sizeId);
+  }
+
+  const rawDims =
+    input?.cmDimensions ||
+    matchedPreset?.cmDimensions ||
+    matchedPreset?.label ||
+    "40 × 60 cm";
+  const nums = rawDims.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+  let faceWidthCm = nums[0] || 40;
+  let faceHeightCm = nums[1] || 60;
+
+  if (!matchedPreset) {
+    matchedPreset =
+      PRINT_PRESETS.find((p) => {
+        const pNums = p.cmDimensions.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+        return pNums[0] === faceWidthCm && pNums[1] === faceHeightCm;
+      }) || PRINT_PRESETS[2]; // default 40x60
+  }
+
+  const totalWidthCm = faceWidthCm + bleedCm * 2;
+  const totalHeightCm = faceHeightCm + bleedCm * 2;
+
+  return {
+    faceWidthCm,
+    faceHeightCm,
+    bleedCm,
+    totalWidthCm,
+    totalHeightCm,
+    faceCmLabel: `${faceWidthCm} × ${faceHeightCm} cm`,
+    totalCmLabel: `${totalWidthCm} × ${totalHeightCm} cm`,
+    preset: matchedPreset,
+  };
+}
+
+/**
+ * Exports the portrait scaled to the exact print preset dimensions at high interpolation quality,
+ * adding +5 cm on all 4 sides (top, bottom, left, right) with continuous mirror-wrap bleed
+ * so the canvas can be wrapped ("remangado") around the wooden frame without losing any part of the portrait.
  */
 export async function exportPrintReadyImage(
   imageSrc: string,
   preset: PrintPreset,
   finishMode: PrintFinishMode = "full-bleed",
-): Promise<{ dataUrl: string; widthPx: number; heightPx: number }> {
+  bleedCm: number = CANVAS_WRAP_BLEED_CM,
+): Promise<{
+  dataUrl: string;
+  blob: Blob | null;
+  widthPx: number;
+  heightPx: number;
+  faceWidthPx: number;
+  faceHeightPx: number;
+  bleedPxX: number;
+  bleedPxY: number;
+  totalCmLabel: string;
+}> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     if (
@@ -275,19 +354,72 @@ export async function exportPrintReadyImage(
       const srcH = img.naturalHeight || img.height || 1024;
       const isLandscape = srcW > srcH * 1.05;
 
+      const spec = resolvePrintBleedSpec({ preset }, bleedCm);
+      const faceWidthCm =
+        isLandscape && spec.faceHeightCm > spec.faceWidthCm
+          ? spec.faceHeightCm
+          : spec.faceWidthCm;
+      const faceHeightCm =
+        isLandscape && spec.faceHeightCm > spec.faceWidthCm
+          ? spec.faceWidthCm
+          : spec.faceHeightCm;
+
       // Adapt preset orientation to match the portrait (e.g., 70x50cm for landscape 2-pet scenes)
-      const targetW =
+      const faceW =
         isLandscape && preset.baseHeightPx > preset.baseWidthPx
           ? preset.baseHeightPx
           : preset.baseWidthPx;
-      const targetH =
+      const faceH =
         isLandscape && preset.baseHeightPx > preset.baseWidthPx
           ? preset.baseWidthPx
           : preset.baseHeightPx;
 
+      // 1. Renderizar el área visible frontal del cuadro (faceW × faceH) en un lienzo intermedio
+      const faceCanvas = document.createElement("canvas");
+      faceCanvas.width = faceW;
+      faceCanvas.height = faceH;
+      const faceCtx = faceCanvas.getContext("2d");
+      if (!faceCtx) {
+        reject(new Error("No se pudo inicializar el lienzo frontal"));
+        return;
+      }
+
+      faceCtx.imageSmoothingEnabled = true;
+      faceCtx.imageSmoothingQuality = "high";
+      faceCtx.fillStyle = "#FAF8F5";
+      faceCtx.fillRect(0, 0, faceW, faceH);
+
+      if (finishMode === "museum-matte") {
+        const margin = Math.round(Math.min(faceW, faceH) * 0.075);
+        const availW = faceW - margin * 2;
+        const availH = faceH - margin * 2;
+        const scale = Math.min(availW / srcW, availH / srcH);
+        const drawW = Math.round(srcW * scale);
+        const drawH = Math.round(srcH * scale);
+        const offsetX = Math.round((faceW - drawW) / 2);
+        const offsetY = Math.round((faceH - drawH) / 2);
+        faceCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+      } else {
+        const scale = Math.max(faceW / srcW, faceH / srcH);
+        const drawW = Math.round(srcW * scale);
+        const drawH = Math.round(srcH * scale);
+        const offsetX = Math.round((faceW - drawW) / 2);
+        const offsetY = Math.round((faceH - drawH) * 0.22);
+        faceCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+      }
+
+      // 2. Calcular los píxeles equivalentes a +5 cm en cada uno de los 4 lados
+      const bleedPxX =
+        bleedCm > 0 ? Math.round((bleedCm / faceWidthCm) * faceW) : 0;
+      const bleedPxY =
+        bleedCm > 0 ? Math.round((bleedCm / faceHeightCm) * faceH) : 0;
+
+      const totalW = faceW + bleedPxX * 2;
+      const totalH = faceH + bleedPxY * 2;
+
       const canvas = document.createElement("canvas");
-      canvas.width = targetW;
-      canvas.height = targetH;
+      canvas.width = totalW;
+      canvas.height = totalH;
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -297,37 +429,180 @@ export async function exportPrintReadyImage(
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-
-      // Fill background with archival museum white
       ctx.fillStyle = "#FAF8F5";
-      ctx.fillRect(0, 0, targetW, targetH);
+      ctx.fillRect(0, 0, totalW, totalH);
 
-      if (finishMode === "museum-matte") {
-        // Draw with an 8% archival gallery border around the image (no cropping of the artwork)
-        const margin = Math.round(Math.min(targetW, targetH) * 0.075);
-        const availW = targetW - margin * 2;
-        const availH = targetH - margin * 2;
-        const scale = Math.min(availW / srcW, availH / srcH);
-        const drawW = Math.round(srcW * scale);
-        const drawH = Math.round(srcH * scale);
-        const offsetX = Math.round((targetW - drawW) / 2);
-        const offsetY = Math.round((targetH - drawH) / 2);
+      // Dibujar la imagen frontal íntegra en el centro
+      ctx.drawImage(faceCanvas, bleedPxX, bleedPxY, faceW, faceH);
 
-        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
-      } else {
-        // Full-bleed cover crop anchored to top-headroom (22% from top) so the pet's head,
-        // ears, and crown are never cut off when adapting between portrait and square formats
-        const scale = Math.max(targetW / srcW, targetH / srcH);
-        const drawW = Math.round(srcW * scale);
-        const drawH = Math.round(srcH * scale);
-        const offsetX = Math.round((targetW - drawW) / 2);
-        const offsetY = Math.round((targetH - drawH) * 0.22);
+      if (bleedPxX > 0 && bleedPxY > 0) {
+        const sampleW = Math.min(bleedPxX, faceW);
+        const sampleH = Math.min(bleedPxY, faceH);
 
-        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+        // Borde Izquierdo (+5 cm): reflejo horizontal del borde izquierdo de la obra
+        ctx.save();
+        ctx.translate(bleedPxX, bleedPxY);
+        ctx.scale(-1, 1);
+        ctx.drawImage(
+          faceCanvas,
+          0,
+          0,
+          sampleW,
+          faceH,
+          0,
+          0,
+          bleedPxX,
+          faceH,
+        );
+        ctx.restore();
+
+        // Borde Derecho (+5 cm): reflejo horizontal del borde derecho de la obra
+        ctx.save();
+        ctx.translate(bleedPxX + faceW, bleedPxY);
+        ctx.scale(-1, 1);
+        ctx.drawImage(
+          faceCanvas,
+          faceW - sampleW,
+          0,
+          sampleW,
+          faceH,
+          -bleedPxX,
+          0,
+          bleedPxX,
+          faceH,
+        );
+        ctx.restore();
+
+        // Borde Superior (+5 cm): reflejo vertical del borde superior de la obra
+        ctx.save();
+        ctx.translate(bleedPxX, bleedPxY);
+        ctx.scale(1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          0,
+          0,
+          faceW,
+          sampleH,
+          0,
+          0,
+          faceW,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Borde Inferior (+5 cm): reflejo vertical del borde inferior de la obra
+        ctx.save();
+        ctx.translate(bleedPxX, bleedPxY + faceH);
+        ctx.scale(1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          0,
+          faceH - sampleH,
+          faceW,
+          sampleH,
+          0,
+          -bleedPxY,
+          faceW,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Esquina Superior Izquierda (5×5 cm)
+        ctx.save();
+        ctx.translate(bleedPxX, bleedPxY);
+        ctx.scale(-1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          0,
+          0,
+          sampleW,
+          sampleH,
+          0,
+          0,
+          bleedPxX,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Esquina Superior Derecha (5×5 cm)
+        ctx.save();
+        ctx.translate(bleedPxX + faceW, bleedPxY);
+        ctx.scale(-1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          faceW - sampleW,
+          0,
+          sampleW,
+          sampleH,
+          -bleedPxX,
+          0,
+          bleedPxX,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Esquina Inferior Izquierda (5×5 cm)
+        ctx.save();
+        ctx.translate(bleedPxX, bleedPxY + faceH);
+        ctx.scale(-1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          0,
+          faceH - sampleH,
+          sampleW,
+          sampleH,
+          0,
+          -bleedPxY,
+          bleedPxX,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Esquina Inferior Derecha (5×5 cm)
+        ctx.save();
+        ctx.translate(bleedPxX + faceW, bleedPxY + faceH);
+        ctx.scale(-1, -1);
+        ctx.drawImage(
+          faceCanvas,
+          faceW - sampleW,
+          faceH - sampleH,
+          sampleW,
+          sampleH,
+          -bleedPxX,
+          -bleedPxY,
+          bleedPxX,
+          bleedPxY,
+        );
+        ctx.restore();
+
+        // Líneas guía sutiles de doblez en las 4 esquinas (fuera del área frontal visible) para encuadrar el bastidor
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+        ctx.lineWidth = Math.max(2, Math.round(Math.min(bleedPxX, bleedPxY) * 0.012));
+        ctx.setLineDash([12, 10]);
+        ctx.strokeRect(bleedPxX, bleedPxY, faceW, faceH);
+        ctx.restore();
       }
 
+      const totalCmLabel = `${faceWidthCm + bleedCm * 2} × ${faceHeightCm + bleedCm * 2} cm`;
       const dataUrl = canvas.toDataURL("image/png", 1.0);
-      resolve({ dataUrl, widthPx: targetW, heightPx: targetH });
+      canvas.toBlob(
+        (blob) => {
+          resolve({
+            dataUrl,
+            blob,
+            widthPx: totalW,
+            heightPx: totalH,
+            faceWidthPx: faceW,
+            faceHeightPx: faceH,
+            bleedPxX,
+            bleedPxY,
+            totalCmLabel,
+          });
+        },
+        "image/png",
+        1.0,
+      );
     };
 
     img.onerror = (err) => reject(err);

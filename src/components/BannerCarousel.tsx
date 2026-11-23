@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,16 +13,29 @@ import {
 } from "lucide-react";
 
 export default function BannerCarousel() {
+  const desktopVideoRef = useRef<HTMLVideoElement>(null);
+  const mobileVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    [desktopVideoRef.current, mobileVideoRef.current].forEach((video) => {
+      if (!video) return;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.volume = 0;
+      video.play().catch(() => {});
+    });
+  }, []);
+
   return (
     <section
       aria-label="Presentación Principal de Apolena"
       className="relative w-full overflow-hidden bg-[#FAF7F2] text-[#141414]"
     >
       {/* ========================================================= */}
-      {/* 1. VERSIÓN DESKTOP: La primera imagen como fondo completo */}
+      {/* 1. VERSIÓN DESKTOP: Video en bucle infinito con póster    */}
       {/* ========================================================= */}
       <div className="hidden lg:flex relative w-full overflow-hidden min-h-[540px] xl:min-h-[580px] 2xl:min-h-[620px] items-center">
-        {/* Imagen de Fondo Original del Slide */}
+        {/* Póster e Imagen de Respaldo + Video Hero sin audio en bucle */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/banners/hero-pc.jpg"
@@ -32,6 +45,20 @@ export default function BannerCarousel() {
             className="object-cover object-right xl:object-center"
             sizes="100vw"
           />
+          <video
+            ref={desktopVideoRef}
+            src="/banners/video-here-bg.mp4?v=2"
+            poster="/banners/hero-canvas-bg-2.png"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover object-right xl:object-center pointer-events-none"
+          />
+          {/* Velo sutil de contraste en el lado izquierdo para máxima nitidez de lectura */}
+          <div className="absolute inset-y-0 left-0 w-[44%] bg-gradient-to-r from-[#FAF3E8]/45 via-[#FAF3E8]/20 to-transparent pointer-events-none" />
         </div>
 
         {/* Contenido Editorial alineado a la izquierda sobre la pared iluminada */}
@@ -115,7 +142,7 @@ export default function BannerCarousel() {
             Transformamos su foto en un cuadro único en canvas, listo para colgar.
           </p>
 
-          {/* Imagen de la composición en sala (recorte del cuadro sobre la credenza) */}
+          {/* Video e Imagen Póster de la composición en sala */}
           <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
             <Image
               src="/banners/hero-movil.jpg"
@@ -124,6 +151,18 @@ export default function BannerCarousel() {
               height={501}
               priority
               className="w-full h-auto object-cover"
+            />
+            <video
+              ref={mobileVideoRef}
+              src="/banners/video-here-bg.mp4?v=2"
+              poster="/banners/hero-canvas-mobile.jpg"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover object-right pointer-events-none"
             />
           </div>
 

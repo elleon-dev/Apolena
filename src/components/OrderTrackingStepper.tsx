@@ -89,17 +89,15 @@ export function OrderTrackingStepper({
       num: 3,
       key: "delivered",
       title: "3. Entregado",
-      subtitle:
-        "Recibido en tu domicilio · Pago del 50% restante contraentrega",
+      subtitle: "Pedido entregado en tu dirección o agencia asignada",
       icon: PackageCheck,
       timestamp: deliveredAt,
     },
     {
       num: 4,
       key: "completed",
-      title: "4. Exitoso (100%)",
-      subtitle:
-        "Segundo 50% contraentrega confirmado y orden culminada con éxito",
+      title: "4. Exitoso",
+      subtitle: "Entrega verificada y orden culminada con éxito",
       icon: CheckCircle2,
       timestamp: completedAt,
     },

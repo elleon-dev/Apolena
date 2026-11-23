@@ -9,6 +9,7 @@ import {
   createOrderWithSplitPayment,
   findProfileByEmail,
   createProfile,
+  getAuthoritativeSessionUser,
   getOrdersByBuyer,
   PaymentMethod,
 } from "@/lib/db-service";
@@ -42,8 +43,8 @@ function sanitizeOrderArtworkForBuyer(order: any, isAdmin: boolean) {
   };
 }
 
-export async function GET() {
-  const user = await getSessionUser();
+export async function GET(request: Request) {
+  const user = await getAuthoritativeSessionUser(request);
   if (!user) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   }
@@ -58,7 +59,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    let sessionUser = await getSessionUser();
+    let sessionUser = await getAuthoritativeSessionUser(request);
     let newSessionToken: string | null = null;
 
     const shipping = body.shipping;
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Ingresa el número de operación o referencia de tu pago del 50% de adelanto.",
+            "Ingresa el número de operación o referencia de tu pago.",
         },
         { status: 400 },
       );

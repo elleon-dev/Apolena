@@ -190,8 +190,7 @@ export default function CommonUserOrdersPage() {
                 <strong className="text-white">1. En Fabricación</strong> →{" "}
                 <strong className="text-white">2. En Camino</strong> →{" "}
                 <strong className="text-white">3. Entregado</strong> y cierre{" "}
-                <strong className="text-[#c6a26c]">Exitoso</strong> tras el 50%
-                contraentrega.
+                <strong className="text-[#c6a26c]">Exitoso</strong>.
               </p>
             </div>
 
@@ -351,7 +350,7 @@ export default function CommonUserOrdersPage() {
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto leading-relaxed">
               {orders.length === 0
-                ? "Sube la foto de tu mascota, elige un personaje artístico y encarga tu cuadro personalizado con el 50% de adelanto."
+                ? "Sube la foto de tu mascota, elige un personaje artístico y encarga tu cuadro personalizado."
                 : "Prueba seleccionando la pestaña 'Todas' o ingresa un Tracking ID diferente arriba."}
             </p>
             <div className="pt-1">
@@ -407,9 +406,15 @@ export default function CommonUserOrdersPage() {
                             <CheckCircle2 className="w-3.5 h-3.5 text-[#c6a26c]" />
                             <span>Exitoso · 100% Pagado</span>
                           </span>
-                        ) : (
+                        ) : order.remaining_amount > 0 ? (
                           <span className="text-xs px-3 py-1 rounded-full bg-[#c6a26c]/20 text-[#174B3D] font-semibold border border-[#c6a26c]/40">
                             50% Adelanto · 50% Contraentrega
+                          </span>
+                        ) : (
+                          <span className="text-xs px-3 py-1 rounded-full bg-[#174B3D]/10 text-[#174B3D] font-semibold border border-[#174B3D]/25">
+                            {isPaidFull
+                              ? "Pago 100% Verificado"
+                              : "Pago 100% · En Verificación"}
                           </span>
                         )}
 
@@ -546,36 +551,54 @@ export default function CommonUserOrdersPage() {
                           <span>S/ {order.total_amount.toFixed(2)}</span>
                         </div>
 
-                        {/* Barra de progreso de pago 50% / 100% */}
+                        {/* Barra de progreso de pago */}
                         <div className="w-full h-2 rounded-full bg-[#E8DEC8] overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
                               isPaidFull
                                 ? "w-full bg-[#174B3D]"
-                                : "w-1/2 bg-[#c6a26c]"
+                                : order.remaining_amount > 0
+                                  ? "w-1/2 bg-[#c6a26c]"
+                                  : "w-full bg-[#c6a26c]"
                             }`}
                           />
                         </div>
 
-                        <div className="flex justify-between text-[#174B3D] font-semibold">
-                          <span>
-                            1er 50% Adelanto (
-                            {order.payment_method.toUpperCase()}):
-                          </span>
-                          <span>S/ {order.advance_amount.toFixed(2)}</span>
-                        </div>
+                        {order.remaining_amount > 0 ? (
+                          <>
+                            <div className="flex justify-between text-[#174B3D] font-semibold">
+                              <span>
+                                1er 50% Adelanto (
+                                {order.payment_method.toUpperCase()}):
+                              </span>
+                              <span>S/ {order.advance_amount.toFixed(2)}</span>
+                            </div>
 
-                        <div className="flex justify-between text-[#141414]/80 font-semibold">
-                          <span>2do 50% Contraentrega:</span>
-                          <span
-                            className={
-                              isPaidFull ? "text-[#174B3D]" : "text-[#94713F]"
-                            }
-                          >
-                            S/ {order.remaining_amount.toFixed(2)} (
-                            {isPaidFull ? "Pagado" : "Al recibir en casa"})
-                          </span>
-                        </div>
+                            <div className="flex justify-between text-[#141414]/80 font-semibold">
+                              <span>2do 50% Contraentrega:</span>
+                              <span
+                                className={
+                                  isPaidFull
+                                    ? "text-[#174B3D]"
+                                    : "text-[#94713F]"
+                                }
+                              >
+                                S/ {order.remaining_amount.toFixed(2)} (
+                                {isPaidFull ? "Pagado" : "Al recibir en casa"})
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between text-[#174B3D] font-semibold">
+                            <span>
+                              Pago Total ({order.payment_method.toUpperCase()}):
+                            </span>
+                            <span>
+                              S/ {order.total_amount.toFixed(2)} (
+                              {isPaidFull ? "Verificado" : "En verificación"})
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-2.5 border-t border-[#E8DEC8] flex items-center gap-1.5 text-stone-600 text-[11px]">

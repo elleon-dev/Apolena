@@ -15,7 +15,7 @@ export interface SessionUserInfo {
 }
 
 const STORAGE_KEY = "apolena_session_user_v1";
-const REVALIDATE_INTERVAL_MS = 30 * 1000; // 30s background revalidation throttle
+const REVALIDATE_INTERVAL_MS = 5 * 1000; // 5s background revalidation throttle for immediate RBAC sync
 
 let memoryUser: SessionUserInfo | null | undefined = undefined;
 let isClientHydrated = false;

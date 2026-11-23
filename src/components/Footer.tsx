@@ -3,7 +3,21 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Instagram } from "lucide-react";
+
+function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743l-.002-.001.002.001a2.895 2.895 0 0 1 3.183-4.51v-3.5a6.329 6.329 0 0 0-5.394 6.27c0 3.5 2.841 6.341 6.341 6.341 3.5 0 6.341-2.841 6.341-6.341V8.71a8.19 8.19 0 0 0 4.945 1.637V6.892a4.82 4.82 0 0 1-2.999-.206z" />
+    </svg>
+  );
+}
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -70,6 +84,36 @@ export function Footer() {
               elaboradas en lienzo de tela canvas a 300 DPI, tensadas sobre
               bastidor de madera y listas para colgar.
             </p>
+
+            {/* Redes Sociales Oficiales */}
+            <div className="pt-1 space-y-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#c6a26c] block">
+                Síguenos
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="https://www.tiktok.com/@apolenaperu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="TikTok @apolenaperu"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#11382D] hover:bg-[#11382D]/80 border border-[#c6a26c]/40 hover:border-[#c6a26c] text-white/90 hover:text-white transition-all text-xs font-semibold shadow-xs group cursor-pointer"
+                >
+                  <TikTokIcon className="w-3.5 h-3.5 text-[#c6a26c] group-hover:scale-110 transition-transform" />
+                  <span>TikTok</span>
+                </a>
+
+                <a
+                  href="https://www.instagram.com/apolenaperu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram @apolenaperu"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#11382D] hover:bg-[#11382D]/80 border border-[#c6a26c]/40 hover:border-[#c6a26c] text-white/90 hover:text-white transition-all text-xs font-semibold shadow-xs group cursor-pointer"
+                >
+                  <Instagram className="w-3.5 h-3.5 text-[#c6a26c] group-hover:scale-110 transition-transform" />
+                  <span>Instagram</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Columna 2: Enlaces de Navegación, Soporte y Legal */}
@@ -159,14 +203,6 @@ export function Footer() {
                     Política de Privacidad
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/libro-de-reclamaciones"
-                    className="hover:text-[#c6a26c] transition-colors"
-                  >
-                    Libro de Reclamaciones
-                  </Link>
-                </li>
               </ul>
             </div>
           </div>
@@ -237,14 +273,32 @@ export function Footer() {
             <Link href="/privacidad" className="hover:text-[#c6a26c] transition-colors">
               Privacidad
             </Link>
-            <span>·</span>
-            <Link
-              href="/libro-de-reclamaciones"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#11382D] border border-[#c6a26c]/50 text-[#c6a26c] hover:bg-[#11382D]/80 hover:border-[#c6a26c] transition-all font-semibold shadow-xs"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Libro de Reclamaciones Virtual</span>
-            </Link>
+
+            <span className="text-white/30">|</span>
+
+            {/* Redes Sociales en Barra Inferior */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://www.tiktok.com/@apolenaperu"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok @apolenaperu"
+                title="TikTok @apolenaperu"
+                className="w-7 h-7 rounded-full bg-[#11382D] hover:bg-[#1a4a3c] border border-[#c6a26c]/40 hover:border-[#c6a26c] flex items-center justify-center text-[#c6a26c] hover:text-white transition-all cursor-pointer"
+              >
+                <TikTokIcon className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="https://www.instagram.com/apolenaperu"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram @apolenaperu"
+                title="Instagram @apolenaperu"
+                className="w-7 h-7 rounded-full bg-[#11382D] hover:bg-[#1a4a3c] border border-[#c6a26c]/40 hover:border-[#c6a26c] flex items-center justify-center text-[#c6a26c] hover:text-white transition-all cursor-pointer"
+              >
+                <Instagram className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

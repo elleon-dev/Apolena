@@ -349,24 +349,44 @@ export default function TrackingDetailPage({
               <div className="bg-white border border-[#E8DEC8] rounded-3xl p-6 shadow-soft space-y-3 text-xs">
                 <div className="flex items-center gap-2 font-bold text-[#174B3D]">
                   <CreditCard className="w-4 h-4 text-[#c6a26c]" />
-                  <span>Estado de Pagos (Modalidad 50% / 50%)</span>
-                </div>
-                <div className="flex justify-between text-stone-600">
-                  <span>1er 50% (Adelanto de Inicio):</span>
-                  <span className="font-semibold text-[#174B3D]">
-                    S/ {order.advance_amount.toFixed(2)} (
-                    {order.payment_method.toUpperCase()})
+                  <span>
+                    {order.remaining_amount > 0
+                      ? "Estado de Pagos (Modalidad 50% / 50%)"
+                      : "Estado de Pago (100% al ordenar)"}
                   </span>
                 </div>
-                <div className="flex justify-between text-stone-600">
-                  <span>2do 50% (Contraentrega al recibir):</span>
-                  <span className="font-semibold text-[#141414]">
-                    S/ {order.remaining_amount.toFixed(2)} ·{" "}
-                    {order.payment_status === "paid_full"
-                      ? "Pagado (Exitoso)"
-                      : "Pendiente contraentrega"}
-                  </span>
-                </div>
+                {order.remaining_amount > 0 ? (
+                  <>
+                    <div className="flex justify-between text-stone-600">
+                      <span>1er 50% (Adelanto de Inicio):</span>
+                      <span className="font-semibold text-[#174B3D]">
+                        S/ {order.advance_amount.toFixed(2)} (
+                        {order.payment_method.toUpperCase()})
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-stone-600">
+                      <span>2do 50% (Contraentrega al recibir):</span>
+                      <span className="font-semibold text-[#141414]">
+                        S/ {order.remaining_amount.toFixed(2)} ·{" "}
+                        {order.payment_status === "paid_full"
+                          ? "Pagado (Exitoso)"
+                          : "Pendiente contraentrega"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-stone-600">
+                    <span>
+                      Pago Total ({order.payment_method.toUpperCase()}):
+                    </span>
+                    <span className="font-semibold text-[#174B3D]">
+                      S/ {order.total_amount.toFixed(2)} ·{" "}
+                      {order.payment_status === "paid_full"
+                        ? "Verificado (100%)"
+                        : "En verificación"}
+                    </span>
+                  </div>
+                )}
                 <div className="pt-2 border-t border-[#E8DEC8] flex items-center gap-2 text-stone-500">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[#174B3D]" />
                   <span className="truncate">

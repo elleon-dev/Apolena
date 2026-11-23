@@ -38,8 +38,7 @@ export default function ProductsCatalogPage() {
           </h1>
           <p className="text-xs sm:text-base text-stone-600">
             Comenzamos con nuestros cuadros de estudio en lienzo Fine Art a 300
-            DPI con marcos personalizables. Paga el 50% de adelanto y el 50%
-            restante al recibir tu pedido.
+            DPI con marcos personalizables y delivery incluido en Lima Metropolitana.
           </p>
         </div>
 
@@ -56,7 +55,7 @@ export default function ProductsCatalogPage() {
                   className="w-full h-full object-cover"
                 />
                 <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white/95 text-stone-900 text-xs font-semibold border border-cream-200 shadow-soft">
-                  Desde S/ {product.base_price.toFixed(2)} · 50% Adelanto
+                  Desde S/ {product.base_price.toFixed(2)} · Delivery incluido
                 </span>
               </div>
 

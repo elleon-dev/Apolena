@@ -1,11 +1,11 @@
 ---
 name: apolena-business-checkout-payments
-description: Reglas de Negocio Oficiales para el Checkout, Esquema de Pago 50% Adelanto + 50% Contraentrega, Métodos de Pago (Yape, Plin, Transferencia Bancaria) y Registro de Transacciones (payment_transactions) en Apolena.
+description: Reglas de Negocio Oficiales para el Checkout, Esquema de Pago Total 100% al Ordenar, Métodos de Pago (Yape, Plin, Transferencia Bancaria) y Registro de Transacciones (payment_transactions) en Apolena.
 ---
 
-# 💳 Reglas de Negocio Oficiales: Checkout y Pagos 50% / 50% en Apolena
+# 💳 Reglas de Negocio Oficiales: Checkout y Pago 100% al Ordenar en Apolena
 
-Este skill define la lógica financiera y de checkout inalterable de Apolena, basada en el modelo de **50% de adelanto al confirmar el pedido** y **50% restante contraentrega** al recibir el producto.
+Este skill define la lógica financiera y de checkout inalterable de Apolena, basada en el modelo de **pago único del 100% al confirmar el pedido** (sin cobros pendientes contraentrega).
 
 > [!IMPORTANT]
 > **REGLA DE GUARDIA:** Si algún cambio solicitado por el usuario requiere modificar las reglas de este skill, el agente DEBE emitir una alerta explícita informando que se está alterando la lógica de negocio establecida y solicitar confirmación antes de aplicar el cambio.
@@ -17,7 +17,7 @@ Este skill define la lógica financiera y de checkout inalterable de Apolena, ba
 Una vez que el usuario genera y selecciona el retrato de su mascota:
 
 1. **Llenado Libre y Autenticación con Redirección Fluida:**
-   - Para maximizar la conversión y comodidad del usuario, el comprador puede completar todos los datos de delivery y método de pago (50% de adelanto) sin bloqueos iniciales.
+   - Para maximizar la conversión y comodidad del usuario, el comprador puede completar todos los datos de delivery y método de pago (100% del pedido) sin bloqueos iniciales.
    - Al hacer clic en **"Confirmar Orden"**:
      - Si el usuario **ya está autenticado**, la orden se procesa directamente en `/api/orders`.
      - Si el usuario **no está autenticado**, todos sus datos ingresados se guardan de forma segura en `localStorage` (`apolena_pending_checkout`) y se le redirige a `/auth/login` o `/auth/register` con parámetro `callbackUrl=/checkout?pendingOrder=true` (prellenando su correo, nombre y teléfono).
@@ -29,16 +29,16 @@ Una vez que el usuario genera y selecciona el retrato de su mascota:
    - Selección de Boleta o Factura con sus datos respectivos.
 4. **Cálculo de Importes en la Orden (`orders`):**
    - `subtotal`: Suma de los `order_items`.
-   - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`).
+   - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`; Lima Metropolitana = S/ 0.00 incluido, Provincias = S/ 20.00).
    - `total_amount`: $\text{subtotal} + \text{shipping\_cost}$.
-   - `advance_amount`: $\text{round}(\text{total\_amount} \times 0.50, 2)$ (**50% del total** a pagar para iniciar fabricación).
-   - `remaining_amount`: $\text{total\_amount} - \text{advance\_amount}$ (**50% restante** a pagar contraentrega al recibir el producto).
+   - `advance_amount`: $\text{total\_amount}$ (**100% del total** a pagar al confirmar la orden).
+   - `remaining_amount`: $0$ (sin saldos pendientes contraentrega).
 
 ---
 
 ## 2. Métodos de Pago Soportados (`payment_method`)
 
-Por el momento, todos los pagos operan bajo modalidad manual verificable / contraentrega usando exclusivamente:
+Todos los pagos operan bajo modalidad verificable al confirmar el pedido usando exclusivamente:
 
 - `yape`: Pago vía Yape (Número de celular y titular configurados en `platform_settings`).
 - `plin`: Pago vía Plin (Número de celular y titular configurados en `platform_settings`).
@@ -50,25 +50,21 @@ En el checkout (`/checkout`), cada dato se muestra en bloques interactivos indiv
 
 ## 3. Ciclo de Pagos y Tabla `payment_transactions`
 
-Cada orden tiene un ciclo financiero de **2 pagos (50% + 50%)** respaldados en la tabla `payment_transactions`:
+Cada nueva orden tiene un ciclo financiero de **pago único del 100%** respaldado en la tabla `payment_transactions` (manteniendo compatibilidad retroactiva en lectura y gestión para órdenes históricas creadas con `remaining_amount > 0`):
 
-### Etapa 1 — Pago del 50% de Adelanto (`payment_stage = "advance_50"`)
+### Pago Único del 100% al Ordenar (`payment_stage = "advance_50"`)
 
-- Al generar la orden en el checkout, el usuario abona el **50% del total** (`advance_amount`) con Yape, Plin o Transferencia Bancaria.
+- Al generar la orden en el checkout, el usuario abona el **100% del total** (`advance_amount = total_amount`, `remaining_amount = 0`) con Yape, Plin o Transferencia Bancaria.
 - Se crea un registro en `payment_transactions` con:
   - `order_id`: ID de la orden.
-  - `payment_stage`: `"advance_50"`.
+  - `payment_stage`: `"advance_50"` (se conserva el identificador interno para mantener 100% compatibilidad de esquema y consultas con órdenes históricas).
   - `payment_method`: `"yape" | "plin" | "bank_transfer"`.
-  - `amount`: Monto equivalente al 50% inicial.
-  - `reference_code` / `operation_number`: Número de operación ingresado por el cliente.
+  - `amount`: Monto equivalente al **100% del total** (`total_amount`).
+  - `operation_number`: Número de operación ingresado por el cliente.
   - `proof_image_url`: Captura o voucher de pago (opcional/recomendado).
   - `status`: `"pending_verification"` (o `"verified"` una vez validado por el Admin).
 - Estado de pago en `orders.payment_status`:
-  - Inicia en `"partial_pending"` al enviar la orden, y pasa a `"partial_paid"` (50% pagado) cuando el Admin valida el adelanto.
-
-### Etapa 2 — Pago del 50% Restante Contraentrega (`payment_stage = "final_50"`)
-
-- Una vez que el pedido llega al paso **Entregado (`delivered`)**, el usuario completa el **otro 50%** (`remaining_amount`) al recibir el producto (vía Yape, Plin o Transferencia).
-- Se registra la segunda transacción en `payment_transactions` con `payment_stage = "final_50"`, `amount = remaining_amount` y `status = "verified"`.
-- Estado de pago en `orders.payment_status` pasa a `"paid_full"` (100% pagado).
-- En ese instante, el estatus general de la orden (`orders.status`) cambia automáticamente a **`completed` ("Exitoso")**, culminando el proceso.
+  - Inicia en `"partial_pending"` (Pago por verificar) al enviar la orden.
+  - Cuando el Admin valida el pago (`verify_advance_50`), como `remaining_amount === 0`, `orders.payment_status` pasa automáticamente a **`"paid_full"` (100% Pagado)**.
+- **Compatibilidad Retroactiva (Órdenes Históricas 50%/50%):**
+  - Si una orden antigua posee `remaining_amount > 0`, la interfaz y `updateOrderAdminLifecycle` siguen mostrando el saldo pendiente y permitiendo la verificación en dos etapas (`partial_paid` → `paid_full` con `final_50`) sin errores ni pérdida de datos.

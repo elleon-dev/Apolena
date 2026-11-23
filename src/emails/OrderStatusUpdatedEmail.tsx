@@ -53,7 +53,7 @@ export default function OrderStatusUpdatedEmail({
             <Text style={statusTitle}>{status_label}</Text>
             {isInTransit && (
               <Text style={statusDescription}>
-                Tu lienzo está en manos de nuestro courier asignado y en ruta a tu dirección. Recuerda tener listo el 50% restante para abonar al recibirlo.
+                Tu lienzo está en manos de nuestro courier asignado y en ruta a tu dirección de entrega.
               </Text>
             )}
             {isCompleted && (

@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 import {
+  getSessionUser,
   hashPassword,
   resolveUserRole,
+  SessionUser,
   SUPER_ADMIN_EMAIL,
   UserRole,
 } from "@/lib/auth";
@@ -293,8 +295,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     },
   },
   SHIPPING_RATES_CONFIG: {
-    lima_metropolitana_pen: 15,
-    provincias_pen: 25,
+    lima_metropolitana_pen: 0,
+    provincias_pen: 20,
     estimated_manufacturing_days: "3 a 5 días hábiles",
     delivery_lima_days: "3 a 5 días hábiles luego de realizada la compra",
     delivery_provincias_days: "5 a 7 días hábiles luego de realizada la compra",
@@ -678,10 +680,6 @@ export async function findProfileById(
   if (!memCache.profilesById) {
     memCache.profilesById = new Map();
   }
-  const cached = memCache.profilesById.get(id);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
-  }
 
   if (isDatabaseConfigured()) {
     try {
@@ -700,10 +698,17 @@ export async function findProfileById(
         });
         return record;
       }
+      return null;
     } catch (e) {
       console.warn("Prisma findProfileById fallback:", e);
     }
   }
+
+  const cached = memCache.profilesById.get(id);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
   const db = await readLocalDb();
   const local = db.profiles.find((p) => p.id === id) || null;
   if (local) {
@@ -714,6 +719,35 @@ export async function findProfileById(
     });
   }
   return local;
+}
+
+/**
+ * Obtiene el usuario en sesión verificando siempre su rol y estado activo en tiempo real
+ * contra la tabla `profiles` de PostgreSQL. Garantiza que cambios de rol (user <-> admin <-> super_admin)
+ * tengan efecto inmediato en todas las rutas de servidor sin depender de cookies desactualizadas.
+ */
+export async function getAuthoritativeSessionUser(
+  request?: Request,
+): Promise<SessionUser | null> {
+  const session = await getSessionUser(request);
+  if (!session) return null;
+
+  const profile =
+    (await findProfileById(session.id)) ||
+    (await findProfileByEmail(session.email));
+
+  if (!profile) return session;
+  if (profile.is_active === false) return null;
+
+  return {
+    ...session,
+    id: profile.id,
+    email: profile.email,
+    name: profile.name || session.name,
+    phone: profile.phone ?? session.phone,
+    avatar_url: profile.avatar_url ?? session.avatar_url ?? null,
+    role: resolveUserRole(profile.email, profile.role),
+  };
 }
 
 export async function createProfile(input: {
@@ -1114,7 +1148,7 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
             customization_config: isWallArtProductSlug(r.slug)
               ? {
                   ...normConfig,
-                  characters: dbCharacters && dbCharacters.length > 0 ? dbCharacters : normConfig.characters,
+                  characters: dbCharacters ?? [],
                 }
               : (r.customization_config as unknown as ProductCustomizationConfig) ||
                 DEFAULT_WALL_ART_PRODUCT.customization_config,
@@ -1153,21 +1187,46 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
   const fallbackMapped = list.map((p) => ({
     ...p,
     customization_config: isWallArtProductSlug(p.slug)
-      ? normalizeWallArtCustomizationConfig(p.customization_config)
+      ? {
+          ...normalizeWallArtCustomizationConfig(p.customization_config),
+          characters: [],
+        }
       : p.customization_config,
   }));
-  if (onlyActive) {
-    memCache.productsActive = {
-      data: fallbackMapped,
-      expiresAt: now + CACHE_TTL_MS,
-    };
-  } else {
-    memCache.productsAll = {
-      data: fallbackMapped,
-      expiresAt: now + CACHE_TTL_MS,
-    };
-  }
   return fallbackMapped;
+}
+
+export async function getWallArtCharacters(
+  onlyActive = true,
+): Promise<FamousCharacter[]> {
+  if (isDatabaseConfigured()) {
+    try {
+      const rows = await prisma.characterTemplate.findMany({
+        where: onlyActive ? { is_available: true } : undefined,
+        orderBy: { position: "asc" },
+      });
+      return rows.map((c) => ({
+        id: c.slug,
+        name: c.name,
+        characterTitle: c.character_title || "",
+        universe: c.universe,
+        description: c.description || "",
+        characterImageUrl: c.character_image_url,
+        maskUrl: c.mask_url || "",
+        fusionSampleUrl: c.fusion_sample_url || c.character_image_url,
+        accentColor: c.accent_color || "bg-terracotta-500",
+        tagColor:
+          c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+        prompt: c.prompt || "",
+        negativePrompt: c.negative_prompt || "",
+        isAvailable: c.is_available,
+      }));
+    } catch (e) {
+      console.warn("getWallArtCharacters db error:", e);
+    }
+  }
+
+  return [];
 }
 
 export async function getWallArtCharacterById(
@@ -2058,9 +2117,9 @@ export async function createOrderWithSplitPayment(input: {
   const shippingCost = Number(input.shipping_cost.toFixed(2));
   const totalAmount = Number((subtotal + shippingCost).toFixed(2));
 
-  // Regla de Negocio Inalterable: 50% de adelanto + 50% contraentrega
-  const advanceAmount = Number((totalAmount * 0.5).toFixed(2));
-  const remainingAmount = Number((totalAmount - advanceAmount).toFixed(2));
+  // Regla de Negocio Oficial: Cobro del 100% al ordenar
+  const advanceAmount = totalAmount;
+  const remainingAmount = 0;
 
   let sequence = dbOrderCount + 1;
   let orderCode = generateOrderCode(sequence);
@@ -2089,13 +2148,13 @@ export async function createOrderWithSplitPayment(input: {
   const yapeCfg = settings.PAYMENT_METHODS_CONFIG.yape;
   const plinCfg = settings.PAYMENT_METHODS_CONFIG.plin;
 
-  let advancePaymentNotes = "Pago inicial del 50% al confirmar pedido";
+  let advancePaymentNotes = "Pago total del 100% al confirmar pedido";
   if (input.payment_method === "bank_transfer") {
-    advancePaymentNotes = `Adelanto 50% vía Transferencia (${bankCfg.bank_name || "BCP Soles"} · Cta: ${bankCfg.account_number} · CCI: ${bankCfg.cci} · Titular: ${bankCfg.holder_name})`;
+    advancePaymentNotes = `Pago 100% vía Transferencia (${bankCfg.bank_name || "BCP Soles"} · Cta: ${bankCfg.account_number} · CCI: ${bankCfg.cci} · Titular: ${bankCfg.holder_name})`;
   } else if (input.payment_method === "yape") {
-    advancePaymentNotes = `Adelanto 50% vía Yape (Tel: ${yapeCfg.phone} · Titular: ${yapeCfg.holder_name || bankCfg.holder_name})`;
+    advancePaymentNotes = `Pago 100% vía Yape (Tel: ${yapeCfg.phone} · Titular: ${yapeCfg.holder_name || bankCfg.holder_name})`;
   } else if (input.payment_method === "plin") {
-    advancePaymentNotes = `Adelanto 50% vía Plin (Tel: ${plinCfg.phone} · Titular: ${plinCfg.holder_name || bankCfg.holder_name})`;
+    advancePaymentNotes = `Pago 100% vía Plin (Tel: ${plinCfg.phone} · Titular: ${plinCfg.holder_name || bankCfg.holder_name})`;
   }
 
   const newOrder: OrderRecord = {
@@ -2336,7 +2395,7 @@ export async function createOrderWithSplitPayment(input: {
       enqueueEmail({
         to_email: adminEmails[0] || "admin@apolena.pe",
         cc: adminEmails.slice(1),
-        subject: `[NUEVA ORDEN APOLENA] ${orderCode} · S/ ${totalAmount.toFixed(2)} (Adelanto 50%: S/ ${advanceAmount.toFixed(2)})`,
+        subject: `[NUEVA ORDEN APOLENA] ${orderCode} · Pago 100%: S/ ${totalAmount.toFixed(2)}`,
         template: "order_created_admin",
         data: {
           order_id: orderId,
@@ -2538,15 +2597,15 @@ export async function updateOrderAdminLifecycle(input: {
   const nowDate = new Date(now);
 
   if (input.action === "verify_advance_50") {
-    order.payment_status = "partial_paid";
-    const advTx = order.paymentTransactions.find(
-      (t) => t.payment_stage === "advance_50",
-    );
-    if (advTx) {
-      advTx.status = "verified";
-      advTx.verified_by = input.adminId;
-      advTx.verified_at = now;
-    }
+    order.payment_status =
+      Number(order.remaining_amount || 0) <= 0 ? "paid_full" : "partial_paid";
+    order.paymentTransactions.forEach((tx) => {
+      if (tx.payment_stage === "advance_50") {
+        tx.status = "verified";
+        tx.verified_by = input.adminId;
+        tx.verified_at = now;
+      }
+    });
   } else if (input.action === "set_step_manufacturing") {
     order.status = "manufacturing";
     order.manufacturing_started_at = order.manufacturing_started_at || now;
@@ -2571,14 +2630,13 @@ export async function updateOrderAdminLifecycle(input: {
       pkg.items.forEach((it) => (it.status = "delivered"));
     });
   } else if (input.action === "complete_final_50_payment") {
-    // Regla Inalterable: Al entregarse y pagarse el otro 50% contraentrega,
-    // el estatus de la orden cambia a "completed" (Exitoso) y culmina el proceso.
+    // Culminación de la orden en estado "completed" (Exitoso) con pago 100% verificado
     order.delivered_at = order.delivered_at || now;
     order.completed_at = now;
     order.status = "completed";
     order.payment_status = "paid_full";
 
-    // Asegurar que el adelanto también esté marcado como verificado
+    // Asegurar que el pago esté marcado como verificado
     order.paymentTransactions.forEach((tx) => {
       if (tx.payment_stage === "advance_50") {
         tx.status = "verified";
@@ -2589,7 +2647,7 @@ export async function updateOrderAdminLifecycle(input: {
     const existingFinal = order.paymentTransactions.find(
       (t) => t.payment_stage === "final_50",
     );
-    if (!existingFinal) {
+    if (!existingFinal && Number(order.remaining_amount || 0) > 0) {
       order.paymentTransactions.push({
         id: crypto.randomUUID(),
         order_id: order.id,
@@ -2599,18 +2657,18 @@ export async function updateOrderAdminLifecycle(input: {
         amount: order.remaining_amount,
         currency: "PEN",
         operation_number:
-          input.finalOperationNumber?.trim() || "CONTRAENTREGA-OK",
+          input.finalOperationNumber?.trim() || "PAGO-COMPLETADO",
         proof_image_url: null,
         payer_name: order.shipping?.name || null,
         payer_phone: order.shipping?.phone || null,
         notes:
           input.notes ||
-          "Pago del 50% restante contraentrega verificado. Orden culminada exitosamente.",
+          "Pago verificado. Orden culminada exitosamente.",
         verified_by: input.adminId,
         verified_at: now,
         created_at: now,
       });
-    } else {
+    } else if (existingFinal) {
       existingFinal.status = "verified";
       existingFinal.verified_by = input.adminId;
       existingFinal.verified_at = now;

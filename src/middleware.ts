@@ -3,7 +3,37 @@ import {
   SESSION_COOKIE_NAME,
   verifySessionToken,
   isAdminRole,
+  UserRole,
 } from "@/lib/auth";
+
+async function resolveLiveSessionFromMe(request: NextRequest): Promise<{
+  role: UserRole | null;
+  isActive: boolean;
+  setCookie: string | null;
+} | null> {
+  try {
+    const meUrl = new URL("/api/auth/me", request.url);
+    const meRes = await fetch(meUrl, {
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
+      cache: "no-store",
+    });
+    if (!meRes.ok) return null;
+    const meData = await meRes.json();
+    const setCookie = meRes.headers.get("set-cookie");
+    if (!meData?.user) {
+      return { role: null, isActive: false, setCookie };
+    }
+    return {
+      role: meData.user.role as UserRole,
+      isActive: true,
+      setCookie,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,7 +56,38 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (!isAdminRole(user.role)) {
+    let effectiveRole: UserRole = user.role;
+    let refreshedSetCookie: string | null = null;
+
+    // En navegación a /dashboard o /admin, o si el token en cookie aún dice "user" en /api/admin/*,
+    // consultamos /api/auth/me para obtener el rol real en tiempo real desde PostgreSQL y refrescar la cookie.
+    const isPageNavigation =
+      pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+
+    if (isPageNavigation || !isAdminRole(effectiveRole)) {
+      const live = await resolveLiveSessionFromMe(request);
+      if (live) {
+        refreshedSetCookie = live.setCookie;
+        if (!live.isActive || !live.role) {
+          if (pathname.startsWith("/api/")) {
+            return NextResponse.json(
+              { error: "Sesión inactiva o expirada." },
+              { status: 401 },
+            );
+          }
+          const loginUrl = new URL("/auth/login", request.url);
+          loginUrl.searchParams.set("callbackUrl", pathname);
+          const redirectRes = NextResponse.redirect(loginUrl);
+          if (refreshedSetCookie) {
+            redirectRes.headers.set("set-cookie", refreshedSetCookie);
+          }
+          return redirectRes;
+        }
+        effectiveRole = live.role;
+      }
+    }
+
+    if (!isAdminRole(effectiveRole)) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { error: "Acceso denegado. Ruta exclusiva para administradores." },
@@ -34,10 +95,18 @@ export async function middleware(request: NextRequest) {
         );
       }
       // Si es usuario estándar ("user"), redirigir a la vista común de órdenes (/orders)
-      return NextResponse.redirect(new URL("/orders", request.url));
+      const redirectRes = NextResponse.redirect(new URL("/orders", request.url));
+      if (refreshedSetCookie) {
+        redirectRes.headers.set("set-cookie", refreshedSetCookie);
+      }
+      return redirectRes;
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (refreshedSetCookie) {
+      response.headers.set("set-cookie", refreshedSetCookie);
+    }
+    return response;
   }
 
   // 2. Protección de la vista común de órdenes (/orders/*) para todo tipo de usuarios autenticados
@@ -56,8 +125,19 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth/register")
   ) {
     if (user) {
-      const target = isAdminRole(user.role) ? "/dashboard" : "/orders";
-      return NextResponse.redirect(new URL(target, request.url));
+      let effectiveRole: UserRole = user.role;
+      let refreshedSetCookie: string | null = null;
+      const live = await resolveLiveSessionFromMe(request);
+      if (live?.isActive && live.role) {
+        effectiveRole = live.role;
+        refreshedSetCookie = live.setCookie;
+      }
+      const target = isAdminRole(effectiveRole) ? "/dashboard" : "/orders";
+      const redirectRes = NextResponse.redirect(new URL(target, request.url));
+      if (refreshedSetCookie) {
+        redirectRes.headers.set("set-cookie", refreshedSetCookie);
+      }
+      return redirectRes;
     }
   }
 

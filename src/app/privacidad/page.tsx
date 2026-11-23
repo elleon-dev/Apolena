@@ -6,12 +6,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
   ShieldCheck,
-  Lock,
-  Eye,
-  FileCheck,
-  Server,
+  FileText,
+  Clock,
+  Share2,
+  HelpCircle,
+  Scale,
+  Palette,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 
 export default function PrivacidadPage() {
@@ -24,145 +25,120 @@ export default function PrivacidadPage() {
         <div className="text-center space-y-3 pb-6 border-b border-[#E8DEC8]">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#174B3D]/10 text-[#174B3D] text-xs font-semibold">
             <ShieldCheck className="w-4 h-4 text-[#c6a26c]" />
-            <span>Ley N° 29733 · Protección de Datos Personales (Perú)</span>
+            <span>Protección de Datos y Privacidad</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#174B3D]">
-            Política de Privacidad y Tratamiento de Datos
+            Política de Privacidad de APOLENA
           </h1>
-          <p className="text-xs sm:text-sm text-[#141414]/70 max-w-2xl mx-auto leading-relaxed">
-            En <strong>Apolena Atelier</strong> valoramos y protegemos la privacidad de nuestros clientes y el amor hacia sus mascotas. Esta política detalla cómo recopilamos, procesamos y resguardamos tus datos personales y fotografías.
+          <p className="text-xs sm:text-sm text-[#141414]/75 max-w-2xl mx-auto leading-relaxed">
+            Cuando subes una foto a APOLENA, la usamos para crear el retrato de tu mascota. Aquí te contamos qué información necesitamos, con quién la compartimos y cómo puedes consultarnos sobre tus datos.
           </p>
-          <span className="text-[11px] text-stone-500 block">
-            Vigente desde Noviembre de 2026 · Lima, República del Perú
+          <span className="text-xs text-stone-600 block font-medium">
+            Última actualización · 18/11/2026 · Lima, Perú
           </span>
         </div>
 
-        {/* Bloque Principal */}
+        {/* Bloque Principal de Contenido */}
         <div className="space-y-8 text-xs sm:text-sm text-[#141414]/85 leading-relaxed bg-white border border-[#c6a26c]/30 rounded-3xl p-6 sm:p-10 shadow-soft">
-          {/* Sección 1 */}
-          <section className="space-y-2">
+          {/* Sección 1: ¿Qué información usamos? */}
+          <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">1.</span> Responsable del Banco de Datos
+              <FileText className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>¿Qué información usamos?</span>
             </h2>
             <p>
-              El responsable del tratamiento de los bancos de datos personales recopilados a través de esta plataforma es <strong>APOLENA STUDIO S.A.C.</strong>, con domicilio legal en Lima, Perú, y correo oficial de contacto para temas de privacidad:{" "}
-              <strong className="text-[#174B3D]">privacidad@apolena.pe</strong>.
+              Para crear tu retrato, usamos la foto de tu mascota y las opciones que elijas, como el estilo, el tamaño y el acabado. Si haces un pedido, usamos tu nombre, correo, teléfono y dirección para confirmarlo, coordinar la entrega y ayudarte si surge algún problema. Según el medio de pago, también podemos usar la referencia de la operación para verificarlo.
+            </p>
+            <p>
+              Te indicaremos qué datos son necesarios en cada paso. Por ejemplo, necesitamos una foto para generar el retrato y una dirección para entregarte el cuadro.
             </p>
           </section>
 
-          {/* Sección 2 */}
-          <section className="space-y-2">
+          {/* Sección 2: ¿Quién recibe la foto y los datos del pedido? */}
+          <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">2.</span> Información que Recopilamos
+              <Share2 className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>¿Quién recibe la foto y los datos del pedido?</span>
             </h2>
             <p>
-              Para brindar nuestros servicios de confección y envío de cuadros personalizados, solicitamos los siguientes datos:
+              Usamos herramientas de diseño gráfico automatizado para transformar la foto en un retrato. Cuando el cuadro pasa a producción, enviamos a impresión el archivo final y las indicaciones para imprimirlo. El servicio de reparto recibe los datos de contacto y la dirección que necesita para hacer la entrega.
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone-700">
-              <li>
-                <strong>Datos de Identificación y Contacto:</strong> Nombre y apellidos, número de documento de identidad (DNI, CE o RUC), dirección de correo electrónico y teléfono celular/WhatsApp.
-              </li>
-              <li>
-                <strong>Datos de Envío y Despacho:</strong> Dirección física exacta, departamento, provincia, distrito y referencias de entrega.
-              </li>
-              <li>
-                <strong>Fotografías de Mascotas:</strong> Imágenes digitales que el usuario carga voluntariamente en el simulador para la generación artística del retrato.
-              </li>
-              <li>
-                <strong>Datos de Transacción:</strong> Número de comprobante de operación bancaria o captura de transferencia del 50% de adelanto. Apolena <strong>no almacena números de tarjetas de crédito o débito</strong>, ya que las operaciones se efectúan mediante canales bancarios externos verificables (Yape, Plin o Transferencia).
-              </li>
-            </ul>
+            <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-stone-800 text-xs">
+              Si queremos mostrar el retrato de tu mascota en nuestra web, redes sociales o publicidad, primero te pediremos permiso. Si ofrecemos novedades o promociones, tú decides si quieres recibirlas.
+            </div>
           </section>
 
-          {/* Sección 3 */}
-          <section className="space-y-2">
+          {/* Sección 3: ¿Cuánto tiempo guardamos la foto? */}
+          <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">3.</span> Procesamiento de Imágenes con Inteligencia Artificial
+              <Clock className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>¿Cuánto tiempo guardamos la foto?</span>
             </h2>
             <p>
-              Las fotografías de las mascotas que subes a nuestra plataforma son procesadas de manera segura y temporal a través de nuestros modelos de generación visual con el único propósito de crear las propuestas artísticas del cuadro solicitado.
-            </p>
-            <p className="p-3.5 rounded-2xl bg-sage-50/80 border border-sage-200 text-sage-950 text-xs">
-              <strong>Compromiso de No Comercialización:</strong> Apolena <strong>NUNCA comercializa, vende ni alquila</strong> las fotos de tus mascotas ni tus datos personales a empresas de publicidad ni a terceras partes. Las imágenes se emplean exclusivamente para la fabricación de tu pedido y visualización en tu galería personal.
+              Guardamos la foto original y el retrato generado durante <strong>24 horas</strong>. Luego esto se cancela. Conservamos los datos del pedido durante <strong>12 meses</strong> para atender consultas, resolver incidencias y cumplir las obligaciones aplicables.
             </p>
           </section>
 
-          {/* Sección 4 */}
-          <section className="space-y-2">
+          {/* Sección 4: ¿Cómo puedes consultar o pedir cambios en tus datos? */}
+          <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">4.</span> Finalidades del Tratamiento
+              <HelpCircle className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>¿Cómo puedes consultar o pedir cambios en tus datos?</span>
             </h2>
             <p>
-              Tus datos personales se tratan para las siguientes finalidades legítimas y necesarias:
-            </p>
-            <ol className="list-decimal pl-5 space-y-1.5 text-xs text-stone-700">
-              <li>Fabricación, impresión Fine Art a 300 DPI y tensado sobre bastidor del cuadro adquirido.</li>
-              <li>Coordinación de entrega a domicilio y seguimiento en tiempo real mediante el <strong>Tracking ID</strong>.</li>
-              <li>Envío de notificaciones transaccionales a través de correo electrónico (confirmación de pedido, avances de taller y comprobante).</li>
-              <li>Emisión del comprobante fiscal (Boleta o Factura) de conformidad con las disposiciones de la SUNAT.</li>
-            </ol>
-          </section>
-
-          {/* Sección 5 */}
-          <section className="space-y-2">
-            <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">5.</span> Seguridad de la Información y Almacenamiento
-            </h2>
-            <p>
-              Implementamos rigurosas medidas técnicas, legales y organizativas para salvaguardar tu información:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-stone-700">
-              <li>Cifrado de extremo a extremo mediante protocolos SSL/HTTPS en todas las páginas y formularios.</li>
-              <li>Almacenamiento en bases de datos con protección de acceso por roles (RBAC) y contraseñas cifradas con algoritmos de hashing seguro (bcrypt).</li>
-              <li>Almacenamiento de archivos en infraestructura Cloud aislada y protegida contra accesos no autorizados.</li>
-            </ul>
-          </section>
-
-          {/* Sección 6 */}
-          <section className="space-y-2">
-            <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <span className="text-[#c6a26c]">6.</span> Ejercicio de Derechos ARCO
-            </h2>
-            <p>
-              De conformidad con la Ley N° 29733, puedes ejercer en cualquier momento tus derechos de <strong>Acceso, Rectificación, Cancelación y Oposición (ARCO)</strong> respecto de tus datos personales almacenados en nuestros sistemas.
-            </p>
-            <p>
-              Para hacerlo, solo debes remitir una solicitud firmada con copia de tu documento de identidad a{" "}
-              <strong className="text-[#174B3D]">privacidad@apolena.pe</strong> indicando en el asunto &ldquo;Ejercicio de Derechos ARCO&rdquo;. Tu solicitud será atendida dentro de los plazos estipulados por la ley peruana.
+              Escríbenos a{" "}
+              <a
+                href="mailto:apolenaperu@gmail.com"
+                className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2 hover:text-[#c6a26c] transition-colors"
+              >
+                apolenaperu@gmail.com
+              </a>{" "}
+              o al WhatsApp:{" "}
+              <a
+                href="https://wa.me/51949743059"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2 hover:text-[#c6a26c] transition-colors"
+              >
+                949 743 059
+              </a>{" "}
+              si quieres saber qué datos tenemos sobre ti, corregirlos, pedir su eliminación, oponerte a su uso o retirar un permiso que nos hayas dado. Si consideras que tu solicitud no fue atendida, puedes acudir a la Autoridad Nacional de Protección de Datos Personales del Perú.
             </p>
           </section>
         </div>
 
-        {/* Acceso Rápido a otros documentos legales */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        {/* Acceso a otros documentos informativos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           <Link
             href="/terminos"
             className="p-5 rounded-2xl bg-white border border-[#c6a26c]/30 hover:border-[#174B3D] flex items-center justify-between group transition-all shadow-xs"
           >
             <div>
-              <span className="text-xs font-bold text-[#174B3D] block">
+              <span className="text-xs font-bold text-[#174B3D] flex items-center gap-1.5">
+                <Scale className="w-4 h-4 text-[#c6a26c]" />
                 Términos y Condiciones
               </span>
-              <p className="text-[11px] text-stone-500 mt-0.5">
-                Reglas del servicio, pagos 50/50 y garantías.
+              <p className="text-[11px] text-stone-500 mt-1">
+                Conoce el funcionamiento del pedido, envíos, cambios y garantías.
               </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#c6a26c] group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 text-[#c6a26c] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
           </Link>
 
           <Link
-            href="/libro-de-reclamaciones"
+            href="/products/cuadros-personalizados"
             className="p-5 rounded-2xl bg-white border border-[#c6a26c]/30 hover:border-[#174B3D] flex items-center justify-between group transition-all shadow-xs"
           >
             <div>
-              <span className="text-xs font-bold text-[#174B3D] block">
-                Libro de Reclamaciones Virtual
+              <span className="text-xs font-bold text-[#174B3D] flex items-center gap-1.5">
+                <Palette className="w-4 h-4 text-[#c6a26c]" />
+                Catálogo de Retratos
               </span>
-              <p className="text-[11px] text-stone-500 mt-0.5">
-                Conforme al Código de Consumo de INDECOPI.
+              <p className="text-[11px] text-stone-500 mt-1">
+                Explora los estilos, tamaños y acabados para tu mascota.
               </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#c6a26c] group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 text-[#c6a26c] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
           </Link>
         </div>
       </main>

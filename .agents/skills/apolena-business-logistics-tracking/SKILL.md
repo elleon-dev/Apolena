@@ -32,12 +32,12 @@ Toda orden generada en `orders` posee:
 
 ## 2. Los 3 Pasos del Tracking Logístico + Estado Final Exitoso
 
-El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de **3 pasos operativos**, seguidos del **cierre exitoso** al completar el 50% restante del pago:
+El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de **3 pasos operativos**, seguidos del **cierre exitoso** al confirmar la entrega:
 
 ### Paso 1 — Fabricación (`status = "manufacturing"`)
 
 - **Descripción para el usuario:** _"En fabricación — Estamos imprimiendo y preparando el cuadro personalizado de tu mascota con acabado de galería."_
-- Se activa al crearse/confirmarse la orden con el 50% de adelanto.
+- Se activa al crearse/confirmarse la orden con el pago del 100%.
 - Timestamps asociados: `manufacturing_started_at`.
 
 ### Paso 2 — En Camino (`status = "in_transit"`)
@@ -48,14 +48,14 @@ El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de 
 
 ### Paso 3 — Entregado (`status = "delivered"`)
 
-- **Descripción para el usuario:** _"Entregado — Tu pedido llegó a tu domicilio. Pendiente de cierre del 50% restante contraentrega."_
+- **Descripción para el usuario:** _"Entregado — Pedido entregado en tu dirección o agencia asignada."_
 - El producto ha sido entregado físicamente al cliente.
 - Timestamps asociados: `delivered_at`.
 
 ### Culminación del Proceso — Exitoso (`status = "completed"`)
 
-- **Condición obligatoria:** La orden se encuentra en `delivered` **Y** el usuario ha completado el pago del **segundo 50% contraentrega** (`payment_status === "paid_full"`).
-- **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y dando por culminado el proceso de principio a fin.
+- **Condición obligatoria:** La orden se encuentra entregada (`delivered`) **Y** el pago total del 100% está verificado (`payment_status === "paid_full"`). (Para órdenes históricas 50%/50% con `remaining_amount > 0`, además liquida el saldo pendiente contraentrega).
+- **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y desbloqueando la descarga del Recuerdo Digital HD.
 - Timestamps asociados: `completed_at`.
 
 _(Estado adicional de excepción: `cancelled` si una orden es anulada por administración antes de su entrega)._

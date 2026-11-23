@@ -70,8 +70,8 @@ function CheckoutContent() {
     lima_metropolitana_pen: number;
     provincias_pen: number;
   }>({
-    lima_metropolitana_pen: 15,
-    provincias_pen: 25,
+    lima_metropolitana_pen: 0,
+    provincias_pen: 20,
   });
 
   // Contact & Delivery Location State
@@ -196,9 +196,7 @@ function CheckoutContent() {
       : shippingRates.provincias_pen;
 
   const subtotal = draft.unit_price;
-  const totalAmount = subtotal + shippingCost;
-  const advance50 = Number((totalAmount * 0.5).toFixed(2));
-  const remaining50 = Number((totalAmount - advance50).toFixed(2));
+  const totalAmount = Number((subtotal + shippingCost).toFixed(2));
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -217,7 +215,7 @@ function CheckoutContent() {
     }
 
     if (!operationNumber.trim()) {
-      setError("Por favor ingresa el número de operación o referencia del 50% de adelanto.");
+      setError("Por favor ingresa el número de operación o referencia de tu pago.");
       return;
     }
 
@@ -385,32 +383,19 @@ function CheckoutContent() {
               </button>
             </div>
 
-            {/* Payment Split Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-sage-50/60 border border-sage-100 space-y-1">
-                <span className="text-sage-700 font-semibold block">
-                  1er Pago Registrado (50% Adelanto)
-                </span>
-                <p className="text-lg font-bold text-stone-900">
-                  S/ {createdOrder.advance_amount.toFixed(2)}
-                </p>
-                <p className="text-stone-500">
-                  Método: {createdOrder.payment_method.toUpperCase()} · Op:{" "}
-                  {createdOrder.paymentTransactions[0]?.operation_number}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-1">
-                <span className="text-stone-700 font-semibold block">
-                  2do Pago Pendiente (50% Contraentrega)
-                </span>
-                <p className="text-lg font-bold text-stone-900">
-                  S/ {createdOrder.remaining_amount.toFixed(2)}
-                </p>
-                <p className="text-stone-500">
-                  Se abona al recibir el cuadro en tu domicilio.
-                </p>
-              </div>
+            {/* Payment Summary (100%) */}
+            <div className="p-4 rounded-2xl bg-sage-50/60 border border-sage-100 space-y-1 text-xs text-center">
+              <span className="text-sage-700 font-semibold block">
+                Pago Total Registrado (100%)
+              </span>
+              <p className="text-2xl font-bold text-stone-900">
+                S/ {createdOrder.total_amount.toFixed(2)}
+              </p>
+              <p className="text-stone-500">
+                Método: {createdOrder.payment_method.toUpperCase()} · Op:{" "}
+                {createdOrder.paymentTransactions[0]?.operation_number} · Sin
+                saldos pendientes al recibir tu cuadro.
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3 text-xs text-stone-600">
@@ -441,7 +426,7 @@ function CheckoutContent() {
           </div>
         ) : (
           /* ===================================================================== */
-          /* FORMULARIO DE CHECKOUT: DELIVERY + 50% ADELANTO (YAPE/PLIN/BANCO) */
+          /* FORMULARIO DE CHECKOUT: DELIVERY + PAGO 100% (YAPE/PLIN/BANCO)        */
           /* ===================================================================== */
           <form
             onSubmit={handleSubmitOrder}
@@ -467,9 +452,9 @@ function CheckoutContent() {
                   Finalizar Orden de Compra
                 </h1>
                 <p className="text-xs sm:text-sm text-stone-600 mt-1">
-                  Completa tus datos de entrega y abona el{" "}
-                  <strong className="text-stone-900">50% de adelanto</strong>.
-                  El otro 50% lo pagas contraentrega al recibir tu cuadro.
+                  Completa tus datos de entrega y realiza el{" "}
+                  <strong className="text-stone-900">pago total (100%)</strong>{" "}
+                  para iniciar de inmediato la fabricación de tu cuadro.
                 </p>
               </div>
 
@@ -683,17 +668,17 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* STEP 2: PAGO DEL 50% DE ADELANTO (YAPE, PLIN O TRANSFERENCIA) */}
+              {/* STEP 2: PAGO TOTAL 100% (YAPE, PLIN O TRANSFERENCIA) */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      2. Pago del 50% de Adelanto (S/ {advance50.toFixed(2)})
+                      2. Pago Total del Pedido (S/ {totalAmount.toFixed(2)})
                     </h2>
                   </div>
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-terracotta-50 text-terracotta-700 border border-terracotta-100">
-                    50% Hoy · 50% Contraentrega
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#174B3D]/10 text-[#174B3D] border border-[#174B3D]/20">
+                    Pago Único 100%
                   </span>
                 </div>
 
@@ -744,7 +729,7 @@ function CheckoutContent() {
                   {paymentMethod === "yape" && (
                     <div className="space-y-2.5">
                       <p className="font-semibold text-stone-900">
-                        Yapea <strong className="text-terracotta-600 font-bold">S/ {advance50.toFixed(2)}</strong> al número oficial de Apolena:
+                        Yapea <strong className="text-terracotta-600 font-bold">S/ {totalAmount.toFixed(2)}</strong> al número oficial de Apolena:
                       </p>
                       <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-cream-200 shadow-xs">
                         <div>
@@ -794,7 +779,7 @@ function CheckoutContent() {
                       <p className="font-semibold text-stone-900">
                         Envía por Plin{" "}
                         <strong className="text-terracotta-600 font-bold">
-                          S/ {advance50.toFixed(2)}
+                          S/ {totalAmount.toFixed(2)}
                         </strong>{" "}
                         al número oficial de Apolena:
                       </p>
@@ -846,7 +831,7 @@ function CheckoutContent() {
                       <p className="font-semibold text-stone-900">
                         Transfiere{" "}
                         <strong className="text-terracotta-600 font-bold">
-                          S/ {advance50.toFixed(2)}
+                          S/ {totalAmount.toFixed(2)}
                         </strong>{" "}
                         a nuestra cuenta{" "}
                         {paymentSettings?.bank_transfer?.bank_name ||
@@ -974,7 +959,7 @@ function CheckoutContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div className="space-y-1.5">
                     <label className="font-semibold text-stone-800 block">
-                      Número de Operación / Confirmación del 50% *
+                      Número de Operación / Confirmación del Pago *
                     </label>
                     <input
                       type="text"
@@ -1093,18 +1078,15 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                {/* 50% / 50% Highlight Box */}
-                <div className="p-4 rounded-2xl bg-terracotta-50/60 border border-terracotta-100 space-y-2 text-xs">
-                  <div className="flex items-center justify-between font-bold text-terracotta-700 text-sm">
-                    <span>Adelanto hoy (50%):</span>
-                    <span>S/ {advance50.toFixed(2)}</span>
+                {/* Total 100% Payment Highlight Box */}
+                <div className="p-4 rounded-2xl bg-[#174B3D]/5 border border-[#174B3D]/20 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between font-bold text-[#174B3D] text-sm">
+                    <span>Total a pagar ahora (100%):</span>
+                    <span>S/ {totalAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-stone-600">
-                    <span>Saldo 50% Contraentrega:</span>
-                    <span className="font-semibold">
-                      S/ {remaining50.toFixed(2)}
-                    </span>
-                  </div>
+                  <p className="text-[11px] text-stone-600">
+                    Pago único al ordenar. No tendrás saldos pendientes al recibir tu cuadro.
+                  </p>
                 </div>
 
                 <button
@@ -1120,8 +1102,7 @@ function CheckoutContent() {
                   ) : (
                     <>
                       <span>
-                        Confirmar Orden y Adelanto 50% (S/{" "}
-                        {advance50.toFixed(2)})
+                        Confirmar Orden y Pago (S/ {totalAmount.toFixed(2)})
                       </span>
                       <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                     </>
