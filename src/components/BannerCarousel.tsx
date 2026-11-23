@@ -48,7 +48,7 @@ export default function BannerCarousel() {
           />
           <video
             ref={desktopVideoRef}
-            src="/banners/video-here-bg.mp4"
+            src="/banners/video-here-bg.mp4?v=1080p"
             poster="/banners/hero-pc.png"
             autoPlay
             loop
@@ -166,7 +166,7 @@ export default function BannerCarousel() {
             />
             <video
               ref={mobileVideoRef}
-              src="/banners/video-here-bg.mp4"
+              src="/banners/video-here-bg.mp4?v=1080p"
               poster="/banners/hero-movil.png"
               autoPlay
               loop
@@ -174,7 +174,7 @@ export default function BannerCarousel() {
               playsInline
               preload="auto"
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover object-[78%_center] pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover object-[right_center] pointer-events-none"
             />
           </div>
 
