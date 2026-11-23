@@ -35,7 +35,7 @@ export default function BannerCarousel() {
       {/* ========================================================= */}
       {/* 1. VERSIÓN DESKTOP: Video en bucle infinito como protagonista */}
       {/* ========================================================= */}
-      <div className="hidden lg:flex relative w-full overflow-hidden min-h-[540px] xl:min-h-[580px] 2xl:min-h-[620px] items-center">
+      <div className="hidden lg:flex relative w-full overflow-hidden min-h-[580px] xl:min-h-[640px] 2xl:min-h-[700px] items-center">
         {/* Póster de alta fidelidad + Video Hero en bucle sin velos pesados */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -43,7 +43,7 @@ export default function BannerCarousel() {
             alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
             fill
             priority
-            className="object-cover object-right xl:object-center"
+            className="object-cover object-[right_top] xl:object-[82%_0%]"
             sizes="100vw"
           />
           <video
@@ -56,10 +56,10 @@ export default function BannerCarousel() {
             playsInline
             preload="auto"
             aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover object-right xl:object-center pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover object-[right_top] xl:object-[82%_0%] pointer-events-none"
           />
-          {/* Velo sutil original para preservar nitidez de lectura sin opacar la calidez del video */}
-          <div className="absolute inset-y-0 left-0 w-[44%] bg-gradient-to-r from-[#FAF3E8]/45 via-[#FAF3E8]/20 to-transparent pointer-events-none" />
+          {/* Velo sutil adaptado a la paleta oficial Apolena (#FFFBF2) para legibilidad perfecta */}
+          <div className="absolute inset-y-0 left-0 w-[48%] bg-gradient-to-r from-[#FFFBF2]/95 via-[#FFFBF2]/60 to-transparent pointer-events-none" />
         </div>
 
         {/* Contenido Editorial alineado a la izquierda sobre la pared iluminada */}
@@ -155,13 +155,13 @@ export default function BannerCarousel() {
           </p>
 
           {/* Video e Imagen Póster de la composición en sala */}
-          <div className="relative w-full aspect-[16/11] rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
+          <div className="relative w-full aspect-[4/5] sm:aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-[#FAF7F2]">
             <Image
               src="/banners/hero-movil.png"
               alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
               fill
               priority
-              className="object-cover object-center"
+              className="object-cover object-top"
               sizes="(max-width: 768px) 100vw, 600px"
             />
             <video
@@ -174,7 +174,7 @@ export default function BannerCarousel() {
               playsInline
               preload="auto"
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover object-[78%_center] pointer-events-none"
             />
           </div>
 
