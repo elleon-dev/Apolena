@@ -17,6 +17,9 @@ import {
   Eye,
   Gem,
   CheckCircle2,
+  Hammer,
+  Layers,
+  SunMedium,
 } from "lucide-react";
 
 const PILLARS = [
@@ -63,7 +66,7 @@ const CORE_VALUES = [
   {
     title: "Calidad artesanal",
     detail:
-      "Cuidamos cada trazo digital, impresión en lienzo Fine Art y acabado para que tu cuadro perdure en el tiempo.",
+      "Cuidamos cada trazo digital, impresión en tela lienzo canvas y acabado para que tu cuadro perdure en el tiempo.",
   },
   {
     title: "Identidad y creatividad",
@@ -136,7 +139,7 @@ export default function QuienesSomosPage() {
 
       <main className="flex-1 overflow-x-hidden">
         {/* ══════════════════════════════════════════════════════════════════
-            HERO PRINCIPAL: Misión a la izquierda + Cuadro en sala a la derecha
+            HERO PRINCIPAL: Misión a la izquierda + Cuadro perro policía a la derecha
         ══════════════════════════════════════════════════════════════════ */}
         <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
           <div
@@ -192,12 +195,12 @@ export default function QuienesSomosPage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-[#9A7438]" />
-                  Lienzo Fine Art &amp; entrega en todo el Perú
+                  Lienzo canvas y entrega en todo el Perú
                 </span>
               </div>
             </div>
 
-            {/* LADO DERECHO: Imagen vision.jpg animada subiendo desde abajo */}
+            {/* LADO DERECHO: Imagen principal perro-policia.jpg */}
             <div
               style={{ transitionDelay: "150ms" }}
               className={`lg:col-span-6 relative transition-all duration-1000 ease-out ${
@@ -206,8 +209,8 @@ export default function QuienesSomosPage() {
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-[#1B3B2B]/20 border border-[#E5DEC9] bg-white aspect-square sm:aspect-[4/3] lg:aspect-square">
                 <Image
-                  src="/vision.jpg"
-                  alt="Cuadro personalizado de mascota Apolena colgado en sala"
+                  src="/images/quienes-somos/perro-policia.jpg"
+                  alt="Cuadro personalizado de perro policía Apolena en lienzo canvas"
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -340,6 +343,160 @@ export default function QuienesSomosPage() {
                 </div>
               </div>
             </RevealOnScroll>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            NUEVA SECCIÓN (PUNTO 13): CALIDAD ARTESANAL Y ¿QUÉ ES CANVAS?
+        ══════════════════════════════════════════════════════════════════ */}
+        <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-12 bg-[#FAF6F0] border-t border-[#E7E0CE]">
+          <div className="max-w-7xl mx-auto space-y-16 lg:space-y-20">
+            {/* BLOQUE 1: Calidad que se ve. Cuidado que perdura. */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+              <RevealOnScroll className="lg:col-span-6 space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1B3B2B]/10 border border-[#1B3B2B]/15 text-[#1B3B2B] text-xs font-semibold tracking-[0.18em] uppercase">
+                  <Hammer className="w-3.5 h-3.5 text-[#9A7438]" />
+                  <span>Oficio &amp; Materiales</span>
+                </div>
+
+                <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.65rem] font-bold text-[#1B3B2B] leading-tight">
+                  Calidad que se ve. Cuidado que perdura.
+                </h2>
+
+                <p className="text-base sm:text-lg text-[#3F4942] leading-relaxed">
+                  En <strong className="font-semibold text-[#1B3B2B]">APOLENA</strong>{" "}
+                  combinamos la impresión sobre canvas con tintas ecosolventes y
+                  el cuidado del montaje artesanal. Trabajamos con un
+                  especialista con{" "}
+                  <strong className="font-semibold text-[#1B3B2B]">
+                    20 años de experiencia
+                  </strong>{" "}
+                  y con manos artesanas que ensamblan el bastidor de madera,
+                  tensan la tela y cuidan cada acabado. Así creamos retratos
+                  pensados para acompañarte durante muchos años.
+                </p>
+
+                {/* Tarjeta sutil de recomendación de conservación */}
+                <div className="rounded-2xl bg-white/90 border border-[#E5DEC9] p-5 flex items-start gap-3.5 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-[#FAF6F0] border border-[#E5DEC9] text-[#9A7438] flex items-center justify-center shrink-0 mt-0.5">
+                    <SunMedium className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#1B3B2B]">
+                      Tip de conservación
+                    </p>
+                    <p className="text-sm text-[#4B554E] leading-relaxed">
+                      Para conservarlos, colócalos en interiores, lejos del sol
+                      directo, la humedad y las fuentes de calor; retira el polvo
+                      suavemente con un paño seco y suave, sin frotar ni aplicar
+                      productos de limpieza.
+                    </p>
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* Galería doble del taller artesanal */}
+              <RevealOnScroll delayMs={150} className="lg:col-span-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  <div className="relative rounded-3xl overflow-hidden border border-[#E5DEC9] bg-white shadow-lg shadow-[#1B3B2B]/10 aspect-[4/3] sm:aspect-[4/5] group">
+                    <Image
+                      src="/images/quienes-somos/taller-bastidor.jpg"
+                      alt="Ensamblaje artesanal de bastidor de madera con escuadra en taller Apolena"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1B3B2B]/75 via-[#1B3B2B]/20 to-transparent p-4">
+                      <span className="text-xs font-semibold text-[#FAF6F0] tracking-wide">
+                        Ensamblaje de precisión
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-3xl overflow-hidden border border-[#E5DEC9] bg-white shadow-lg shadow-[#1B3B2B]/10 aspect-[4/3] sm:aspect-[4/5] sm:translate-y-6 group">
+                    <Image
+                      src="/images/quienes-somos/taller-lijado.jpg"
+                      alt="Lijado y acabado manual de bastidores de madera en Apolena"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1B3B2B]/75 via-[#1B3B2B]/20 to-transparent p-4">
+                      <span className="text-xs font-semibold text-[#FAF6F0] tracking-wide">
+                        Acabado pulido a mano
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </RevealOnScroll>
+            </div>
+
+            {/* BLOQUE 2: ¿Qué es canvas? */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center pt-4 lg:pt-8">
+              {/* Galería doble de textura canvas y montaje 3D (izquierda en desktop) */}
+              <RevealOnScroll
+                delayMs={120}
+                className="lg:col-span-6 order-2 lg:order-1"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  <div className="relative rounded-3xl overflow-hidden border border-[#E5DEC9] bg-white shadow-lg shadow-[#1B3B2B]/10 aspect-[4/3] sm:aspect-[4/5] group">
+                    <Image
+                      src="/images/quienes-somos/textura-canvas.jpg"
+                      alt="Detalle de la textura de tela lienzo canvas de alta calidad"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1B3B2B]/75 via-[#1B3B2B]/20 to-transparent p-4">
+                      <span className="text-xs font-semibold text-[#FAF6F0] tracking-wide">
+                        Trama de lienzo natural
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="relative rounded-3xl overflow-hidden border border-[#E5DEC9] bg-white shadow-lg shadow-[#1B3B2B]/10 aspect-[4/3] sm:aspect-[4/5] sm:translate-y-6 group">
+                    <Image
+                      src="/images/quienes-somos/borde-canvas.jpg"
+                      alt="Cuadro canvas montado a mano sobre bastidor de madera con profundidad"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1B3B2B]/75 via-[#1B3B2B]/20 to-transparent p-4">
+                      <span className="text-xs font-semibold text-[#FAF6F0] tracking-wide">
+                        Montaje con profundidad 3D
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* Texto explicativo ¿Qué es canvas? */}
+              <RevealOnScroll className="lg:col-span-6 order-1 lg:order-2 space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#C6A26C]/20 border border-[#C6A26C]/40 text-[#1B3B2B] text-xs font-semibold tracking-[0.18em] uppercase">
+                  <Layers className="w-3.5 h-3.5 text-[#9A7438]" />
+                  <span>Nuestro Soporte</span>
+                </div>
+
+                <h3 className="font-serif text-3xl sm:text-4xl font-bold text-[#1B3B2B] leading-tight">
+                  ¿Qué es canvas?
+                </h3>
+
+                <p className="text-base sm:text-lg text-[#3F4942] leading-relaxed">
+                  <strong className="font-semibold text-[#1B3B2B]">
+                    Canvas significa lienzo:
+                  </strong>{" "}
+                  una tela con textura sobre la que imprimimos el retrato de tu
+                  mascota. Luego la tensamos y montamos a mano sobre un bastidor
+                  de madera para darle forma y profundidad.
+                </p>
+
+                <p className="font-serif text-xl sm:text-2xl text-[#1B3B2B] border-l-2 border-[#C6A26C] pl-4 italic leading-snug">
+                  “¿El resultado? Un cuadro con presencia de museo… y un
+                  protagonista que probablemente duerme en tu sofá.”
+                </p>
+              </RevealOnScroll>
+            </div>
           </div>
         </section>
 
