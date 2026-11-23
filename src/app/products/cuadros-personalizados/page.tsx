@@ -2055,7 +2055,7 @@ export default function personalizedWallArt() {
                     </div>
                   </div>
 
-                  {/* Dedicatoria para Regalo (Opcional) */}
+                  {/* Dedicatoria para Regalo (Opcional) 
                   <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
@@ -2096,7 +2096,7 @@ export default function personalizedWallArt() {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div>*/}
                 </div>
               </div>
 

@@ -22,7 +22,7 @@ export function JsonLd() {
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+51-978-323-984",
+      telephone: "+51-993-920-853",
       contactType: "customer service",
       areaServed: "PE",
       availableLanguage: ["Spanish"],

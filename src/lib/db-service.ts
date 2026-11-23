@@ -301,7 +301,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
   },
   ADMIN_NOTIFICATION_EMAILS: {
     emails: ["admin@apolena.pe", "produccion@apolena.pe"],
-    whatsapp_support: "+51 978 323 984",
+    whatsapp_support: "+51 993 920 853",
   },
 };
 
@@ -2157,7 +2157,7 @@ export async function createOrderWithSplitPayment(input: {
         tracking_number: trackingId,
         tracking_url: `/track/${trackingId}`,
         carrier_phone:
-          settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support || "978 323 984",
+          settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support || "993 920 853",
         estimated_delivery: estimatedDelivery,
         destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
         subtotal,
@@ -2260,7 +2260,7 @@ export async function createOrderWithSplitPayment(input: {
               tracking_url: `/track/${trackingId}`,
               carrier_phone:
                 settings.ADMIN_NOTIFICATION_EMAILS.whatsapp_support ||
-                "978 323 984",
+                "993 920 853",
               estimated_delivery: new Date(estimatedDelivery),
               destination_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
               subtotal,

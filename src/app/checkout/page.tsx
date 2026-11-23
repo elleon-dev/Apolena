@@ -627,7 +627,7 @@ function CheckoutContent() {
 
                   <div className="space-y-1">
                     <label className="font-semibold text-stone-800 block">
-                      Distrito / Ciudad *
+                      Distrito *
                     </label>
                     <input
                       type="text"
