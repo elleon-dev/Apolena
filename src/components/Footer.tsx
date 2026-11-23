@@ -227,7 +227,7 @@ export function Footer() {
 
         {/* Separador e Información Inferior con Libro de Reclamaciones */}
         <div className="border-t border-white/15 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/75">
-          <p>© {currentYear} Apolena (APOLENA STUDIO S.A.C.). Todos los derechos reservados.</p>
+          <p>© {currentYear} Apolena Todos los derechos reservados.</p>
           
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
             <Link href="/terminos" className="hover:text-[#c6a26c] transition-colors">

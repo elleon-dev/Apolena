@@ -8,8 +8,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Truck,
-  MessageCircle,
   Frame,
+  Hand,
 } from "lucide-react";
 
 export default function BannerCarousel() {
@@ -25,7 +25,7 @@ export default function BannerCarousel() {
         {/* Imagen de Fondo Original del Slide */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/banners/hero-canvas-bg-2.png"
+            src="/banners/hero-pc.jpg"
             alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
             fill
             priority
@@ -86,16 +86,6 @@ export default function BannerCarousel() {
                 </Link>
               </div>
 
-              <a
-                href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c] transition-colors"
-              >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
-                <span>¿Dudas? Escríbenos por WhatsApp</span>
-              </a>
-
               <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-stone-700 pt-1">
                 <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
                 <span>Apruebas el diseño antes de imprimir</span>
@@ -128,7 +118,7 @@ export default function BannerCarousel() {
           {/* Imagen de la composición en sala (recorte del cuadro sobre la credenza) */}
           <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
             <Image
-              src="/banners/hero-canvas-mobile.jpg"
+              src="/banners/hero-movil.jpg"
               alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
               width={694}
               height={501}
@@ -164,19 +154,6 @@ export default function BannerCarousel() {
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          {/* Enlace WhatsApp */}
-          <div className="mb-3">
-            <a
-              href="https://wa.me/51978323984?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c]"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
-              <span>¿Dudas? Escríbenos por WhatsApp</span>
-            </a>
-          </div>
-
           {/* Garantía */}
           <div className="flex items-center gap-2 text-xs font-semibold text-stone-700">
             <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
@@ -186,23 +163,28 @@ export default function BannerCarousel() {
       </div>
 
       {/* ========================================================= */}
-      {/* 3. FRANJA DE VALOR: 3 Columnas sin emojis                 */}
+      {/* 3. FRANJA DE VALOR: 4 Columnas sin emojis                 */}
       {/* ========================================================= */}
       <div className="w-full bg-[#FAF7F2] border-y border-[#E8DEC8] py-4 sm:py-5 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0 md:divide-x divide-[#E8DEC8] text-center">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 md:divide-x divide-[#E8DEC8] text-center">
           <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
             <Palette className="w-5 h-5 text-[#174B3D] shrink-0" />
             <span>Diseño personalizado</span>
           </div>
 
           <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
-            <Frame className="w-5 h-5 text-[#174B3D]" />
+            <Frame className="w-5 h-5 text-[#174B3D] shrink-0" />
             <span>Canvas listo para colgar</span>
           </div>
 
           <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
-            <Truck className="w-5 h-5 text-[#174B3D]" />
+            <Truck className="w-5 h-5 text-[#174B3D] shrink-0" />
             <span>Delivery incluido</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5 py-1 px-4 text-[#174B3D] font-bold text-sm sm:text-base">
+            <Hand className="w-5 h-5 text-[#174B3D] shrink-0" />
+            <span>Montado a mano</span>
           </div>
         </div>
       </div>
