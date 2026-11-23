@@ -104,6 +104,12 @@ export interface OrderItemCustomizations {
     pet_name: string;
     style?: string;
   } | null;
+  delivery_location?: {
+    lat: number;
+    lng: number;
+    label?: string | null;
+    google_maps_url?: string;
+  } | null;
 }
 
 export interface OrderRecord {
@@ -140,6 +146,9 @@ export interface OrderRecord {
     reference: string | null;
     document_type: string | null;
     document_number: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    map_url?: string | null;
   } | null;
   invoice: {
     id: string;
@@ -1054,7 +1063,10 @@ function normalizeWallArtCustomizationConfig(
 ): ProductCustomizationConfig {
   const defaults = DEFAULT_WALL_ART_PRODUCT.customization_config;
   if (!raw || typeof raw !== "object") {
-    return defaults;
+    return {
+      ...defaults,
+      characters: [],
+    };
   }
   return {
     characters:
@@ -1063,7 +1075,7 @@ function normalizeWallArtCustomizationConfig(
             ...c,
             isAvailable: c.isAvailable ?? true,
           }))
-        : defaults.characters,
+        : [],
     sizes:
       Array.isArray(raw.sizes) && raw.sizes.length > 0
         ? raw.sizes.map((s: any) => ({
@@ -1073,7 +1085,19 @@ function normalizeWallArtCustomizationConfig(
         : defaults.sizes,
     frames:
       Array.isArray(raw.frames) && raw.frames.length > 0
-        ? raw.frames
+        ? raw.frames.map((f: any) => {
+            const imgs = Array.isArray(f.images)
+              ? f.images.filter(Boolean)
+              : f.imageUrl
+                ? [f.imageUrl]
+                : [];
+            return {
+              ...f,
+              images: imgs,
+              imageUrl: imgs[0] || f.imageUrl || null,
+              isAvailable: f.isAvailable ?? true,
+            };
+          })
         : defaults.frames,
     finishes:
       Array.isArray(raw.finishes) && raw.finishes.length > 0
@@ -1127,11 +1151,39 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
         console.warn("Prisma characterTemplate fetch fallback:", charErr);
       }
 
-      const rows = await prisma.product.findMany({
+      let rows = await prisma.product.findMany({
         where: onlyActive ? { status: "active" } : undefined,
         include: { images: { orderBy: { position: "asc" } } },
         orderBy: { created_at: "asc" },
       });
+
+      // Auto-seed default wall-art product row in PostgreSQL if products table is empty
+      if (rows.length === 0) {
+        const totalProducts = await prisma.product.count();
+        if (totalProducts === 0) {
+          const seeded = await prisma.product.upsert({
+            where: { slug: DEFAULT_WALL_ART_PRODUCT.slug },
+            update: {},
+            create: {
+              title: DEFAULT_WALL_ART_PRODUCT.title,
+              slug: DEFAULT_WALL_ART_PRODUCT.slug,
+              description: DEFAULT_WALL_ART_PRODUCT.description,
+              category: DEFAULT_WALL_ART_PRODUCT.category,
+              base_price: DEFAULT_WALL_ART_PRODUCT.base_price,
+              status: DEFAULT_WALL_ART_PRODUCT.status,
+              stock: DEFAULT_WALL_ART_PRODUCT.stock,
+              specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
+              customization_config: {
+                ...DEFAULT_WALL_ART_PRODUCT.customization_config,
+                characters: [],
+              } as any,
+            },
+            include: { images: { orderBy: { position: "asc" } } },
+          });
+          rows = [seeded];
+        }
+      }
+
       if (rows.length > 0) {
         const mapped = rows.map((r) => {
           const normConfig = normalizeWallArtCustomizationConfig(r.customization_config);
@@ -1311,6 +1363,41 @@ export async function updateProductCustomizationConfig(
     };
   }
 
+  // Automatically externalize any base64 frame images before writing to DB
+  if (updates.customization_config?.frames) {
+    updates.customization_config = {
+      ...updates.customization_config,
+      frames: await Promise.all(
+        updates.customization_config.frames.map(async (fr) => {
+          const rawImages = Array.isArray(fr.images)
+            ? fr.images.filter(Boolean)
+            : fr.imageUrl
+              ? [fr.imageUrl]
+              : [];
+          const externalizedImages = (
+            await Promise.all(
+              rawImages.map(async (imgUrl) => {
+                const ext = await externalizeBase64Image(imgUrl, "products", {
+                  maxDimension: 900,
+                  quality: 85,
+                });
+                return ext || imgUrl;
+              }),
+            )
+          ).filter(Boolean);
+
+          const primaryUrl = externalizedImages[0] || null;
+
+          return {
+            ...fr,
+            imageUrl: primaryUrl,
+            images: externalizedImages,
+          };
+        }),
+      ),
+    };
+  }
+
   invalidateProductsCache();
 
   if (isDatabaseConfigured()) {
@@ -1373,17 +1460,82 @@ export async function updateProductCustomizationConfig(
         }
       }
 
-      const updatedRow = await prisma.product.update({
-        where: { id: productId },
-        data: {
-          title: updates.title,
-          description: updates.description,
-          base_price: updates.base_price,
-          stock: updates.stock,
-          customization_config: updates.customization_config as any,
-        },
-        include: { images: { orderBy: { position: "asc" } } },
-      });
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          productId,
+        );
+      let existingRow = isUuid
+        ? await prisma.product.findUnique({ where: { id: productId } })
+        : null;
+
+      if (!existingRow) {
+        existingRow = await prisma.product.findUnique({
+          where: { slug: DEFAULT_WALL_ART_PRODUCT.slug },
+        });
+      }
+
+      const updatedRow = existingRow
+        ? await prisma.product.update({
+            where: { id: existingRow.id },
+            data: {
+              ...(updates.title !== undefined ? { title: updates.title } : {}),
+              ...(updates.description !== undefined
+                ? { description: updates.description }
+                : {}),
+              ...(updates.base_price !== undefined
+                ? { base_price: updates.base_price }
+                : {}),
+              ...(updates.stock !== undefined ? { stock: updates.stock } : {}),
+              ...(updates.customization_config !== undefined
+                ? { customization_config: updates.customization_config as any }
+                : {}),
+            },
+            include: { images: { orderBy: { position: "asc" } } },
+          })
+        : await prisma.product.create({
+            data: {
+              title: updates.title ?? DEFAULT_WALL_ART_PRODUCT.title,
+              slug: DEFAULT_WALL_ART_PRODUCT.slug,
+              description:
+                updates.description ?? DEFAULT_WALL_ART_PRODUCT.description,
+              category: DEFAULT_WALL_ART_PRODUCT.category,
+              base_price:
+                updates.base_price ?? DEFAULT_WALL_ART_PRODUCT.base_price,
+              status: DEFAULT_WALL_ART_PRODUCT.status,
+              stock: updates.stock ?? DEFAULT_WALL_ART_PRODUCT.stock,
+              specifications: DEFAULT_WALL_ART_PRODUCT.specifications as any,
+              customization_config: (updates.customization_config ??
+                DEFAULT_WALL_ART_PRODUCT.customization_config) as any,
+            },
+            include: { images: { orderBy: { position: "asc" } } },
+          });
+
+      let dbCharacters: FamousCharacter[] = [];
+      try {
+        const charRows = await prisma.characterTemplate.findMany({
+          orderBy: { position: "asc" },
+        });
+        dbCharacters = charRows.map((c) => ({
+          id: c.slug,
+          name: c.name,
+          characterTitle: c.character_title || "",
+          universe: c.universe,
+          description: c.description || "",
+          characterImageUrl: c.character_image_url,
+          maskUrl: c.mask_url || "",
+          fusionSampleUrl: c.fusion_sample_url || "",
+          accentColor: c.accent_color || "bg-terracotta-500",
+          tagColor:
+            c.tag_color || "bg-white/90 text-stone-800 border-stone-200/80",
+          prompt: c.prompt || "",
+          negativePrompt: c.negative_prompt || "",
+          isAvailable: c.is_available,
+        }));
+      } catch {}
+
+      const normConfig = normalizeWallArtCustomizationConfig(
+        updatedRow.customization_config,
+      );
 
       const mappedProduct: ProductRecord = {
         id: updatedRow.id,
@@ -1397,7 +1549,10 @@ export async function updateProductCustomizationConfig(
         specifications:
           (updatedRow.specifications as Record<string, any>) || {},
         customization_config: isWallArtProductSlug(updatedRow.slug)
-          ? normalizeWallArtCustomizationConfig(updatedRow.customization_config)
+          ? {
+              ...normConfig,
+              characters: dbCharacters,
+            }
           : (updatedRow.customization_config as unknown as ProductCustomizationConfig),
         images: updatedRow.images.map((img) => ({
           id: img.id,
@@ -1936,6 +2091,15 @@ async function syncOrderRecordToDatabase(order: OrderRecord): Promise<void> {
                   reference: order.shipping.reference,
                   document_type: order.shipping.document_type || "DNI",
                   document_number: order.shipping.document_number,
+                  latitude:
+                    typeof order.shipping.latitude === "number"
+                      ? order.shipping.latitude
+                      : null,
+                  longitude:
+                    typeof order.shipping.longitude === "number"
+                      ? order.shipping.longitude
+                      : null,
+                  map_url: order.shipping.map_url || null,
                 },
               }
             : undefined,
@@ -2053,6 +2217,9 @@ export async function createOrderWithSplitPayment(input: {
     reference?: string;
     document_type?: string;
     document_number?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    map_url?: string | null;
   };
   invoice: {
     type: "boleta" | "factura";
@@ -2191,6 +2358,25 @@ export async function createOrderWithSplitPayment(input: {
       reference: input.shipping.reference?.trim() || null,
       document_type: input.shipping.document_type || "DNI",
       document_number: input.shipping.document_number?.trim() || null,
+      latitude:
+        typeof input.shipping.latitude === "number"
+          ? input.shipping.latitude
+          : typeof finalCustomizations.delivery_location?.lat === "number"
+            ? finalCustomizations.delivery_location.lat
+            : null,
+      longitude:
+        typeof input.shipping.longitude === "number"
+          ? input.shipping.longitude
+          : typeof finalCustomizations.delivery_location?.lng === "number"
+            ? finalCustomizations.delivery_location.lng
+            : null,
+      map_url:
+        input.shipping.map_url ||
+        finalCustomizations.delivery_location?.google_maps_url ||
+        (typeof input.shipping.latitude === "number" &&
+        typeof input.shipping.longitude === "number"
+          ? `https://www.google.com/maps?q=${input.shipping.latitude.toFixed(6)},${input.shipping.longitude.toFixed(6)}`
+          : null),
     },
     invoice: {
       id: crypto.randomUUID(),
@@ -2292,6 +2478,9 @@ export async function createOrderWithSplitPayment(input: {
                   reference: newOrder.shipping.reference,
                   document_type: newOrder.shipping.document_type,
                   document_number: newOrder.shipping.document_number,
+                  latitude: newOrder.shipping.latitude ?? null,
+                  longitude: newOrder.shipping.longitude ?? null,
+                  map_url: newOrder.shipping.map_url ?? null,
                 },
               }
             : undefined,
@@ -2383,6 +2572,7 @@ export async function createOrderWithSplitPayment(input: {
           advance_amount: advanceAmount,
           remaining_amount: remainingAmount,
           payment_method: input.payment_method,
+          shipping_address: `${input.shipping.address}, ${input.shipping.district}, ${input.shipping.department}`,
           bank_name: bankCfg.bank_name,
           account_number: bankCfg.account_number,
           cci: bankCfg.cci,
@@ -2713,6 +2903,18 @@ export async function updateOrderAdminLifecycle(input: {
           reference: input.shipping.reference !== undefined ? input.shipping.reference : order.shipping.reference,
           document_type: input.shipping.document_type !== undefined ? input.shipping.document_type : order.shipping.document_type,
           document_number: input.shipping.document_number !== undefined ? input.shipping.document_number : order.shipping.document_number,
+          latitude:
+            input.shipping.latitude !== undefined
+              ? input.shipping.latitude
+              : order.shipping.latitude,
+          longitude:
+            input.shipping.longitude !== undefined
+              ? input.shipping.longitude
+              : order.shipping.longitude,
+          map_url:
+            input.shipping.map_url !== undefined
+              ? input.shipping.map_url
+              : order.shipping.map_url,
         };
       } else {
         order.shipping = {
@@ -2728,7 +2930,41 @@ export async function updateOrderAdminLifecycle(input: {
           reference: input.shipping.reference ?? null,
           document_type: input.shipping.document_type ?? null,
           document_number: input.shipping.document_number ?? null,
+          latitude: input.shipping.latitude ?? null,
+          longitude: input.shipping.longitude ?? null,
+          map_url: input.shipping.map_url ?? null,
         };
+      }
+
+      // Sincronizar también customizations.delivery_location del ítem si se actualizó el pin
+      if (
+        input.shipping.latitude !== undefined ||
+        input.shipping.longitude !== undefined
+      ) {
+        const firstItem = order.packages?.[0]?.items?.[0];
+        if (firstItem && firstItem.customizations) {
+          if (
+            typeof input.shipping.latitude === "number" &&
+            typeof input.shipping.longitude === "number"
+          ) {
+            firstItem.customizations = {
+              ...firstItem.customizations,
+              delivery_location: {
+                lat: input.shipping.latitude,
+                lng: input.shipping.longitude,
+                label: input.shipping.map_label || firstItem.customizations.delivery_location?.label || null,
+                google_maps_url:
+                  input.shipping.map_url ||
+                  `https://www.google.com/maps?q=${input.shipping.latitude.toFixed(6)},${input.shipping.longitude.toFixed(6)}`,
+              },
+            };
+          } else {
+            firstItem.customizations = {
+              ...firstItem.customizations,
+              delivery_location: null,
+            };
+          }
+        }
       }
     }
 
@@ -2990,11 +3226,26 @@ export async function updateOrderAdminLifecycle(input: {
                     reference: s.reference,
                     document_type: s.document_type || "DNI",
                     document_number: s.document_number,
+                    latitude: s.latitude ?? null,
+                    longitude: s.longitude ?? null,
+                    map_url: s.map_url ?? null,
                   },
                 },
               },
             }),
           );
+
+          const firstItem = order.packages?.[0]?.items?.[0];
+          if (firstItem?.id) {
+            batchOps.push(
+              prisma.orderItem.update({
+                where: { id: firstItem.id },
+                data: {
+                  customizations: (firstItem.customizations || {}) as any,
+                },
+              }),
+            );
+          }
         }
 
         // Persistir el nuevo comprobante adicional (sin tocar los anteriores)

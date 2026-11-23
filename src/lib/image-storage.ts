@@ -45,12 +45,29 @@ export async function uploadBufferToStorage(
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { error } = await supabase.storage
+      let { error } = await supabase.storage
         .from(SUPABASE_MEDIA_BUCKET)
         .upload(objectPath, buffer, {
           contentType,
           upsert: true,
         });
+
+      // If the bucket hasn't been created in Supabase yet, auto-create it once and retry
+      if (
+        error &&
+        /bucket not found|resource was not found/i.test(error.message || "")
+      ) {
+        await supabase.storage
+          .createBucket(SUPABASE_MEDIA_BUCKET, { public: true })
+          .catch(() => null);
+        const retry = await supabase.storage
+          .from(SUPABASE_MEDIA_BUCKET)
+          .upload(objectPath, buffer, {
+            contentType,
+            upsert: true,
+          });
+        error = retry.error;
+      }
 
       if (!error) {
         const { data } = supabase.storage
@@ -71,11 +88,21 @@ export async function uploadBufferToStorage(
     }
   }
 
-  // Fallback to local public/uploads for offline development
-  const targetDir = ensureUploadsSubdir(subdir);
-  const fullPath = path.join(targetDir, fileName);
-  fs.writeFileSync(fullPath, buffer);
-  return `/uploads/${subdir}/${fileName}`;
+  // On serverless read-only environments (e.g. Vercel), return the sharp-optimized data URL
+  // so it persists reliably in PostgreSQL without throwing EROFS or 404ing across lambdas.
+  if (process.env.VERCEL) {
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  }
+
+  // Fallback to local public/uploads for offline local development
+  try {
+    const targetDir = ensureUploadsSubdir(subdir);
+    const fullPath = path.join(targetDir, fileName);
+    fs.writeFileSync(fullPath, buffer);
+    return `/uploads/${subdir}/${fileName}`;
+  } catch {
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  }
 }
 
 /**

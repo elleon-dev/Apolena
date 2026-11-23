@@ -8,6 +8,7 @@ import {
   Heading,
   Hr,
   Html,
+  Link,
   Preview,
   Row,
   Section,
@@ -32,6 +33,12 @@ export interface OrderCreatedAdminEmailProps {
     pet_inscription?: {
       pet_name?: string;
     };
+    delivery_location?: {
+      lat: number;
+      lng: number;
+      label?: string | null;
+      google_maps_url?: string;
+    } | null;
   };
   app_url?: string;
 }
@@ -76,6 +83,20 @@ export default function OrderCreatedAdminEmail({
             <Text style={line}><strong>Cliente:</strong> {buyer_name} ({buyer_email})</Text>
             <Text style={line}><strong>Teléfono / WhatsApp:</strong> {buyer_phone}</Text>
             <Text style={line}><strong>Dirección Delivery:</strong> {shipping_address}</Text>
+            {customizations?.delivery_location && (
+              <Text style={lineGold}>
+                <strong>📍 Pin Exacto en Mapa:</strong>{" "}
+                <Link
+                  href={
+                    customizations.delivery_location.google_maps_url ||
+                    `https://www.google.com/maps?q=${customizations.delivery_location.lat},${customizations.delivery_location.lng}`
+                  }
+                  style={{ color: "#F2D59B", textDecoration: "underline" }}
+                >
+                  Abrir Ubicación Exacta en Google Maps ({customizations.delivery_location.lat.toFixed(6)}, {customizations.delivery_location.lng.toFixed(6)})
+                </Link>
+              </Text>
+            )}
           </Section>
 
           {/* Especificaciones de Taller */}

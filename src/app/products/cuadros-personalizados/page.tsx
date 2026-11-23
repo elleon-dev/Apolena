@@ -2246,6 +2246,11 @@ export default function personalizedWallArt() {
                         .filter((frame) => frame.isAvailable !== false)
                         .map((frame) => {
                           const isFrameSelected = selectedFrame.id === frame.id;
+                          const frameImg =
+                            (Array.isArray(frame.images) &&
+                            frame.images.length > 0
+                              ? frame.images[0]
+                              : frame.imageUrl) || null;
                           return (
                             <button
                               key={frame.id}
@@ -2258,6 +2263,15 @@ export default function personalizedWallArt() {
                               }`}
                             >
                               <div>
+                                {frameImg && (
+                                  <div className="mb-2 aspect-[4/3] w-full rounded-xl overflow-hidden border border-cream-200 bg-cream-100">
+                                    <img
+                                      src={frameImg}
+                                      alt={frame.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
                                 <div className="flex items-center justify-between gap-1">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span

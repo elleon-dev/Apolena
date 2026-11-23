@@ -3,6 +3,13 @@
 import React, { useState } from "react";
 import { X, Save, Upload, Loader2, AlertCircle, FileText, CheckCircle2 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
+import { DeliveryMapPicker } from "@/components/DeliveryMapPicker";
+import {
+  buildGoogleMapsUrl,
+  DeliveryPinLocation,
+  formatReferenceWithPin,
+  parseDeliveryPinFromOrder,
+} from "@/lib/delivery-location";
 
 interface EditOrderModalProps {
   order: OrderRecord | null;
@@ -20,7 +27,16 @@ export function EditOrderModal({
   if (!open || !order) return null;
 
   // Validación de seguridad de estado
-const isEditable = (order.status as string) === "pending" || (order.status as string) === "manufacturing";
+  const isEditable =
+    (order.status as string) === "pending" ||
+    (order.status as string) === "manufacturing";
+
+  const initialParsedLoc = parseDeliveryPinFromOrder(
+    order.shipping?.reference,
+    order.packages?.[0]?.items?.[0]?.customizations?.delivery_location,
+    order.shipping,
+  );
+
   // Estados del Formulario (Contacto y Envío)
   const [shippingForm, setShippingForm] = useState({
     name: order.shipping?.name || "",
@@ -32,8 +48,19 @@ const isEditable = (order.status as string) === "pending" || (order.status as st
     province: order.shipping?.province || "Lima",
     district: order.shipping?.district || "",
     address: order.shipping?.address || "",
-    reference: order.shipping?.reference || "",
+    reference: initialParsedLoc.cleanReference,
   });
+
+  const [deliveryPin, setDeliveryPin] = useState<DeliveryPinLocation | null>(
+    initialParsedLoc.pin
+      ? {
+          lat: initialParsedLoc.pin.lat,
+          lng: initialParsedLoc.pin.lng,
+          label: initialParsedLoc.pin.label,
+          google_maps_url: initialParsedLoc.pin.googleMapsUrl,
+        }
+      : null,
+  );
 
   // Estados del Comprobante Adicional
   const [paymentUpdate, setPaymentUpdate] = useState({
@@ -71,7 +98,20 @@ const isEditable = (order.status as string) === "pending" || (order.status as st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "edit_order_details",
-          shipping: shippingForm,
+          shipping: {
+            ...shippingForm,
+            reference: formatReferenceWithPin(
+              shippingForm.reference,
+              deliveryPin,
+            ),
+            latitude: deliveryPin ? deliveryPin.lat : null,
+            longitude: deliveryPin ? deliveryPin.lng : null,
+            map_url: deliveryPin
+              ? deliveryPin.google_maps_url ||
+                buildGoogleMapsUrl(deliveryPin.lat, deliveryPin.lng)
+              : null,
+            map_label: deliveryPin?.label || null,
+          },
           ...(paymentUpdate.proof_image_url
             ? { paymentUpdate }
             : {}),
@@ -243,6 +283,16 @@ const isEditable = (order.status as string) === "pending" || (order.status as st
                 placeholder="Ej. Frente al parque, puerta color blanca"
               />
             </div>
+
+            {isEditable && (
+              <DeliveryMapPicker
+                address={shippingForm.address}
+                district={shippingForm.district}
+                department={shippingForm.department}
+                value={deliveryPin}
+                onChange={setDeliveryPin}
+              />
+            )}
           </div>
 
           {/* SECCIÓN 2: HISTORIAL DE COMPROBANTES Y NUEVA FOTO */}

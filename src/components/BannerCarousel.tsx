@@ -8,6 +8,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Truck,
+  MessageCircle,
   Frame,
   Hand,
 } from "lucide-react";
@@ -32,13 +33,13 @@ export default function BannerCarousel() {
       className="relative w-full overflow-hidden bg-[#FAF7F2] text-[#141414]"
     >
       {/* ========================================================= */}
-      {/* 1. VERSIÓN DESKTOP: Video en bucle infinito con póster    */}
+      {/* 1. VERSIÓN DESKTOP: Video en bucle infinito como protagonista */}
       {/* ========================================================= */}
       <div className="hidden lg:flex relative w-full overflow-hidden min-h-[540px] xl:min-h-[580px] 2xl:min-h-[620px] items-center">
-        {/* Póster e Imagen de Respaldo + Video Hero sin audio en bucle */}
+        {/* Póster de alta fidelidad + Video Hero en bucle sin velos pesados */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/banners/hero-pc.jpg"
+            src="/banners/hero-pc.png"
             alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
             fill
             priority
@@ -47,8 +48,8 @@ export default function BannerCarousel() {
           />
           <video
             ref={desktopVideoRef}
-            src="/banners/video-here-bg.mp4?v=2"
-            poster="/banners/hero-canvas-bg-2.png"
+            src="/banners/video-here-bg.mp4"
+            poster="/banners/hero-pc.png"
             autoPlay
             loop
             muted
@@ -57,7 +58,7 @@ export default function BannerCarousel() {
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover object-right xl:object-center pointer-events-none"
           />
-          {/* Velo sutil de contraste en el lado izquierdo para máxima nitidez de lectura */}
+          {/* Velo sutil original para preservar nitidez de lectura sin opacar la calidez del video */}
           <div className="absolute inset-y-0 left-0 w-[44%] bg-gradient-to-r from-[#FAF3E8]/45 via-[#FAF3E8]/20 to-transparent pointer-events-none" />
         </div>
 
@@ -113,6 +114,17 @@ export default function BannerCarousel() {
                 </Link>
               </div>
 
+              {/* Enlace WhatsApp */}
+              <a
+                href="https://wa.me/51993920853?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c] transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                <span>¿Dudas? Escríbenos por WhatsApp</span>
+              </a>
+
               <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-stone-700 pt-1">
                 <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
                 <span>Apruebas el diseño antes de imprimir</span>
@@ -123,7 +135,7 @@ export default function BannerCarousel() {
       </div>
 
       {/* ========================================================= */}
-      {/* 2. VERSIÓN MÓVIL / TABLET: Fiel a la maqueta del iPhone   */}
+      {/* 2. VERSIÓN MÓVIL / TABLET: Fiel a la maqueta original    */}
       {/* ========================================================= */}
       <div className="block lg:hidden px-4 sm:px-6 py-8 sm:py-10 bg-[#FAF7F2]">
         <div className="max-w-lg mx-auto text-left">
@@ -143,26 +155,26 @@ export default function BannerCarousel() {
           </p>
 
           {/* Video e Imagen Póster de la composición en sala */}
-          <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
+          <div className="relative w-full aspect-[16/11] rounded-2xl overflow-hidden shadow-xl border border-[#E8DEC8] mb-6 bg-white">
             <Image
-              src="/banners/hero-movil.jpg"
+              src="/banners/hero-movil.png"
               alt="Retrato personalizado de mascota en cuadro canvas de tela Apolena montado en sala"
-              width={694}
-              height={501}
+              fill
               priority
-              className="w-full h-auto object-cover"
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 100vw, 600px"
             />
             <video
               ref={mobileVideoRef}
-              src="/banners/video-here-bg.mp4?v=2"
-              poster="/banners/hero-canvas-mobile.jpg"
+              src="/banners/video-here-bg.mp4"
+              poster="/banners/hero-movil.png"
               autoPlay
               loop
               muted
               playsInline
               preload="auto"
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover object-right pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
             />
           </div>
 
@@ -192,6 +204,19 @@ export default function BannerCarousel() {
             <span>Elegir mi estilo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
+
+          {/* Enlace WhatsApp */}
+          <div className="mb-3">
+            <a
+              href="https://wa.me/51993920853?text=Hola%20Apolena%2C%20tengo%20una%20consulta%20sobre%20los%20cuadros%20personalizados"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#174B3D] hover:text-[#0E2F26] underline underline-offset-4 decoration-[#c6a26c]"
+            >
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+              <span>¿Dudas? Escríbenos por WhatsApp</span>
+            </a>
+          </div>
 
           {/* Garantía */}
           <div className="flex items-center gap-2 text-xs font-semibold text-stone-700">

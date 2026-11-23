@@ -156,6 +156,11 @@ export async function POST(request: Request) {
         reference: shipping.reference || "",
         document_type: shipping.document_type || "DNI",
         document_number: shipping.document_number || "",
+        latitude:
+          typeof shipping.latitude === "number" ? shipping.latitude : null,
+        longitude:
+          typeof shipping.longitude === "number" ? shipping.longitude : null,
+        map_url: shipping.map_url || null,
       },
       invoice: {
         type: body.invoice?.type === "factura" ? "factura" : "boleta",

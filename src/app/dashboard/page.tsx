@@ -7,6 +7,7 @@ import { EditOrderModal } from "@/components/EditOrderModal";
 import { EditTrackingModal } from "@/components/EditTrackingModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
+import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
 import {
   Shield,
   ShieldCheck,
@@ -43,6 +44,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Image as ImageIcon,
   Palette,
   Ruler,
   ImagePlus,
@@ -203,6 +205,8 @@ export default function AdminDashboardPage() {
     description: "",
     priceModifierPen: 0,
     colorHex: "#1C1917",
+    imageUrl: null,
+    images: [],
     isAvailable: true,
   });
 
@@ -686,7 +690,11 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.product) {
         setProducts((prev) =>
-          prev.map((p) => (p.id === wallArtProduct.id ? data.product : p)),
+          prev.map((p) =>
+            p.id === wallArtProduct.id || p.slug === data.product.slug
+              ? data.product
+              : p,
+          ),
         );
         showToast("success", successMessage);
       } else {
@@ -941,6 +949,16 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
     });
   };
   // --- CRUD Marcos de Cuadros ---
+  const getNormalizedFrameImages = (frame: FrameOption): string[] => {
+    if (Array.isArray(frame.images) && frame.images.length > 0) {
+      return frame.images.filter((url): url is string => Boolean(url?.trim()));
+    }
+    if (frame.imageUrl?.trim()) {
+      return [frame.imageUrl.trim()];
+    }
+    return [];
+  };
+
   const openCreateFrameModal = () => {
     setEditingFrameId(null);
     setFrameForm({
@@ -949,18 +967,143 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
       description: "",
       priceModifierPen: 45,
       colorHex: "#5C3A21",
+      imageUrl: null,
+      images: [],
       isAvailable: true,
     });
     setShowFrameModal(true);
   };
 
   const openEditFrameModal = (frame: FrameOption) => {
+    const imgs = getNormalizedFrameImages(frame);
     setEditingFrameId(frame.id);
     setFrameForm({
       ...frame,
+      imageUrl: imgs[0] || null,
+      images: imgs,
       isAvailable: frame.isAvailable !== false,
     });
     setShowFrameModal(true);
+  };
+
+  const handleAddFrameModalImages = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      handleImageFileToDataUrl(file, (dataUrl) => {
+        setFrameForm((prev) => {
+          const currentImgs = getNormalizedFrameImages(prev);
+          const nextImgs = [...currentImgs, dataUrl];
+          return {
+            ...prev,
+            images: nextImgs,
+            imageUrl: nextImgs[0] || null,
+          };
+        });
+      });
+    });
+  };
+
+  const handleReplaceFrameModalImage = (index: number, file: File | null) => {
+    if (!file) return;
+    handleImageFileToDataUrl(file, (dataUrl) => {
+      setFrameForm((prev) => {
+        const currentImgs = getNormalizedFrameImages(prev);
+        const nextImgs = [...currentImgs];
+        nextImgs[index] = dataUrl;
+        return {
+          ...prev,
+          images: nextImgs,
+          imageUrl: nextImgs[0] || null,
+        };
+      });
+    });
+  };
+
+  const handleRemoveFrameModalImage = (index: number) => {
+    setFrameForm((prev) => {
+      const currentImgs = getNormalizedFrameImages(prev);
+      const nextImgs = currentImgs.filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        images: nextImgs,
+        imageUrl: nextImgs[0] || null,
+      };
+    });
+  };
+
+  const handleDirectUploadFrameImages = (
+    frame: FrameOption,
+    files: FileList | null,
+  ) => {
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files);
+    const loadedUrls: string[] = [];
+    fileArray.forEach((file) => {
+      handleImageFileToDataUrl(file, async (dataUrl) => {
+        loadedUrls.push(dataUrl);
+        if (loadedUrls.length === fileArray.length) {
+          const currentImgs = getNormalizedFrameImages(frame);
+          const nextImgs = [...currentImgs, ...loadedUrls];
+          const nextFrames = (wallArtConfig.frames || []).map((f) =>
+            f.id === frame.id
+              ? { ...f, images: nextImgs, imageUrl: nextImgs[0] || null }
+              : f,
+          );
+          await persistWallArtConfig(
+            {
+              ...wallArtConfig,
+              frames: nextFrames,
+            },
+            `Imagen agregada al marco "${frame.name}".`,
+          );
+        }
+      });
+    });
+  };
+
+  const handleDirectReplaceFrameImage = (
+    frame: FrameOption,
+    imgIndex: number,
+    file: File | null,
+  ) => {
+    if (!file) return;
+    handleImageFileToDataUrl(file, async (dataUrl) => {
+      const currentImgs = getNormalizedFrameImages(frame);
+      const nextImgs = [...currentImgs];
+      nextImgs[imgIndex] = dataUrl;
+      const nextFrames = (wallArtConfig.frames || []).map((f) =>
+        f.id === frame.id
+          ? { ...f, images: nextImgs, imageUrl: nextImgs[0] || null }
+          : f,
+      );
+      await persistWallArtConfig(
+        {
+          ...wallArtConfig,
+          frames: nextFrames,
+        },
+        `Imagen del marco "${frame.name}" actualizada.`,
+      );
+    });
+  };
+
+  const handleDirectRemoveFrameImage = async (
+    frame: FrameOption,
+    imgIndex: number,
+  ) => {
+    const currentImgs = getNormalizedFrameImages(frame);
+    const nextImgs = currentImgs.filter((_, idx) => idx !== imgIndex);
+    const nextFrames = (wallArtConfig.frames || []).map((f) =>
+      f.id === frame.id
+        ? { ...f, images: nextImgs, imageUrl: nextImgs[0] || null }
+        : f,
+    );
+    await persistWallArtConfig(
+      {
+        ...wallArtConfig,
+        frames: nextFrames,
+      },
+      `Imagen eliminada del marco "${frame.name}".`,
+    );
   };
 
   const handleSaveFrameForm = async (e: React.FormEvent) => {
@@ -975,10 +1118,13 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")}`;
 
+    const normalizedImgs = getNormalizedFrameImages(frameForm);
     const frameRecord: FrameOption = {
       ...frameForm,
       id: cleanId,
       priceModifierPen: Number(frameForm.priceModifierPen) || 0,
+      images: normalizedImgs,
+      imageUrl: normalizedImgs[0] || null,
     };
 
     const nextFrames = editingFrameId
@@ -1733,13 +1879,22 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             <p className="text-xs font-semibold text-stone-800 truncate">
                               {order.shipping?.name || "Cliente Apolena"}
                             </p>
-                            <p className="text-[11px] text-stone-500 truncate flex items-center gap-1">
+                            <p className="text-[11px] text-stone-500 truncate flex items-center gap-1 flex-wrap">
                               <MapPin className="w-3 h-3 text-terracotta-500 flex-shrink-0" />
                               <span>
                                 {order.shipping?.district},{" "}
                                 {order.shipping?.department} ·{" "}
                                 {order.shipping?.phone}
                               </span>
+                              {parseDeliveryPinFromOrder(
+                                order.shipping?.reference,
+                                item?.customizations?.delivery_location,
+                                order.shipping,
+                              ).pin && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#174B3D]/10 text-[#174B3D] text-[10px] font-bold">
+                                  Pin GPS
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -2632,6 +2787,8 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(wallArtConfig.frames || []).map((frame, frameIdx) => {
                     const isActive = frame.isAvailable !== false;
+                    const frameImgs = getNormalizedFrameImages(frame);
+                    const primaryImg = frameImgs[0] || null;
                     return (
                       <div
                         key={`frame-${frame.id}-${frameIdx}`}
@@ -2643,11 +2800,40 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3.5 min-w-0">
-                            <div
-                              className="w-12 h-12 rounded-2xl border-2 border-stone-200 flex-shrink-0 shadow-inner"
-                              style={{ backgroundColor: frame.colorHex }}
-                              title={`Color Hex: ${frame.colorHex}`}
-                            />
+                            {primaryImg ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewCharacterImage({
+                                    url: primaryImg,
+                                    title: frame.name,
+                                    subtitle: frame.description,
+                                  })
+                                }
+                                title="Ver imagen completa del marco"
+                                className="group/fthumb relative w-14 h-14 rounded-2xl border-2 border-stone-200 flex-shrink-0 overflow-hidden bg-cream-50 shadow-inner cursor-zoom-in"
+                              >
+                                <img
+                                  src={primaryImg}
+                                  alt={frame.name}
+                                  className="w-full h-full object-cover group-hover/fthumb:scale-105 transition-transform"
+                                />
+                                <span
+                                  className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
+                                  style={{ backgroundColor: frame.colorHex }}
+                                  title={`Color Hex: ${frame.colorHex}`}
+                                />
+                                <span className="absolute inset-0 bg-stone-950/0 group-hover/fthumb:bg-stone-950/35 transition-colors flex items-center justify-center">
+                                  <Maximize2 className="w-3.5 h-3.5 text-white opacity-0 group-hover/fthumb:opacity-100 transition-opacity" />
+                                </span>
+                              </button>
+                            ) : (
+                              <div
+                                className="w-14 h-14 rounded-2xl border-2 border-stone-200 flex-shrink-0 shadow-inner"
+                                style={{ backgroundColor: frame.colorHex }}
+                                title={`Color Hex: ${frame.colorHex}`}
+                              />
+                            )}
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center gap-2">
                                 <h4 className="font-bold text-sm text-stone-900 truncate">
@@ -2677,6 +2863,112 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               ? "Incluido (S/ 0)"
                               : `+ S/ ${frame.priceModifierPen}`}
                           </span>
+                        </div>
+
+                        {/* Galería de Imágenes del Marco (Subir, Modificar, Ver y Eliminar) */}
+                        <div className="bg-cream-50/70 border border-cream-200/80 rounded-2xl p-3 space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold text-stone-700 flex items-center gap-1.5">
+                              <ImageIcon className="w-3.5 h-3.5 text-terracotta-600" />
+                              <span>
+                                Imágenes del marco ({frameImgs.length})
+                              </span>
+                            </span>
+                            <label className="px-2.5 py-1 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-[11px] font-semibold text-stone-800 cursor-pointer flex items-center gap-1 shadow-2xs transition-colors">
+                              <Upload className="w-3 h-3 text-terracotta-600" />
+                              <span>Subir imagen</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                disabled={isSavingCuadros}
+                                onChange={(e) => {
+                                  handleDirectUploadFrameImages(
+                                    frame,
+                                    e.target.files,
+                                  );
+                                  e.target.value = "";
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+
+                          {frameImgs.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {frameImgs.map((imgUrl, imgIdx) => (
+                                <div
+                                  key={`${frame.id}-img-${imgIdx}`}
+                                  className="group/cardimg relative rounded-xl border border-cream-200 bg-white p-1.5 flex flex-col gap-1.5 shadow-2xs"
+                                >
+                                  <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-cream-100">
+                                    <img
+                                      src={imgUrl}
+                                      alt={`${frame.name} ${imgIdx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPreviewCharacterImage({
+                                          url: imgUrl,
+                                          title: `${frame.name} (Imagen ${imgIdx + 1})`,
+                                          subtitle: frame.description,
+                                        })
+                                      }
+                                      title="Ver imagen completa"
+                                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-stone-900/75 hover:bg-stone-900 text-white flex items-center justify-center shadow-xs transition-colors"
+                                    >
+                                      <Maximize2 className="w-3 h-3" />
+                                    </button>
+                                    {imgIdx === 0 && (
+                                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-stone-900/75 text-white text-[9px] font-bold uppercase">
+                                        Principal
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center justify-between gap-1 text-[10px]">
+                                    <label className="flex-1 py-1 px-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 text-stone-700 font-semibold cursor-pointer text-center truncate transition-colors">
+                                      Modificar
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        disabled={isSavingCuadros}
+                                        onChange={(e) => {
+                                          handleDirectReplaceFrameImage(
+                                            frame,
+                                            imgIdx,
+                                            e.target.files?.[0] || null,
+                                          );
+                                          e.target.value = "";
+                                        }}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      disabled={isSavingCuadros}
+                                      onClick={() =>
+                                        handleDirectRemoveFrameImage(
+                                          frame,
+                                          imgIdx,
+                                        )
+                                      }
+                                      title="Eliminar imagen"
+                                      className="py-1 px-2 rounded-lg text-rose-600 hover:bg-rose-50 font-semibold flex items-center justify-center transition-colors"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-stone-400 italic">
+                              Sin imágenes cargadas. Sube una o más fotos de
+                              referencia del marco o bastidor.
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-cream-100 text-xs">
@@ -3351,8 +3643,8 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
 
             {/* MODAL: CREAR / EDITAR MARCO DE CUADRO */}
             {showFrameModal && (
-              <div className="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-                <div className="bg-white border border-cream-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-hover space-y-5">
+              <div className="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white border border-cream-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-hover space-y-5 my-8 max-h-[90vh] overflow-y-auto">
                   <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                     <div>
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-terracotta-600 block">
@@ -3375,6 +3667,123 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                     onSubmit={handleSaveFrameForm}
                     className="space-y-4 text-xs"
                   >
+                    {/* Imágenes del Marco (Subir, Modificar, Ver, Eliminar) */}
+                    <div className="space-y-2.5 bg-cream-50/80 border border-cream-200 rounded-2xl p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <label className="font-semibold text-stone-800 block">
+                            Imágenes del Marco / Bastidor
+                          </label>
+                          <p className="text-[11px] text-stone-500">
+                            Sube fotos reales de la moldura o bastidor. Puedes
+                            modificarlas o eliminarlas en cualquier momento.
+                          </p>
+                        </div>
+                        <label className="px-3 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-[11px] font-semibold cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-xs transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Subir imagen</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              handleAddFrameModalImages(e.target.files);
+                              e.target.value = "";
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {getNormalizedFrameImages(frameForm).length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                          {getNormalizedFrameImages(frameForm).map(
+                            (imgUrl, imgIdx) => (
+                              <div
+                                key={`modal-frame-img-${imgIdx}`}
+                                className="rounded-xl border border-cream-200 bg-white p-2 flex flex-col gap-2 shadow-2xs"
+                              >
+                                <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden bg-cream-100">
+                                  <img
+                                    src={imgUrl}
+                                    alt={`${frameForm.name || "Marco"} ${imgIdx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPreviewCharacterImage({
+                                        url: imgUrl,
+                                        title: `${frameForm.name || "Marco"} (Imagen ${imgIdx + 1})`,
+                                        subtitle: frameForm.description,
+                                      })
+                                    }
+                                    title="Ver imagen completa"
+                                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-stone-900/75 hover:bg-stone-900 text-white flex items-center justify-center shadow-xs"
+                                  >
+                                    <Maximize2 className="w-3 h-3" />
+                                  </button>
+                                  {imgIdx === 0 && (
+                                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-stone-900/75 text-white text-[9px] font-bold uppercase">
+                                      Principal
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between gap-1 text-[11px]">
+                                  <label className="flex-1 py-1 px-2 rounded-lg bg-cream-100 hover:bg-cream-200 text-stone-800 font-semibold cursor-pointer text-center transition-colors">
+                                    Modificar
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        handleReplaceFrameModalImage(
+                                          imgIdx,
+                                          e.target.files?.[0] || null,
+                                        );
+                                        e.target.value = "";
+                                      }}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveFrameModalImage(imgIdx)
+                                    }
+                                    title="Eliminar imagen"
+                                    className="py-1 px-2 rounded-lg text-rose-600 hover:bg-rose-50 font-semibold flex items-center justify-center transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center gap-1.5 py-5 px-4 border-2 border-dashed border-cream-300 hover:border-terracotta-400 rounded-2xl bg-white/70 cursor-pointer transition-colors text-center">
+                          <ImageIcon className="w-6 h-6 text-stone-400" />
+                          <span className="text-xs font-semibold text-stone-700">
+                            Haz clic aquí para subir una o más fotos del marco
+                          </span>
+                          <span className="text-[11px] text-stone-400">
+                            JPG, PNG o WEBP (se optimizan automáticamente en la
+                            nube)
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              handleAddFrameModalImages(e.target.files);
+                              e.target.value = "";
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+
                     <div className="space-y-1">
                       <label className="font-semibold text-stone-800 block">
                         Nombre del Marco
@@ -4475,7 +4884,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-cream-200 space-y-1 text-stone-700">
+                      <div className="pt-2 border-t border-cream-200 space-y-1.5 text-stone-700">
                         <p>
                           <strong>Ubicación:</strong>{" "}
                           {selectedOrder.shipping?.district},{" "}
@@ -4486,12 +4895,73 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           <strong>Dirección exacta:</strong>{" "}
                           {selectedOrder.shipping?.address}
                         </p>
-                        {selectedOrder.shipping?.reference && (
-                          <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200">
-                            <strong>Referencia:</strong>{" "}
-                            {selectedOrder.shipping.reference}
-                          </p>
-                        )}
+                        {(() => {
+                          const parsedLoc = parseDeliveryPinFromOrder(
+                            selectedOrder.shipping?.reference,
+                            selectedOrder.packages?.[0]?.items?.[0]
+                              ?.customizations?.delivery_location,
+                            selectedOrder.shipping,
+                          );
+                          return (
+                            <>
+                              {parsedLoc.cleanReference && (
+                                <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200">
+                                  <strong>Referencia:</strong>{" "}
+                                  {parsedLoc.cleanReference}
+                                </p>
+                              )}
+                              {parsedLoc.pin && (
+                                <div className="p-2.5 rounded-xl bg-[#174B3D]/5 border border-[#174B3D]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <span className="text-[11px] font-bold text-[#174B3D] flex items-center gap-1">
+                                      <MapPin className="w-3.5 h-3.5 text-terracotta-500 shrink-0" />
+                                      <span>Pin Exacto en Mapa (GPS)</span>
+                                    </span>
+                                    <span className="font-mono text-[11px] text-stone-600 block">
+                                      {parsedLoc.pin.lat.toFixed(6)},{" "}
+                                      {parsedLoc.pin.lng.toFixed(6)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) =>
+                                        copyDedication(
+                                          parsedLoc.pin!.googleMapsUrl,
+                                          `gps-modal-${selectedOrder.id}`,
+                                          e,
+                                        )
+                                      }
+                                      className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-cream-100 text-stone-800 border border-cream-200 text-[11px] font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                      {copiedDedicationId ===
+                                      `gps-modal-${selectedOrder.id}` ? (
+                                        <>
+                                          <Check className="w-3 h-3 text-sage-600" />
+                                          <span>Copiado</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3 h-3 text-stone-500" />
+                                          <span>Copiar GPS</span>
+                                        </>
+                                      )}
+                                    </button>
+                                    <a
+                                      href={parsedLoc.pin.googleMapsUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1.5 rounded-lg bg-[#174B3D] hover:bg-[#123B30] text-white text-[11px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                                    >
+                                      <ExternalLink className="w-3 h-3 text-[#c6a26c]" />
+                                      <span>Abrir en Google Maps</span>
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                         {selectedOrder.notes && (
                           <p className="text-stone-600 bg-white p-2 rounded-xl border border-cream-200">
                             <strong>Notas del pedido:</strong>{" "}

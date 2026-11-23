@@ -25,7 +25,7 @@ Este skill define la arquitectura de productos y personalizaciones en Apolena, g
   - `specifications`: JSONB con especificaciones técnicas (ej. resolución 300 DPI, materiales base).
   - `customization_config`: JSONB extensible que define y persiste en Supabase PostgreSQL todas las opciones dinámicas del servicio **`cuadros-personalizados`**:
     - `characters`: Lista dinámica de Personajes y Escenas IA (`id`, `name`, `characterTitle`, `universe`, `description`, `characterImageUrl`, `fusionSampleUrl`, `prompt`, `negativePrompt`, `isAvailable`).
-    - `frames`: Lista dinámica de Marcos y Bastidores (`id`, `name`, `description`, `priceModifierPen`, `colorHex`, `isAvailable`).
+    - `frames`: Lista dinámica de Marcos y Bastidores (`id`, `name`, `description`, `priceModifierPen`, `colorHex`, `imageUrl`, `images`, `isAvailable`), con soporte para subir, modificar, previsualizar en pantalla completa y eliminar imágenes de referencia almacenadas en Supabase Storage (`apolena-media/products`).
     - `sizes`: Lista dinámica de Medidas de Imprenta 300 DPI (`id`, `tier`, `cmDimensions`, `inchDimensions`, `baseWidthPx`, `baseHeightPx`, `dpi`, `recommendedUse`, `pricePen`, `isAvailable`).
     - `finishes`: Lista dinámica de Acabados de Lienzo (`full-bleed` / `museum-matte` con `name`, `description`, `priceModifierPen`, `isAvailable`).
   - **Gestión Dinámica en `/dashboard`:** Tanto `super_admin` como `admin` pueden crear, editar, activar/ocultar y eliminar personajes IA, marcos, medidas 300 DPI y acabados del servicio `cuadros-personalizados` desde la pestaña **"Cuadros Personalizados"** del Dashboard Administrativo (`PUT /api/admin/settings` con `{ productId, productUpdate }`).

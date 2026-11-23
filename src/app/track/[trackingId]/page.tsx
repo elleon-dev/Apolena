@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
+import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
 
 export default function TrackingDetailPage({
   params,
@@ -387,13 +388,43 @@ export default function TrackingDetailPage({
                     </span>
                   </div>
                 )}
-                <div className="pt-2 border-t border-[#E8DEC8] flex items-center gap-2 text-stone-500">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[#174B3D]" />
-                  <span className="truncate">
-                    Entrega en: {order.shipping?.address},{" "}
-                    {order.shipping?.district}
-                  </span>
-                </div>
+                {(() => {
+                  const parsedLoc = parseDeliveryPinFromOrder(
+                    order.shipping?.reference,
+                    item?.customizations?.delivery_location,
+                    order.shipping,
+                  );
+                  return (
+                    <div className="pt-2 border-t border-[#E8DEC8] space-y-1.5 text-stone-500">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[#174B3D]" />
+                          <span className="truncate">
+                            Entrega en: {order.shipping?.address},{" "}
+                            {order.shipping?.district}
+                          </span>
+                        </div>
+                        {parsedLoc.pin && (
+                          <a
+                            href={parsedLoc.pin.googleMapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#174B3D]/10 hover:bg-[#174B3D]/20 text-[#174B3D] font-bold text-[10px] shrink-0 transition-colors"
+                          >
+                            <MapPin className="w-3 h-3 text-[#c6a26c]" />
+                            <span>Ver Pin GPS</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                      </div>
+                      {parsedLoc.cleanReference && (
+                        <p className="text-[11px] text-stone-500 pl-5 truncate">
+                          Referencia: {parsedLoc.cleanReference}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

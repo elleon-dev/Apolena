@@ -20,6 +20,8 @@ export interface FrameOption {
   colorHex: string;
   priceModifierPen: number;
   isAvailable: boolean;
+  imageUrl?: string | null;
+  images?: string[];
 }
 
 /**

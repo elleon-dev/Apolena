@@ -204,6 +204,9 @@ model OrderShipping {
   reference       String?
   document_type   String? @default("DNI")
   document_number String?
+  latitude        Float?
+  longitude       Float?
+  map_url         String?
 
   order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
 

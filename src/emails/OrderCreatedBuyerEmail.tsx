@@ -33,6 +33,12 @@ export interface OrderCreatedBuyerEmailProps {
     pet_inscription?: {
       pet_name?: string;
     };
+    delivery_location?: {
+      lat: number;
+      lng: number;
+      label?: string | null;
+      google_maps_url?: string;
+    } | null;
   };
   app_url?: string;
 }
@@ -120,6 +126,22 @@ export default function OrderCreatedBuyerEmail({
               <Column style={itemKey}>Dirección de Entrega:</Column>
               <Column style={itemValue}>{shipping_address}</Column>
             </Row>
+            {customizations?.delivery_location && (
+              <Row style={itemRow}>
+                <Column style={itemKey}>Pin Exacto (GPS):</Column>
+                <Column style={itemValueGold}>
+                  <Link
+                    href={
+                      customizations.delivery_location.google_maps_url ||
+                      `https://www.google.com/maps?q=${customizations.delivery_location.lat},${customizations.delivery_location.lng}`
+                    }
+                    style={{ color: "#174B3D", textDecoration: "underline", fontWeight: "bold" }}
+                  >
+                    📍 Ver ubicación exacta en Google Maps
+                  </Link>
+                </Column>
+              </Row>
+            )}
 
             <Hr style={divider} />
 

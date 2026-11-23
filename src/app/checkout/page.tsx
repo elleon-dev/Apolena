@@ -27,6 +27,13 @@ import {
   Truck,
 } from "lucide-react";
 import type { OrderItemCustomizations, OrderRecord } from "@/lib/db-service";
+import { DeliveryMapPicker } from "@/components/DeliveryMapPicker";
+import {
+  buildGoogleMapsUrl,
+  DeliveryPinLocation,
+  formatReferenceWithPin,
+  parseDeliveryPinFromOrder,
+} from "@/lib/delivery-location";
 
 interface CheckoutDraft {
   product_id: string;
@@ -85,6 +92,9 @@ function CheckoutContent() {
   const [district, setDistrict] = useState("Miraflores");
   const [address, setAddress] = useState("");
   const [reference, setReference] = useState("");
+  const [deliveryPin, setDeliveryPin] = useState<DeliveryPinLocation | null>(
+    null,
+  );
   const [notes, setNotes] = useState("");
 
   // Invoice State
@@ -142,6 +152,7 @@ function CheckoutContent() {
         if (p.district) setDistrict(p.district);
         if (p.address) setAddress(p.address);
         if (p.reference) setReference(p.reference);
+        if (p.deliveryPin) setDeliveryPin(p.deliveryPin);
         if (p.notes) setNotes(p.notes);
         if (p.invoiceType) setInvoiceType(p.invoiceType);
         if (p.rucNumber) setRucNumber(p.rucNumber);
@@ -233,6 +244,7 @@ function CheckoutContent() {
           district,
           address,
           reference,
+          deliveryPin,
           notes,
           invoiceType,
           rucNumber,
@@ -278,7 +290,10 @@ function CheckoutContent() {
           operation_number: operationNumber,
           proof_image_url: proofImageUrl,
           notes,
-          customizations: draft.customizations,
+          customizations: {
+            ...draft.customizations,
+            ...(deliveryPin ? { delivery_location: deliveryPin } : {}),
+          },
           shipping: {
             name,
             phone,
@@ -287,9 +302,15 @@ function CheckoutContent() {
             department,
             province,
             district,
-            reference,
+            reference: formatReferenceWithPin(reference, deliveryPin),
             document_type: docType,
             document_number: docNumber,
+            latitude: deliveryPin ? deliveryPin.lat : null,
+            longitude: deliveryPin ? deliveryPin.lng : null,
+            map_url: deliveryPin
+              ? deliveryPin.google_maps_url ||
+                buildGoogleMapsUrl(deliveryPin.lat, deliveryPin.lng)
+              : null,
           },
           invoice: {
             type: invoiceType,
@@ -397,6 +418,49 @@ function CheckoutContent() {
                 saldos pendientes al recibir tu cuadro.
               </p>
             </div>
+
+            {/* Dirección y Pin GPS Guardados */}
+            {createdOrder.shipping && (() => {
+              const savedLoc = parseDeliveryPinFromOrder(
+                createdOrder.shipping?.reference,
+                createdOrder.packages?.[0]?.items?.[0]?.customizations
+                  ?.delivery_location,
+                createdOrder.shipping,
+              );
+              return (
+                <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 space-y-2 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-terracotta-500" />
+                        <span>Dirección de Entrega Registrada</span>
+                      </span>
+                      <p className="font-semibold text-stone-900">
+                        {createdOrder.shipping.address},{" "}
+                        {createdOrder.shipping.district} (
+                        {createdOrder.shipping.department})
+                      </p>
+                      {savedLoc.cleanReference && (
+                        <p className="text-stone-600 text-[11px]">
+                          Referencia: {savedLoc.cleanReference}
+                        </p>
+                      )}
+                    </div>
+                    {savedLoc.pin && (
+                      <a
+                        href={savedLoc.pin.googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-xl bg-[#174B3D] hover:bg-[#123B30] text-white text-[11px] font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors"
+                      >
+                        <MapPin className="w-3 h-3 text-[#c6a26c]" />
+                        <span>Ver Pin GPS en Mapa</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3 text-xs text-stone-600">
               <Mail className="w-4 h-4 text-terracotta-500 flex-shrink-0" />
@@ -612,7 +676,7 @@ function CheckoutContent() {
 
                   <div className="space-y-1">
                     <label className="font-semibold text-stone-800 block">
-                      Distrito *
+                      Distrito / Ciudad *
                     </label>
                     <input
                       type="text"
@@ -665,6 +729,20 @@ function CheckoutContent() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 focus:border-terracotta-500 focus:bg-white focus:outline-none"
                     />
                   </div>
+
+                  {/* MAPA INTERACTIVO CON PIN EXACTO */}
+                  <DeliveryMapPicker
+                    address={address}
+                    district={district}
+                    department={department}
+                    value={deliveryPin}
+                    onChange={setDeliveryPin}
+                    onSelectSuggestedAddress={(suggestedAddr) => {
+                      if (!address.trim()) {
+                        setAddress(suggestedAddr);
+                      }
+                    }}
+                  />
                 </div>
               </div>
 
@@ -1072,6 +1150,18 @@ function CheckoutContent() {
                       ? "Lima Metropolitana: Llega en 3 a 5 días hábiles luego de tu compra."
                       : "Provincia / otros distritos: Llega en 5 a 7 días hábiles luego de tu compra."}
                   </p>
+                  {deliveryPin && (
+                    <div className="p-2.5 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-between gap-2 text-[11px] text-sage-900">
+                      <span className="flex items-center gap-1.5 font-semibold truncate">
+                        <MapPin className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
+                        <span className="truncate">
+                          Pin GPS fijado ({deliveryPin.lat.toFixed(4)},{" "}
+                          {deliveryPin.lng.toFixed(4)})
+                        </span>
+                      </span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sage-600 shrink-0" />
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-cream-200">
                     <span>Total de la Orden</span>
                     <span>S/ {totalAmount.toFixed(2)}</span>

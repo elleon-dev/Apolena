@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type { OrderRecord, OrderStatus } from "@/lib/db-service";
 import type { SessionUser } from "@/lib/auth";
+import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
 
 type StatusFilter = "all" | OrderStatus;
 
@@ -601,12 +602,43 @@ export default function CommonUserOrdersPage() {
                         )}
                       </div>
 
-                      <div className="pt-2.5 border-t border-[#E8DEC8] flex items-center gap-1.5 text-stone-600 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
-                        <span className="truncate">
-                          {order.shipping?.address}, {order.shipping?.district}
-                        </span>
-                      </div>
+                      {(() => {
+                        const parsedLoc = parseDeliveryPinFromOrder(
+                          order.shipping?.reference,
+                          item?.customizations?.delivery_location,
+                          order.shipping,
+                        );
+                        return (
+                          <div className="pt-2.5 border-t border-[#E8DEC8] space-y-1.5 text-stone-600 text-[11px]">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <MapPin className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
+                                <span className="truncate font-medium text-stone-800">
+                                  {order.shipping?.address},{" "}
+                                  {order.shipping?.district}
+                                </span>
+                              </div>
+                              {parsedLoc.pin && (
+                                <a
+                                  href={parsedLoc.pin.googleMapsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#174B3D]/10 hover:bg-[#174B3D]/20 text-[#174B3D] font-bold text-[10px] shrink-0 transition-colors"
+                                >
+                                  <MapPin className="w-3 h-3 text-[#c6a26c]" />
+                                  <span>Ver Pin GPS</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
+                            </div>
+                            {parsedLoc.cleanReference && (
+                              <p className="text-[10px] text-stone-500 pl-5 truncate">
+                                Ref: {parsedLoc.cleanReference}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
