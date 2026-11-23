@@ -95,12 +95,12 @@ export default function PrivacidadPage() {
               </a>{" "}
               o al WhatsApp:{" "}
               <a
-                href="https://wa.me/51949743059"
+                href="https://wa.me/51993920853"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2 hover:text-[#c6a26c] transition-colors"
               >
-                949 743 059
+                993 920 853
               </a>{" "}
               si quieres saber qué datos tenemos sobre ti, corregirlos, pedir su eliminación, oponerte a su uso o retirar un permiso que nos hayas dado. Si consideras que tu solicitud no fue atendida, puedes acudir a la Autoridad Nacional de Protección de Datos Personales del Perú.
             </p>

@@ -2025,10 +2025,10 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
-                {/* Customizations: Nombre Brush + Dedicatoria para Regalo en Grid 2 Cols */}
+                {/* Customizations: Nombre Brush (Dedicatoria oculta temporalmente) */}
                 <div
                   ref={customizationsSectionRef}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  className="grid grid-cols-1 gap-4"
                 >
                   {/* Nombre de Mascota en Tipografía Brush (Firma de Atelier) */}
                   <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between gap-3 text-xs">
@@ -2439,7 +2439,7 @@ export default function personalizedWallArt() {
           </div>
         )}
 
-        {/* Modal de Confirmación: Cuadro sin Nombre ni Dedicatoria */}
+        {/* Modal de Confirmación: Cuadro sin Nombre en el Lienzo */}
         {showNoCustomizationModal && (
           <div
             role="dialog"
@@ -2469,10 +2469,10 @@ export default function personalizedWallArt() {
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-serif text-lg font-bold text-stone-900 leading-snug">
-                    ¿Confirmar pedido sin nombre ni dedicatoria?
+                    ¿Confirmar pedido sin nombre?
                   </h3>
                   <p className="text-xs text-stone-500 leading-relaxed">
-                    Notamos que no has añadido el nombre de tu mascota en el lienzo ni una tarjeta de dedicatoria.
+                    Notamos que no has añadido el nombre de tu mascota en el lienzo.
                   </p>
                 </div>
               </div>
@@ -2491,6 +2491,7 @@ export default function personalizedWallArt() {
                   </span>
                 </div>
 
+                {/* Tarjeta de dedicatoria oculta temporalmente
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-stone-600 flex items-center gap-2">
                     <Gift className="w-3.5 h-3.5 text-terracotta-500" />
@@ -2500,6 +2501,7 @@ export default function personalizedWallArt() {
                     {dedicationNote.trim() ? "Incluida" : "Sin dedicatoria"}
                   </span>
                 </div>
+                */}
               </div>
 
               <p className="text-[11px] text-stone-500 text-center leading-relaxed">
@@ -2511,6 +2513,7 @@ export default function personalizedWallArt() {
                 <button
                   type="button"
                   onClick={() => {
+                    setIncludePetInscription(true);
                     setShowNoCustomizationModal(false);
                     setTimeout(() => {
                       customizationsSectionRef.current?.scrollIntoView({
@@ -2522,7 +2525,7 @@ export default function personalizedWallArt() {
                   className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
                 >
                   <PenTool className="w-4 h-4 text-[#c6a26c]" />
-                  <span>Deseo agregar Nombre o Dedicatoria</span>
+                  <span>Deseo agregar el Nombre</span>
                 </button>
 
                 <button
