@@ -676,7 +676,7 @@ function CheckoutContent() {
 
                   <div className="space-y-1">
                     <label className="font-semibold text-stone-800 block">
-                      Distrito / Ciudad *
+                      Distrito *
                     </label>
                     <input
                       type="text"
@@ -1037,7 +1037,7 @@ function CheckoutContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div className="space-y-1.5">
                     <label className="font-semibold text-stone-800 block">
-                      Número de Operación / Confirmación del Pago *
+                      Número de Operación opcional *
                     </label>
                     <input
                       type="text"

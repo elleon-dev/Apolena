@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
-import type { FamousCharacter } from "@/data/characters";
+import { FAMOUS_CHARACTERS, type FamousCharacter } from "@/data/characters";
 
 interface StyleSelectionSectionProps {
   initialCharacters?: FamousCharacter[];
@@ -19,9 +19,10 @@ export default function StyleSelectionSection({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Solo mostrar personajes provenientes de la base de datos (jamás fallbacks locales)
   const [characters, setCharacters] = useState<FamousCharacter[]>(
-    initialCharacters && initialCharacters.length > 0 ? initialCharacters : [],
+    initialCharacters && initialCharacters.length > 0
+      ? initialCharacters
+      : FAMOUS_CHARACTERS.filter((c) => c.isAvailable !== false),
   );
 
   // Sincronización dinámica del cliente con la base de datos (vía /api/templates)
@@ -40,9 +41,7 @@ export default function StyleSelectionSection({
           setCharacters(active);
         }
       })
-      .catch(() => {
-        // Sin internet o sin acceso a la BD: mantener skeleton si no hay datos de BD
-      });
+      .catch(() => {});
   }, []);
 
   const checkScroll = useCallback(() => {
