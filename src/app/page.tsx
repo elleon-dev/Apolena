@@ -26,7 +26,7 @@ export default async function Home() {
       {/* 4. Quiénes Somos (Fondo Primary #174B3D con Logo Blanco) */}
       <AboutSection />
       {/* 5. Testimonios & Reseñas de Clientes */}
-      <TestimonialsSection />
+      {/*<TestimonialsSection />*/}
       {/* 6. Contacto & Atención al Cliente */}
       <ContactSection />
       {/* 7. Preguntas Frecuentes */}
