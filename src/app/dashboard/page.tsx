@@ -252,10 +252,62 @@ export default function AdminDashboardPage() {
     const item = order.packages?.[0]?.items?.[0];
     if (!item) return;
 
-    const imageSrc =
-      item.customizations?.master_art_url ||
-      item.generated_art_url ||
-      "/samples/cat-suit.jpg";
+    setDownloadingMasterOrderId(order.id);
+
+    let imageSrc = item.customizations?.master_art_url || null;
+    const isWatermarked = (url?: string | null) =>
+      Boolean(
+        url &&
+          (url.includes("/previews/") || url.includes("/uploads/previews/")),
+      );
+
+    // Si no tiene master_art_url o apunta a una vista previa con marca de agua, consultar al servidor
+    if (!imageSrc || isWatermarked(imageSrc)) {
+      try {
+        const res = await fetch(`/api/admin/orders/${order.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.masterArtUrl && !isWatermarked(data.masterArtUrl)) {
+            imageSrc = data.masterArtUrl;
+            // Actualizar la orden en el estado local para futuras descargas inmediatas
+            setOrders((prev) =>
+              prev.map((o) => {
+                if (o.id !== order.id) return o;
+                const pkg = o.packages?.[0];
+                const itm = pkg?.items?.[0];
+                if (!itm) return o;
+                return {
+                  ...o,
+                  packages: [
+                    {
+                      ...pkg,
+                      items: [
+                        {
+                          ...itm,
+                          customizations: {
+                            ...(itm.customizations || {}),
+                            master_art_url: data.masterArtUrl,
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                };
+              }),
+            );
+          }
+        }
+      } catch (err) {
+        console.warn(
+          "No se pudo obtener el archivo maestro limpio del servidor:",
+          err,
+        );
+      }
+    }
+
+    if (!imageSrc) {
+      imageSrc = item.generated_art_url || "/samples/cat-suit.jpg";
+    }
 
     const bleedSpec = resolvePrintBleedSpec(
       {
@@ -271,16 +323,19 @@ export default function AdminDashboardPage() {
         ? "museum-matte"
         : "full-bleed";
 
-    setDownloadingMasterOrderId(order.id);
+    const inscriptionPetName =
+      (item.customizations?.pet_inscription?.enabled &&
+        item.customizations?.pet_inscription?.pet_name?.trim()) ||
+      item.customizations?.pet_name?.trim() ||
+      null;
+
     try {
       const exported = await exportPrintReadyImage(
         imageSrc,
         bleedSpec.preset,
         finishMode,
         CANVAS_WRAP_BLEED_CM,
-        item.customizations?.pet_inscription?.enabled
-          ? item.customizations.pet_inscription.pet_name?.trim()
-          : null,
+        inscriptionPetName,
       );
 
       const fileName = `Orden-${order.order_code}-cuadro-${bleedSpec.faceWidthCm}x${bleedSpec.faceHeightCm}cm-impresion-${bleedSpec.totalWidthCm}x${bleedSpec.totalHeightCm}cm-300DPI.png`;
@@ -293,7 +348,7 @@ export default function AdminDashboardPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
       } else {
         const link = document.createElement("a");
         link.href = exported.dataUrl;

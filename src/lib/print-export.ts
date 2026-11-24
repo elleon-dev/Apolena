@@ -370,7 +370,15 @@ export async function exportPrintReadyImage(
       img.crossOrigin = "anonymous";
     }
 
-    img.onload = () => {
+    img.onload = async () => {
+      if (typeof document !== "undefined" && document.fonts?.ready) {
+        try {
+          await document.fonts.ready;
+        } catch {
+          // ignore font loading error
+        }
+      }
+
       const srcW = img.naturalWidth || img.width || 1024;
       const srcH = img.naturalHeight || img.height || 1024;
       const isLandscape = srcW > srcH * 1.05;
@@ -444,7 +452,7 @@ export async function exportPrintReadyImage(
           faceCtx.font = `400 ${fontSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
         }
 
-        const x = faceW - Math.round(faceW * 0.014);
+        const x = faceW - Math.round(faceW * 0.045);
         const y = faceH - Math.round(faceH * 0.085);
         faceCtx.translate(x, y);
         faceCtx.rotate((-6 * Math.PI) / 180);

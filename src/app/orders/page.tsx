@@ -84,9 +84,10 @@ export default function CommonUserOrdersPage() {
           ? "museum-matte"
           : "full-bleed",
         CANVAS_WRAP_BLEED_CM,
-        item.customizations?.pet_inscription?.enabled
-          ? item.customizations.pet_inscription.pet_name?.trim()
-          : null,
+        (item.customizations?.pet_inscription?.enabled &&
+          item.customizations?.pet_inscription?.pet_name?.trim()) ||
+          item.customizations?.pet_name?.trim() ||
+          null,
       );
       const link = document.createElement("a");
       link.href = exported.blob
