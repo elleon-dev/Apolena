@@ -151,9 +151,13 @@ export async function dispatchEmailWithResend(
   }
 
   const apiKey = process.env.RESEND_API_KEY!.trim();
-  const fromEmail =
+  let fromEmail =
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Apolena Atelier <notificaciones@apolena.shop>";
+    "Apolena Atelier <onboarding@resend.dev>";
+
+  if (fromEmail.includes("tudominio.com") || fromEmail.includes("example.com")) {
+    fromEmail = "Apolena Atelier <onboarding@resend.dev>";
+  }
 
   try {
     const html = await renderEmailHtml(payload.template, payload.data);
@@ -197,9 +201,20 @@ export async function dispatchEmailWithResend(
         }
       }
 
+      let parsedMessage = errText;
+      try {
+        const json = JSON.parse(errText);
+        parsedMessage = json.message || errText;
+      } catch {}
+
+      if (parsedMessage.includes("only send testing emails to your own email address")) {
+        parsedMessage =
+          "Resend (Modo Prueba): Solo permite enviar a tu propio correo de registro en Resend hasta verificar tu dominio en resend.com/domains.";
+      }
+
       return {
         sent: false,
-        error: `Resend HTTP ${response.status}: ${errText}`,
+        error: parsedMessage,
       };
     }
 

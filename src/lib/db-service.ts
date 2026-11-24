@@ -312,7 +312,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     delivery_provincias_days: "5 a 7 días hábiles luego de realizada la compra",
   },
   ADMIN_NOTIFICATION_EMAILS: {
-    emails: ["admin@apolena.pe", "produccion@apolena.pe"],
+    emails: ["nmoriano26@gmail.com", "admin@apolena.pe"],
     whatsapp_support: "+51 993 920 853",
   },
 };
