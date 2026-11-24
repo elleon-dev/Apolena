@@ -14,6 +14,7 @@ import {
   getPlatformSettings,
   getNewsletterSubscribers,
 } from "@/lib/db-service";
+import { isResendConfigured } from "@/lib/email-service";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
     orders,
     users: sanitizedUsers,
     emailQueue,
+    is_resend_configured: isResendConfigured(),
     products,
     settings,
     subscribers,

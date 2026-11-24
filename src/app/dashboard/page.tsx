@@ -154,6 +154,9 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [users, setUsers] = useState<SanitizedUser[]>([]);
   const [emailQueue, setEmailQueue] = useState<EmailQueueRecord[]>([]);
+  const [isResendConfigured, setIsResendConfigured] = useState<boolean>(false);
+  const [isRetryingEmails, setIsRetryingEmails] = useState(false);
+  const [retryingEmailId, setRetryingEmailId] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductRecord[]>([]);
   const [settings, setSettings] = useState<PlatformSettingsMap | null>(null);
 
@@ -445,12 +448,58 @@ export default function AdminDashboardPage() {
       setOrders(data.orders || []);
       setUsers(data.users || []);
       setEmailQueue(data.emailQueue || []);
+      setIsResendConfigured(Boolean(data.is_resend_configured));
       setProducts(data.products || []);
       setSettings(data.settings || null);
     } catch {
       window.location.replace("/orders");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRetryPendingEmails = async (emailId?: string) => {
+    if (emailId) {
+      setRetryingEmailId(emailId);
+    } else {
+      setIsRetryingEmails(true);
+    }
+    try {
+      const res = await fetch("/api/admin/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(
+          "error",
+          data.error || "Error al procesar la cola de correos.",
+        );
+        return;
+      }
+      if (data.result?.is_configured === false) {
+        showToast(
+          "error",
+          "RESEND_API_KEY no configurada. Agrega tu clave en el archivo .env o en Vercel.",
+        );
+      } else if (data.result?.sent > 0) {
+        showToast(
+          "success",
+          `Se enviaron ${data.result.sent} correos correctamente.`,
+        );
+        loadAdminData();
+      } else if (data.result?.errors?.length > 0) {
+        showToast("error", data.result.errors[0]);
+        loadAdminData();
+      } else {
+        showToast("success", "No hay correos pendientes con intentos restantes.");
+      }
+    } catch (e: any) {
+      showToast("error", e?.message || "Error al reintentar correos.");
+    } finally {
+      setIsRetryingEmails(false);
+      setRetryingEmailId(null);
     }
   };
 
@@ -4493,17 +4542,86 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
           /* ================================================================= */
           /* TAB 4: COLA DE CORREOS TRANSACCIONALES (email_queue)              */
           /* ================================================================= */
-          <div className="bg-white border border-cream-200 rounded-3xl p-6 sm:p-8 shadow-soft space-y-4">
-            <h2 className="font-serif text-2xl font-semibold text-stone-900">
-              Historial de Notificaciones en <code>email_queue</code>
-            </h2>
-            <p className="text-xs text-stone-500">
-              Registro auditable de todos los correos enviados automáticamente
-              al usuario comprador y a los administradores.
-            </p>
+          <div className="bg-white border border-cream-200 rounded-3xl p-6 sm:p-8 shadow-soft space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-cream-200">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h2 className="font-serif text-2xl font-semibold text-stone-900">
+                    Historial de Notificaciones en <code>email_queue</code>
+                  </h2>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
+                      isResendConfigured
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-amber-50 text-amber-800 border-amber-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isResendConfigured ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                      }`}
+                    />
+                    {isResendConfigured
+                      ? "Resend API Conectado"
+                      : "Modo Simulación (Sin RESEND_API_KEY)"}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-500">
+                  Registro auditable de todos los correos transaccionales generados para el comprador y administración.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isRetryingEmails}
+                  onClick={() => handleRetryPendingEmails()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#174B3D] hover:bg-[#123b30] text-white text-xs font-semibold shadow-soft transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${
+                      isRetryingEmails ? "animate-spin" : ""
+                    }`}
+                  />
+                  <span>
+                    {isRetryingEmails
+                      ? "Procesando envíos..."
+                      : "Procesar / Despachar Pendientes"}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {!isResendConfigured && (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs text-amber-900 leading-relaxed shadow-2xs">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-950">
+                    Los correos se encuentran en cola porque falta configurar la API Key de Resend
+                  </p>
+                  <p className="text-amber-800">
+                    Actualmente el sistema está en <strong>Modo Simulación</strong> para no interrumpir el flujo del usuario. Para activar el envío real hacia las bandejas de entrada:
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-0.5 text-amber-850 mt-1">
+                    <li>
+                      Crea tu cuenta gratuita en <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="font-semibold underline">resend.com</a> y genera una API Key.
+                    </li>
+                    <li>
+                      Configura <code>RESEND_API_KEY=&quot;re_...&quot;</code> en tu archivo <code>.env.local</code> (o en Vercel Environment Variables).
+                    </li>
+                    <li>
+                      Configura <code>RESEND_FROM_EMAIL</code> con tu correo verificado (o <code>onboarding@resend.dev</code> en modo prueba).
+                    </li>
+                    <li>
+                      Haz clic en <strong>&ldquo;Procesar / Despachar Pendientes&rdquo;</strong> arriba para enviar todos los correos acumulados.
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            )}
 
             {emailQueue.length === 0 ? (
-              <p className="text-xs text-stone-500 py-6 text-center">
+              <p className="text-xs text-stone-500 py-10 text-center">
                 Aún no hay correos encolados. Crea una orden para ver las
                 notificaciones automáticas.
               </p>
@@ -4512,28 +4630,69 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 {emailQueue.map((mail) => (
                   <div
                     key={mail.id}
-                    className="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F5] border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-colors hover:border-terracotta-200"
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-sage-100 text-sage-800 font-semibold text-[10px] uppercase">
-                          {mail.status}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase border ${
+                            mail.status === "sent"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              : mail.status === "failed"
+                              ? "bg-rose-100 text-rose-800 border-rose-300"
+                              : "bg-amber-100 text-amber-800 border-amber-300"
+                          }`}
+                        >
+                          {mail.status === "sent"
+                            ? "Enviado con éxito"
+                            : mail.status === "failed"
+                            ? "Fallido"
+                            : "Pendiente de Envío"}
                         </span>
-                        <span className="font-mono text-stone-500">
+                        <span className="font-mono text-stone-500 bg-white px-2 py-0.5 rounded-md border border-cream-200 text-[10px]">
                           {mail.template}
                         </span>
+                        {mail.attempts > 0 && (
+                          <span className="text-[10px] text-stone-400">
+                            (Intentos: {mail.attempts}/{mail.max_attempts})
+                          </span>
+                        )}
                       </div>
-                      <p className="font-semibold text-stone-900">
+                      <p className="font-semibold text-stone-900 text-sm">
                         {mail.subject}
                       </p>
                       <p className="text-stone-600">
-                        Para: <strong>{mail.to_email}</strong>
-                        {mail.cc?.length > 0 && ` (CC: ${mail.cc.join(", ")})`}
+                        Para: <strong className="text-stone-800">{mail.to_email}</strong>
+                        {mail.cc && mail.cc.length > 0 && ` (CC: ${mail.cc.join(", ")})`}
                       </p>
+                      {mail.last_error && (
+                        <p className="text-[11px] text-amber-800 bg-amber-50/70 p-2 rounded-lg border border-amber-200 font-mono">
+                          <strong>Detalle:</strong> {mail.last_error}
+                        </p>
+                      )}
                     </div>
-                    <span className="text-[11px] font-mono text-stone-400">
-                      {new Date(mail.created_at).toLocaleString("es-PE")}
-                    </span>
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0">
+                      <span className="text-[11px] font-mono text-stone-400">
+                        {new Date(mail.created_at).toLocaleString("es-PE")}
+                      </span>
+                      {mail.status !== "sent" && (
+                        <button
+                          type="button"
+                          disabled={retryingEmailId === mail.id || isRetryingEmails}
+                          onClick={() => handleRetryPendingEmails(mail.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-stone-50 border border-stone-200 text-[11px] font-semibold text-stone-700 shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                          <RefreshCw
+                            className={`w-3 h-3 ${
+                              retryingEmailId === mail.id ? "animate-spin" : ""
+                            }`}
+                          />
+                          <span>
+                            {retryingEmailId === mail.id ? "Enviando..." : "Reintentar"}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
