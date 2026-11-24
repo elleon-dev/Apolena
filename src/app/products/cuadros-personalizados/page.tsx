@@ -7,8 +7,6 @@ import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import {
   AIProviderId,
-  AI_PROVIDERS,
-  ApiKeysOverride,
   GeneratedVariant,
 } from "@/lib/types";
 import {
@@ -26,21 +24,13 @@ import {
   ArrowLeft,
   RefreshCw,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Download,
   ZoomIn,
   Columns,
-  ShieldCheck,
   Maximize2,
   AlertCircle,
   Plus,
-  Trash2,
-  KeyRound,
-  SlidersHorizontal,
-  ImagePlus,
   X,
-  ExternalLink,
   FileText,
   Dog,
   Cat,
@@ -55,7 +45,6 @@ import {
   Frame,
   ShoppingBag,
   PenTool,
-  Gift,
   Truck,
   Home,
   Palette,
@@ -111,7 +100,7 @@ const ROOM_SCALE_COORDINATES: Record<
 
 export default function personalizedWallArt() {
   const router = useRouter();
-  // 3-step state: 1 = Upload Pet(s), 2 = Choose Theme & Studio Engine, 3 = Result Portrait
+  // 3-step state: 1 = Choose Character/Theme, 2 = Upload Pet Photo, 3 = Result Portrait
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Pet Images (1 mandatory, 2nd optional for duo portrait)
@@ -195,6 +184,10 @@ export default function personalizedWallArt() {
   );
   const [executionSeconds, setExecutionSeconds] = useState(12.4);
   const [fusionError, setFusionError] = useState<string | null>(null);
+  const [errorNotification, setErrorNotification] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
 
   // Result Viewer state
   const [viewMode, setViewMode] = useState<"fusion" | "compare" | "room">("fusion");
@@ -234,7 +227,7 @@ export default function personalizedWallArt() {
   const fileInput2Ref = useRef<HTMLInputElement>(null);
   const themeFileInputRef = useRef<HTMLInputElement>(null);
   const charactersScrollRef = useRef<HTMLDivElement>(null);
-  const createPortraitBtnRef = useRef<HTMLButtonElement>(null);
+  const continueToUploadBtnRef = useRef<HTMLButtonElement>(null);
   const customizationsSectionRef = useRef<HTMLDivElement>(null);
   const [previewCharacterModal, setPreviewCharacterModal] =
     useState<FamousCharacter | null>(null);
@@ -243,14 +236,30 @@ export default function personalizedWallArt() {
   const [showPhotoGuideModal, setShowPhotoGuideModal] =
     useState<boolean>(false);
 
-  const scrollToCreatePortrait = () => {
+  const triggerErrorNotification = useCallback(
+    (title: string, description: string) => {
+      setFusionError(description);
+      setErrorNotification({ title, description });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!errorNotification) return;
+    const timer = setTimeout(() => {
+      setErrorNotification(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [errorNotification]);
+
+  const scrollToContinueUpload = () => {
     setTimeout(() => {
-      if (createPortraitBtnRef.current) {
-        createPortraitBtnRef.current.scrollIntoView({
+      if (continueToUploadBtnRef.current) {
+        continueToUploadBtnRef.current.scrollIntoView({
           behavior: "smooth",
           block: "center",
         });
-        createPortraitBtnRef.current.focus({ preventScroll: true });
+        continueToUploadBtnRef.current.focus({ preventScroll: true });
       }
     }, 100);
   };
@@ -485,13 +494,15 @@ export default function personalizedWallArt() {
   const readAndCompressImage = useCallback(
     (file: File, onDone: (dataUrl: string) => void) => {
       if (!file.type.startsWith("image/")) {
-        setFusionError(
-          "Por favor selecciona una imagen válida (JPG, PNG o WEBP).",
+        triggerErrorNotification(
+          "Formato de archivo no válido",
+          "Por favor selecciona una imagen válida en formato JPG, PNG o WEBP.",
         );
         return;
       }
 
       setFusionError(null);
+      setErrorNotification(null);
       setIsValidatingPetPhoto(true);
 
       const reader = new FileReader();
@@ -530,20 +541,23 @@ export default function personalizedWallArt() {
             ) as { class: string; score: number } | undefined;
 
             if (!animalPrediction) {
-              setFusionError(
+              triggerErrorNotification(
+                "Imagen incorrecta",
                 "La fotografía debe mostrar claramente una mascota o animal real. No se aceptan personas, paisajes u objetos.",
               );
               return;
             }
 
             setFusionError(null);
+            setErrorNotification(null);
             if (animalPrediction.class === "dog") setPetSpecies("dog");
             else if (animalPrediction.class === "cat") setPetSpecies("cat");
             else setPetSpecies("other");
             onDone(dataUrl);
           } catch {
-            setFusionError(
-              "No pudimos validar que la fotografía sea de una mascota. Inténtalo nuevamente.",
+            triggerErrorNotification(
+              "Error al validar la fotografía",
+              "No pudimos validar que la fotografía sea de una mascota. Inténtalo nuevamente con otra foto.",
             );
           } finally {
             setIsValidatingPetPhoto(false);
@@ -551,17 +565,23 @@ export default function personalizedWallArt() {
         };
         img.onerror = () => {
           setIsValidatingPetPhoto(false);
-          setFusionError("La fotografía no pudo abrirse. Prueba con otra imagen JPG, PNG o WEBP.");
+          triggerErrorNotification(
+            "No se pudo abrir la imagen",
+            "La fotografía no pudo abrirse o está dañada. Prueba con otra imagen JPG, PNG o WEBP.",
+          );
         };
         img.src = e.target?.result as string;
       };
       reader.onerror = () => {
         setIsValidatingPetPhoto(false);
-        setFusionError("No pudimos leer la fotografía seleccionada.");
+        triggerErrorNotification(
+          "Error al leer el archivo",
+          "No pudimos leer la fotografía seleccionada. Intenta subirla nuevamente.",
+        );
       };
       reader.readAsDataURL(file);
     },
-    [],
+    [triggerErrorNotification],
   );
 
   // Quick Demo Presets
@@ -591,6 +611,7 @@ export default function personalizedWallArt() {
 
     setIsGenerating(true);
     setFusionError(null);
+    setErrorNotification(null);
     setGenerationProgress(10);
     setGenerationStepMessage(
       "Preparando fotografías y referencias de estudio...",
@@ -663,7 +684,8 @@ export default function personalizedWallArt() {
               } else if (resData.job.status === "failed") {
                 clearInterval(interval);
                 setIsGenerating(false);
-                setFusionError(
+                triggerErrorNotification(
+                  "Error al generar el retrato",
                   resData.job.errorMessage ||
                     "Error en el servicio de generación",
                 );
@@ -672,7 +694,8 @@ export default function personalizedWallArt() {
           } catch (err) {
             clearInterval(interval);
             setIsGenerating(false);
-            setFusionError(
+            triggerErrorNotification(
+              "Error de conexión",
               "Error de conexión verificando el estado del retrato.",
             );
           }
@@ -692,7 +715,8 @@ export default function personalizedWallArt() {
           } else if (job.status === "failed") {
             eventSource.close();
             setIsGenerating(false);
-            setFusionError(
+            triggerErrorNotification(
+              "Error al generar el retrato",
               job.errorMessage || "Error en el servicio de generación",
             );
           }
@@ -708,7 +732,10 @@ export default function personalizedWallArt() {
     } catch (err: any) {
       console.error("Error starting fusion:", err);
       setIsGenerating(false);
-      setFusionError(err?.message || "Error al iniciar la composición");
+      triggerErrorNotification(
+        "Error al iniciar la composición",
+        err?.message || "Error al iniciar la composición",
+      );
     }
   };
 
@@ -742,6 +769,7 @@ export default function personalizedWallArt() {
     setSecondPetImage(null);
     setFusedResultUrl("");
     setFusionError(null);
+    setErrorNotification(null);
     setIsGenerating(false);
     setIsSimulationJob(false);
     setSimulationNotice(null);
@@ -859,6 +887,35 @@ export default function personalizedWallArt() {
 
   return (
     <div className="min-h-screen flex flex-col bg-cream-50 text-stone-900">
+      {/* Notificación flotante de error cuando se sube una imagen incorrecta (#90) */}
+      {errorNotification && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed top-20 right-4 sm:top-24 sm:right-6 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl bg-white border border-red-200 shadow-2xl p-4 sm:p-5 flex items-start gap-3.5 animate-in fade-in slide-in-from-top-3 duration-200"
+        >
+          <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+            <X className="w-4 h-4 stroke-[2.75]" />
+          </div>
+          <div className="flex-1 min-w-0 pr-1">
+            <h4 className="text-sm font-bold text-stone-900 leading-snug">
+              {errorNotification.title}
+            </h4>
+            <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+              {errorNotification.description}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorNotification(null)}
+            aria-label="Cerrar notificación"
+            className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* App Header */}
       <Header
         currentStep={step}
@@ -936,22 +993,196 @@ export default function personalizedWallArt() {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 1: SUBIR FOTO DE TU MASCOTA (1 MASCOTA) */}
+        {/* PASO 1: ELEGIR PERSONAJE / VESTUARIO Y ESCENARIO (#73) */}
         {/* ========================================================================= */}
         {!isGenerating && step === 1 && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            {/* Step Indicator */}
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cream-100 border border-cream-200 text-stone-600 text-xs font-medium">
+                <Sparkles className="w-3.5 h-3.5 text-terracotta-500" />
+                <span>Paso 1 de 3 · Dirección de Arte</span>
+              </div>
+            </div>
+
+            {/* SECTION A: SELECT COLLECTION THEME */}
+            <div className="space-y-6">
+              <div className="text-center space-y-2 max-w-2xl mx-auto">
+                <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900">
+                  Elige el vestuario y escenario
+                </h1>
+                <p className="text-xs sm:text-sm text-stone-600">
+                  Selecciona una obra de nuestra colección para convertir a tu mascota en protagonista.
+                </p>
+              </div>
+
+              {/* Dynamic Curated Collection Cards (Grid Compacto Vertical 2:3 o Skeleton si no hay conexión a BD) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
+                {catalogCharacters.length === 0
+                  ? Array.from({ length: 12 }).map((_, idx) => (
+                      <div
+                        key={`studio-char-skeleton-${idx}`}
+                        aria-hidden="true"
+                        className="rounded-xl overflow-hidden border border-cream-200 bg-white shadow-soft flex flex-col justify-between h-full"
+                      >
+                        <div className="relative aspect-[2/3] w-full bg-[#EFE6D5] animate-pulse">
+                          <div className="absolute top-1.5 left-1.5 h-3.5 w-16 rounded-full bg-white/70" />
+                        </div>
+                        <div className="p-2 space-y-1.5 animate-pulse">
+                          <div className="h-3 w-3/4 rounded bg-stone-200" />
+                          <div className="h-2.5 w-1/2 rounded bg-stone-100" />
+                          <div className="h-5 w-full rounded-full bg-cream-100 mt-1" />
+                        </div>
+                      </div>
+                    ))
+                  : catalogCharacters.map((char) => {
+                      const isSelected =
+                        !useCustomTheme && selectedCharacter.id === char.id;
+
+                      return (
+                        <div
+                          key={char.id}
+                          onClick={() => {
+                            setSelectedCharacter(char);
+                            setUseCustomTheme(false);
+                            scrollToContinueUpload();
+                          }}
+                          title={char.description || char.name}
+                          className={`group/card relative rounded-xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                            isSelected
+                              ? "border-[#174B3D] ring-2 ring-[#174B3D]/25 shadow-card"
+                              : "border-cream-200 hover:border-stone-300 shadow-soft"
+                          }`}
+                        >
+                          {/* Imagen Vertical Completa (2:3) en tamaño compacto */}
+                          <div className="relative aspect-[2/3] w-full overflow-hidden bg-cream-100">
+                            <img
+                              src={char.characterImageUrl}
+                              alt={char.name}
+                              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
+                            />
+
+                            <div className="absolute top-1.5 left-1.5 right-8">
+                              <span className="inline-block max-w-full truncate text-[8px] font-medium px-1.5 py-0.5 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
+                                {char.universe}
+                              </span>
+                            </div>
+
+                            {isSelected && (
+                              <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow-soft">
+                                <Check className="w-3 h-3 stroke-[2.5]" />
+                              </div>
+                            )}
+
+                            {/* Botón flotante para ver imagen en tamaño completo */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewCharacterModal(char);
+                              }}
+                              aria-label={`Ver imagen completa de ${char.name}`}
+                              title="Ver imagen en tamaño completo"
+                              className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all duration-150 hover:scale-110 z-10"
+                            >
+                              <Maximize2 className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          {/* Pie Compacto */}
+                          <div className="p-2 space-y-1.5 flex flex-col justify-between">
+                            <div className="min-w-0">
+                              <h3 className="font-serif text-xs font-bold text-stone-900 truncate leading-tight">
+                                {char.name}
+                              </h3>
+                              <span className="text-[9px] font-medium text-stone-500 block truncate mt-0.5">
+                                {char.characterTitle}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`w-full py-1 px-2 rounded-full text-[10px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                                isSelected
+                                  ? "bg-[#174B3D] text-white"
+                                  : "bg-cream-100 text-stone-700 group-hover/card:bg-cream-200"
+                              }`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check className="w-2.5 h-2.5" />
+                                  <span>Elegido</span>
+                                </>
+                              ) : (
+                                <span>Seleccionar</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+              </div>
+            </div>
+
+            {/* Continue to Step 2 (Upload Pet Photo) CTA */}
+            <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
+              <button
+                ref={continueToUploadBtnRef}
+                type="button"
+                onClick={() => {
+                  setStep(2);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                disabled={!useCustomTheme && catalogCharacters.length === 0}
+                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
+              >
+                <span>Continuar a subir foto</span>
+                <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+              </button>
+              <p className="text-xs text-stone-500">
+                Estilo seleccionado:{" "}
+                <strong className="text-stone-800 font-medium">
+                  {activeThemeName}
+                </strong>
+                . En el siguiente paso subirás la fotografía de tu mascota.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PASO 2: SUBIR FOTO DE TU MASCOTA Y GENERAR RETRATO (#73 + #90) */}
+        {/* ========================================================================= */}
+        {!isGenerating && step === 2 && (
           <div className="space-y-6 max-w-5xl xl:max-w-6xl mx-auto animate-in fade-in duration-300">
-            {/* Header Compacto */}
-            <div className="text-center space-y-2 max-w-2xl mx-auto">
+            {/* Navigation & Step Indicator */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:text-stone-900 text-xs font-medium hover:border-stone-300 transition-colors shadow-soft"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Volver a personajes</span>
+              </button>
+
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 border border-cream-200 text-stone-600 text-xs font-medium">
                 <Camera className="w-3.5 h-3.5 text-terracotta-500" />
-                <span>Paso 1 de 3 · Fotografía de Referencia</span>
+                <span>Paso 2 de 3 · Fotografía de Referencia</span>
               </div>
-              <h1 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900 tracking-tight">
+            </div>
+
+            {/* Header Compacto */}
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
+              <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900 tracking-tight">
                 Sube la foto de tu mascota
-              </h1>
+              </h2>
               <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
                 Selecciona una fotografía clara donde se aprecie bien el rostro,
-                los ojos y los rasgos de tu mascota.
+                los ojos y los rasgos de tu mascota para el estilo{" "}
+                <strong className="text-stone-800 font-semibold">
+                  {activeThemeName}
+                </strong>
+                .
               </p>
             </div>
 
@@ -1065,7 +1296,7 @@ export default function personalizedWallArt() {
                 </div>
               </div>
 
-              {/* Columna Derecha: Tipo de Mascota, Nombre en Lienzo y Botón Continuar */}
+              {/* Columna Derecha: Tipo de Mascota, Nombre en Lienzo y Botón Crear Retrato */}
               <div className="lg:col-span-6 bg-white border border-cream-200 rounded-3xl p-5 sm:p-6 shadow-soft flex flex-col justify-between space-y-4">
                 <div className="space-y-4">
                   {/* Selector de Tipo de Mascota */}
@@ -1199,14 +1430,8 @@ export default function personalizedWallArt() {
                           setShowPhotoGuideModal(true);
                         }
                       }}
-                      className="group/guide flex items-center gap-3 p-2.5 rounded-2xl bg-white hover:bg-cream-50 border border-cream-200 hover:border-[#c6a26c] cursor-pointer transition-colors shadow-xs"
+                      className="w-full rounded-2xl overflow-hidden border border-cream-200 hover:border-[#c6a26c] bg-cream-50 shadow-xs cursor-pointer transition-colors"
                     >
-                      {/* Guía de la foto correcta a subir */}
-                  <div className="pt-3 border-t border-cream-200 space-y-2">
-                    <span className="text-xs font-semibold text-stone-700 block">
-                      Imagen de foto correcta a subir:
-                    </span>
-                    <div className="w-full rounded-2xl overflow-hidden border border-cream-200 bg-cream-50 shadow-xs">
                       <img
                         src="/images/ejemplo.jpg"
                         alt="Ejemplo de foto correcta de mascota"
@@ -1214,195 +1439,42 @@ export default function personalizedWallArt() {
                       />
                     </div>
                   </div>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Botón Principal Continuar */}
-                <div className="pt-2">
+                {/* Botón Principal Crear Retrato Ahora */}
+                <div className="pt-2 space-y-2">
                   <button
-                    onClick={() => setStep(2)}
-                    disabled={!petImage}
+                    type="button"
+                    onClick={handleStartFusion}
+                    disabled={!petImage || isValidatingPetPhoto}
                     className={`w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all ${
-                      petImage
+                      petImage && !isValidatingPetPhoto
                         ? "bg-[#174B3D] hover:bg-[#134034] text-white cursor-pointer"
                         : "bg-cream-200 text-stone-400 cursor-not-allowed"
                     }`}
                   >
                     <span>
                       {petImage
-                        ? "Continuar a Estilo y Escena"
+                        ? "Crear Retrato Ahora"
                         : "Sube una foto para continuar"}
                     </span>
                     <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                   </button>
+                  {petImage && (
+                    <p className="text-[11px] text-stone-500 text-center">
+                      Prepararemos{" "}
+                      <strong className="text-stone-800 font-medium">
+                        2 propuestas artísticas exclusivas
+                      </strong>{" "}
+                      en estilo{" "}
+                      <strong className="text-stone-800 font-medium">
+                        {activeThemeName}
+                      </strong>
+                      .
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* PASO 2: ELEGIR ESCENA / SUBIR REFERENCIA Y MOTOR DEL ESTUDIO */}
-        {/* ========================================================================= */}
-        {!isGenerating && step === 2 && (
-          <div className="space-y-10 animate-in fade-in duration-300">
-            {/* Navigation & Step Indicator */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setStep(1)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-cream-200 text-stone-700 hover:text-stone-900 text-xs font-medium hover:border-stone-300 transition-colors shadow-soft"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Volver a fotografías</span>
-              </button>
-
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cream-100 border border-cream-200 text-stone-600 text-xs font-medium">
-                <span>Paso 2 de 3 · Dirección de Arte</span>
-              </div>
-            </div>
-
-            {/* SECTION A: SELECT COLLECTION THEME OR UPLOAD CUSTOM REFERENCE */}
-            <div className="space-y-6">
-              <div className="text-center space-y-2 max-w-2xl mx-auto">
-                <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-stone-900">
-                  Elige el vestuario y escenario
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-600">
-                  Selecciona una obra de nuestra colección para convertir a tu mascota en protagonista.
-                </p>
-              </div>
-
-              {/* Dynamic Curated Collection Cards (Grid Compacto Vertical 2:3 o Skeleton si no hay conexión a BD) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5">
-                  {catalogCharacters.length === 0
-                    ? Array.from({ length: 12 }).map((_, idx) => (
-                        <div
-                          key={`studio-char-skeleton-${idx}`}
-                          aria-hidden="true"
-                          className="rounded-xl overflow-hidden border border-cream-200 bg-white shadow-soft flex flex-col justify-between h-full"
-                        >
-                          <div className="relative aspect-[2/3] w-full bg-[#EFE6D5] animate-pulse">
-                            <div className="absolute top-1.5 left-1.5 h-3.5 w-16 rounded-full bg-white/70" />
-                          </div>
-                          <div className="p-2 space-y-1.5 animate-pulse">
-                            <div className="h-3 w-3/4 rounded bg-stone-200" />
-                            <div className="h-2.5 w-1/2 rounded bg-stone-100" />
-                            <div className="h-5 w-full rounded-full bg-cream-100 mt-1" />
-                          </div>
-                        </div>
-                      ))
-                    : catalogCharacters.map((char) => {
-                        const isSelected =
-                          !useCustomTheme && selectedCharacter.id === char.id;
-
-                        return (
-                          <div
-                            key={char.id}
-                            onClick={() => {
-                              setSelectedCharacter(char);
-                              setUseCustomTheme(false);
-                              scrollToCreatePortrait();
-                            }}
-                            title={char.description || char.name}
-                            className={`group/card relative rounded-xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
-                              isSelected
-                                ? "border-[#174B3D] ring-2 ring-[#174B3D]/25 shadow-card"
-                                : "border-cream-200 hover:border-stone-300 shadow-soft"
-                            }`}
-                          >
-                            {/* Imagen Vertical Completa (2:3) en tamaño compacto */}
-                            <div className="relative aspect-[2/3] w-full overflow-hidden bg-cream-100">
-                              <img
-                                src={char.characterImageUrl}
-                                alt={char.name}
-                                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
-                              />
-
-                              <div className="absolute top-1.5 left-1.5 right-8">
-                                <span className="inline-block max-w-full truncate text-[8px] font-medium px-1.5 py-0.5 rounded-full border backdrop-blur-xs bg-white/90 text-stone-800 border-stone-200/80">
-                                  {char.universe}
-                                </span>
-                              </div>
-
-                              {isSelected && (
-                                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow-soft">
-                                  <Check className="w-3 h-3 stroke-[2.5]" />
-                                </div>
-                              )}
-
-                              {/* Botón flotante para ver imagen en tamaño completo */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewCharacterModal(char);
-                                }}
-                                aria-label={`Ver imagen completa de ${char.name}`}
-                                title="Ver imagen en tamaño completo"
-                                className="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all duration-150 hover:scale-110 z-10"
-                              >
-                                <Maximize2 className="w-3 h-3" />
-                              </button>
-                            </div>
-
-                            {/* Pie Compacto */}
-                            <div className="p-2 space-y-1.5 flex flex-col justify-between">
-                              <div className="min-w-0">
-                                <h3 className="font-serif text-xs font-bold text-stone-900 truncate leading-tight">
-                                  {char.name}
-                                </h3>
-                                <span className="text-[9px] font-medium text-stone-500 block truncate mt-0.5">
-                                  {char.characterTitle}
-                                </span>
-                              </div>
-
-                              <span
-                                className={`w-full py-1 px-2 rounded-full text-[10px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                                  isSelected
-                                    ? "bg-[#174B3D] text-white"
-                                    : "bg-cream-100 text-stone-700 group-hover/card:bg-cream-200"
-                                }`}
-                              >
-                                {isSelected ? (
-                                  <>
-                                    <Check className="w-2.5 h-2.5" />
-                                    <span>Elegido</span>
-                                  </>
-                                ) : (
-                                  <span>Seleccionar</span>
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-              </div>
-            </div>
-
-
-            {/* Launch Dual Artistic Portrait Generation CTA */}
-            <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
-              <button
-                ref={createPortraitBtnRef}
-                onClick={handleStartFusion}
-                disabled={!useCustomTheme && catalogCharacters.length === 0}
-                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
-              >
-                <span>Crear Retrato Ahora</span>
-                <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-              </button>
-              <p className="text-xs text-stone-500">
-                Prepararemos{" "}
-                <strong className="text-stone-800 font-medium">
-                  2 propuestas artísticas exclusivas
-                </strong>{" "}
-                de tu mascota en estilo{" "}
-                <strong className="text-stone-800 font-medium">
-                  {activeThemeName}
-                </strong>{" "}
-                para que elijas tu favorita.
-              </p>
             </div>
           </div>
         )}
@@ -1552,7 +1624,8 @@ export default function personalizedWallArt() {
                     setSelectedCharacter(previewCharacterModal);
                     setUseCustomTheme(false);
                     setPreviewCharacterModal(null);
-                    scrollToCreatePortrait();
+                    setStep(2);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-soft transition-all"
                 >
@@ -2520,7 +2593,10 @@ export default function personalizedWallArt() {
               </button>
 
               <button
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  setStep(1);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 className="px-6 py-3 rounded-full bg-[#c6a26c] hover:bg-[#b58f56] text-[#174B3D] text-xs font-bold shadow-soft transition-all"
               >
                 Probar otro escenario

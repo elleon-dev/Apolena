@@ -18,11 +18,11 @@ const STEPS: StepItem[] = [
   {
     number: "01",
     badgeText: "Paso Inicial",
-    title: "Sube una foto de tu mascota",
+    title: "Elige tu estilo y sube su foto",
     description:
-      "Elige tu estilo artístico favorito. Sube una foto clara de tu mascota y realiza tu pedido en minutos.",
+      "Selecciona tu personaje o estilo artístico favorito y sube una foto clara de tu mascota en minutos.",
     imageSrc: "/images/steps/img1.jpg",
-    imageAlt: "Ilustración 2D subir foto de mascota",
+    imageAlt: "Ilustración 2D elegir estilo y subir foto de mascota",
     accentBg: "bg-[#FFFBF2] border-[#c6a26c]/45",
   },
   {
@@ -92,13 +92,13 @@ export default function StepsSection() {
               <div
                 className={`w-[17em] h-[17em] mt-3 mb-6 ${step.accentBg} flex items-center justify-center relative group-hover:scale-105 transition-transform duration-300`}
               >
-                  <Image
-                    src={step.imageSrc}
-                    alt={step.imageAlt}
-                    fill
-                    sizes="628px"
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                <Image
+                  src={step.imageSrc}
+                  alt={step.imageAlt}
+                  fill
+                  sizes="628px"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
               </div>
 
               {/* Título del Paso */}
