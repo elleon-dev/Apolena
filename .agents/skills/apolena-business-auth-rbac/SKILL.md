@@ -71,3 +71,17 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 
 - En todas las consultas de `/orders` y `/api/orders` (modo cliente), las consultas **DEBEN** filtrar obligatoriamente por el `user_id` o `email` del usuario en sesión.
 - Un usuario con rol `user` jamás puede listar ni modificar órdenes pertenecientes a otro comprador.
+
+---
+
+## 5. Seguridad a Nivel de Filas en Supabase (Row Level Security - RLS)
+
+Todas las 15 tablas del esquema `public` tienen activado `ROW LEVEL SECURITY = true` y 30 políticas granulares:
+
+1. **Acceso de Servicio Backend (`service_role` / Prisma):** Acceso total (`FOR ALL`) reservado al backend y Prisma.
+2. **Catálogo Público (`products`, `product_images`, `character_templates`, `reviews`, `platform_settings`):** Lectura pública (`SELECT`) para visitantes (`anon` y `authenticated`).
+3. **Suscripción (`newsletter_subscribers`):** Permiso de inserción pública (`INSERT`).
+4. **Datos Protegidos de Usuarios (`profiles`, `orders`, `order_items`, `order_packages`, `order_shippings`, `order_invoices`, `payment_transactions`, `generation_jobs`):**
+   - Lectura y actualización estrictamente restringida al propietario mediante `auth.uid() = buyer_id` o `auth.uid() = id`.
+   - Bloqueado de forma absoluta para consultas anónimas directas desde PostgREST.
+5. **Colas Confidenciales (`email_queue`):** Bloqueo total para clientes; acceso restringido exclusivamente a `service_role`.
