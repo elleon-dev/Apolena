@@ -2,6 +2,10 @@ import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import { externalizeBase64Image } from "@/lib/image-storage";
+import { prisma, isDatabaseConfigured } from "@/lib/prisma";
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface MasterArtworkVaultEntry {
   jobId: string;
@@ -56,7 +60,7 @@ function persistVaultToDisk(): void {
 /**
  * Resolves any data URI, local public file, or remote URL into a Buffer
  */
-async function resolveSourceToBuffer(source: string): Promise<Buffer> {
+export async function resolveSourceToBuffer(source: string): Promise<Buffer> {
   if (source.startsWith("data:")) {
     const commaIdx = source.indexOf(",");
     const b64 = source.substring(commaIdx + 1);
@@ -183,6 +187,67 @@ export async function burnServerSideWatermark(
 }
 
 /**
+ * Durable copy of the vault inside `generation_jobs` (Prisma): the clean masters live in
+ * `settings.master_variants` and `hd_output_image_url`, which are never returned to the studio.
+ * The local JSON/memory vault alone is lost on restarts and serverless instances.
+ */
+export interface JobPersistenceMeta {
+  templateId: string;
+  petName?: string;
+  species?: string;
+  petImageUrl?: string;
+  provider?: string;
+  modelUsed?: string;
+}
+
+async function persistMasterVaultToDatabase(
+  jobId: string,
+  masterMap: Record<string, string>,
+  watermarkedVariants: Array<Record<string, any>>,
+  meta?: JobPersistenceMeta,
+): Promise<void> {
+  if (!isDatabaseConfigured() || !UUID_REGEX.test(jobId)) return;
+  const firstWm = String(watermarkedVariants[0]?.imageUrl || "");
+  const firstMaster = Object.values(masterMap)[0] || null;
+  const safePetImage =
+    meta?.petImageUrl && !meta.petImageUrl.startsWith("data:")
+      ? meta.petImageUrl
+      : "inline-upload";
+  const settings = { master_variants: masterMap };
+  try {
+    await prisma.generationJob.upsert({
+      where: { id: jobId },
+      update: {
+        status: "completed",
+        progress: 100,
+        output_image_url: firstWm || null,
+        hd_output_image_url: firstMaster,
+        variants: watermarkedVariants as any,
+        settings: settings as any,
+      },
+      create: {
+        id: jobId,
+        template_id: meta?.templateId || "custom",
+        pet_name: meta?.petName || "Mi Mascota",
+        species: meta?.species || "dog",
+        pet_image_url: safePetImage,
+        provider: meta?.provider || "openai",
+        model_used: meta?.modelUsed || null,
+        status: "completed",
+        progress: 100,
+        current_step: "Retrato revelado",
+        output_image_url: firstWm || null,
+        hd_output_image_url: firstMaster,
+        variants: watermarkedVariants as any,
+        settings: settings as any,
+      },
+    });
+  } catch (err) {
+    console.warn("[persistMasterVaultToDatabase warning]:", err);
+  }
+}
+
+/**
  * Stores the clean HD master variants in the server vault and returns
  * the server-watermarked variants safe to send to the client browser.
  */
@@ -196,6 +261,7 @@ export async function protectAndStoreJobVariants(
     imageUrl: string;
     executionSeconds: number;
   }>,
+  meta?: JobPersistenceMeta,
 ): Promise<{
   watermarkedOutputUrl: string;
   watermarkedVariants: typeof variants;
@@ -208,10 +274,11 @@ export async function protectAndStoreJobVariants(
   const watermarkedVariants: typeof variants = [];
 
   for (const v of variants) {
+    // Keep the master at native resolution with near-lossless quality for 300 DPI printing
     const cleanMasterUrl =
       (await externalizeBase64Image(v.imageUrl, "artworks", {
-        maxDimension: 2048,
-        quality: 88,
+        maxDimension: 4096,
+        quality: 95,
       })) || v.imageUrl;
     masterMap[v.id] = cleanMasterUrl;
     const wmUrl = await burnServerSideWatermark(v.imageUrl);
@@ -229,6 +296,7 @@ export async function protectAndStoreJobVariants(
     createdAt: new Date().toISOString(),
   });
   persistVaultToDisk();
+  await persistMasterVaultToDatabase(jobId, masterMap, watermarkedVariants, meta);
 
   const firstWm = watermarkedVariants[0]?.imageUrl || "";
   const firstMaster =
@@ -241,15 +309,26 @@ export async function protectAndStoreJobVariants(
   };
 }
 
+/** True when the URL points to a watermarked web preview (never valid for printing). */
+export function isWatermarkedPreviewUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return url.includes("/previews/") || url.includes("/uploads/previews/");
+}
+
 /**
- * Resolves the clean 300 DPI master artwork URL from the server vault
- * when creating an order or when an admin / completed-order buyer requests it.
+ * Resolves the clean 300 DPI master artwork URL when creating an order or when an
+ * admin / completed-order buyer requests it. Lookup order:
+ * 1. Local vault (memory/disk) by job + variant.
+ * 2. `generation_jobs.settings.master_variants` / `hd_output_image_url` in the database.
+ * 3. Reverse lookup of the watermarked preview URL inside the local vault.
+ * Returns `fallbackUrl` only when nothing better exists (callers must check
+ * `isWatermarkedPreviewUrl` before using it for production).
  */
-export function resolveCleanMasterArtwork(
+export async function resolveCleanMasterArtwork(
   jobId?: string | null,
   variantId?: string | null,
   fallbackUrl?: string | null,
-): string | null {
+): Promise<string | null> {
   loadVaultFromDisk();
 
   if (jobId) {
@@ -260,6 +339,34 @@ export function resolveCleanMasterArtwork(
       }
       const firstMaster = Object.values(entry.masterVariants)[0];
       if (firstMaster) return firstMaster;
+    }
+
+    if (isDatabaseConfigured() && UUID_REGEX.test(jobId)) {
+      try {
+        const row = await prisma.generationJob.findUnique({
+          where: { id: jobId },
+          select: { settings: true, hd_output_image_url: true },
+        });
+        const masters = ((row?.settings as any)?.master_variants || {}) as Record<
+          string,
+          string
+        >;
+        if (variantId && masters[variantId]) return masters[variantId];
+        const firstDbMaster = Object.values(masters)[0] || row?.hd_output_image_url;
+        if (firstDbMaster) return firstDbMaster;
+      } catch (err) {
+        console.warn("[resolveCleanMasterArtwork DB warning]:", err);
+      }
+    }
+  }
+
+  if (fallbackUrl && isWatermarkedPreviewUrl(fallbackUrl)) {
+    for (const entry of Array.from(memoryVault.values())) {
+      for (const [vid, wmUrl] of Object.entries(entry.watermarkedVariants)) {
+        if (wmUrl === fallbackUrl && entry.masterVariants[vid]) {
+          return entry.masterVariants[vid];
+        }
+      }
     }
   }
 

@@ -278,6 +278,9 @@ export default function AdminDashboardPage() {
         bleedSpec.preset,
         finishMode,
         CANVAS_WRAP_BLEED_CM,
+        item.customizations?.pet_inscription?.enabled
+          ? item.customizations.pet_inscription.pet_name?.trim()
+          : null,
       );
 
       const fileName = `Orden-${order.order_code}-cuadro-${bleedSpec.faceWidthCm}x${bleedSpec.faceHeightCm}cm-impresion-${bleedSpec.totalWidthCm}x${bleedSpec.totalHeightCm}cm-300DPI.png`;

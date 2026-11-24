@@ -13,7 +13,10 @@ import {
   getOrdersByBuyer,
   PaymentMethod,
 } from "@/lib/db-service";
-import { resolveCleanMasterArtwork } from "@/lib/server-watermark";
+import {
+  isWatermarkedPreviewUrl,
+  resolveCleanMasterArtwork,
+} from "@/lib/server-watermark";
 import { getRequestOrigin } from "@/lib/app-url";
 
 /**
@@ -118,11 +121,16 @@ export async function POST(request: Request) {
       body.selected_variant_id ||
       body.customizations?.selected_variant_id ||
       "variant-1";
-    const resolvedMasterArtUrl = resolveCleanMasterArtwork(
+    const resolvedMasterCandidate = await resolveCleanMasterArtwork(
       body.generation_job_id,
       selectedVariantId,
-      body.generated_art_url || "/samples/cat-suit.jpg",
+      body.generated_art_url || null,
     );
+    // Never store a watermarked web preview as the production master
+    const resolvedMasterArtUrl =
+      resolvedMasterCandidate && !isWatermarkedPreviewUrl(resolvedMasterCandidate)
+        ? resolvedMasterCandidate
+        : null;
 
     const enrichedCustomizations = {
       ...(body.customizations || {}),

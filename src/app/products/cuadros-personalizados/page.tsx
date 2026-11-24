@@ -657,6 +657,7 @@ export default function personalizedWallArt() {
       const exported = await exportWatermarkedPreviewImage(
         sourceUrl,
         activeThemeName,
+        includePetInscription ? petInscriptionName.trim() : null,
       );
       const link = document.createElement("a");
       link.href = exported.dataUrl;
@@ -1923,7 +1924,7 @@ export default function personalizedWallArt() {
                     >
                       {/* Imagen de fondo de la sala con marcas guía de medidas (en proporción 819x1024 nativa sin recorte) */}
                       <img
-                        src="/images/room-sizes-reference.png"
+                        src="/images/room-sizes-reference-2.png"
                         alt="Escala de tamaños de cuadros en sala"
                         draggable={false}
                         className="block w-auto max-w-full max-h-[60vh] sm:max-h-[66vh] object-contain pointer-events-none select-none mx-auto"

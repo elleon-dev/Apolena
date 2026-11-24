@@ -97,6 +97,10 @@ export async function saveJob(job: GenerationJob): Promise<void> {
  * Retrieves a job by ID
  */
 export async function getJobById(id: string): Promise<GenerationJob | null> {
+  // The in-process store holds the live job (with watermarked variants); prefer it over the DB row.
+  const localJob = localJobs.get(id);
+  if (localJob) return localJob;
+
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase

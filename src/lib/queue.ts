@@ -93,6 +93,14 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     const protectedArt = await protectAndStoreJobVariants(
       jobId,
       result.variants,
+      {
+        templateId: job.templateId,
+        petName: job.petName,
+        species: job.species,
+        petImageUrl: job.petImageUrl,
+        provider: job.provider,
+        modelUsed: result.modelUsed,
+      },
     );
 
     // 4. Completed (client receives only watermarked previews; hdOutputImageUrl is stored in DB/vault for workshop & post-payment unlock)

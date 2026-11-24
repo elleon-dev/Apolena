@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { enqueueJob } from "@/lib/queue";
 import { FAMOUS_CHARACTERS } from "@/data/characters";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
@@ -86,7 +87,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    // UUID so the job can be persisted in `generation_jobs` and linked to `order_items.generation_job_id`
+    const jobId = randomUUID();
 
     const job = await enqueueJob({
       jobId,

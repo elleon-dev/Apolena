@@ -89,8 +89,8 @@ export const PRINT_PRESETS: PrintPreset[] = [
     cmDimensions: "20 × 30 cm",
     inchDimensions: '8 × 12"',
     dpi: 300,
-    baseWidthPx: 2400,
-    baseHeightPx: 3600,
+    baseWidthPx: 2362,
+    baseHeightPx: 3543,
     recommendedUse:
       "Ideal para espacios reducidos, repisas, escritorios o composiciones de varios cuadros. Detalle sutil y versátil.",
     pricePen: 160,
@@ -104,8 +104,8 @@ export const PRINT_PRESETS: PrintPreset[] = [
     cmDimensions: "30 × 40 cm",
     inchDimensions: '12 × 16"',
     dpi: 300,
-    baseWidthPx: 3000,
-    baseHeightPx: 4000,
+    baseWidthPx: 3543,
+    baseHeightPx: 4724,
     recommendedUse:
       "Ideal para paredes pequeñas o medianas y composiciones tipo galería. Gran equilibrio y presencia.",
     pricePen: 190,
@@ -119,8 +119,8 @@ export const PRINT_PRESETS: PrintPreset[] = [
     cmDimensions: "40 × 60 cm",
     inchDimensions: '16 × 24"',
     dpi: 300,
-    baseWidthPx: 3200,
-    baseHeightPx: 4800,
+    baseWidthPx: 4724,
+    baseHeightPx: 7087,
     recommendedUse:
       "La medida más popular. Excelente visibilidad y tamaño ideal para salas, dormitorios y oficinas.",
     pricePen: 210,
@@ -134,8 +134,8 @@ export const PRINT_PRESETS: PrintPreset[] = [
     cmDimensions: "50 × 70 cm",
     inchDimensions: '20 × 28"',
     dpi: 300,
-    baseWidthPx: 3600,
-    baseHeightPx: 5000,
+    baseWidthPx: 5906,
+    baseHeightPx: 8268,
     recommendedUse:
       "Ideal para aportar carácter y presencia en salas o comedores sin saturar el ambiente.",
     pricePen: 240,
@@ -149,8 +149,8 @@ export const PRINT_PRESETS: PrintPreset[] = [
     cmDimensions: "60 × 90 cm",
     inchDimensions: '24 × 36"',
     dpi: 300,
-    baseWidthPx: 4000,
-    baseHeightPx: 6000,
+    baseWidthPx: 7087,
+    baseHeightPx: 10630,
     recommendedUse:
       "Ideal como cuadro principal protagónico. Gran impacto visual sobre sillones, camas y pasillos amplios.",
     pricePen: 275,
@@ -284,10 +284,6 @@ export function resolvePrintBleedSpec(
 ): PrintBleedSpec {
   let matchedPreset: PrintPreset | undefined = input?.preset || undefined;
 
-  if (!matchedPreset && input?.sizeId) {
-    matchedPreset = PRINT_PRESETS.find((p) => p.id === input.sizeId);
-  }
-
   const rawDims =
     input?.cmDimensions ||
     matchedPreset?.cmDimensions ||
@@ -297,12 +293,34 @@ export function resolvePrintBleedSpec(
   let faceWidthCm = nums[0] || 40;
   let faceHeightCm = nums[1] || 60;
 
+  matchedPreset = PRINT_PRESETS.find((p) => {
+    const pNums = p.cmDimensions.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+    return pNums[0] === faceWidthCm && pNums[1] === faceHeightCm;
+  });
+
+  if (!matchedPreset && !input?.cmDimensions) {
+    matchedPreset = input?.preset
+      ? input.preset
+      : input?.sizeId
+        ? PRINT_PRESETS.find((p) => p.id === input.sizeId)
+        : undefined;
+  }
+
   if (!matchedPreset) {
-    matchedPreset =
-      PRINT_PRESETS.find((p) => {
-        const pNums = p.cmDimensions.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
-        return pNums[0] === faceWidthCm && pNums[1] === faceHeightCm;
-      }) || PRINT_PRESETS[2]; // default 40x60
+    const cmToPx = (cm: number) => Math.round((cm / 2.54) * 300);
+    matchedPreset = {
+      id: input?.sizeId || `custom-${faceWidthCm}x${faceHeightCm}`,
+      tier: "Medida personalizada",
+      label: `${faceWidthCm} × ${faceHeightCm} cm`,
+      cmDimensions: `${faceWidthCm} × ${faceHeightCm} cm`,
+      inchDimensions: `${Number((faceWidthCm / 2.54).toFixed(1))} × ${Number((faceHeightCm / 2.54).toFixed(1))}"`,
+      dpi: 300,
+      baseWidthPx: cmToPx(faceWidthCm),
+      baseHeightPx: cmToPx(faceHeightCm),
+      recommendedUse: "Medida congelada según la personalización de la orden",
+      pricePen: 0,
+      isAvailable: true,
+    };
   }
 
   const totalWidthCm = faceWidthCm + bleedCm * 2;
@@ -330,6 +348,7 @@ export async function exportPrintReadyImage(
   preset: PrintPreset,
   finishMode: PrintFinishMode = "full-bleed",
   bleedCm: number = CANVAS_WRAP_BLEED_CM,
+  petName?: string | null,
 ): Promise<{
   dataUrl: string;
   blob: Blob | null;
@@ -408,6 +427,36 @@ export async function exportPrintReadyImage(
         const offsetX = Math.round((faceW - drawW) / 2);
         const offsetY = Math.round((faceH - drawH) * 0.22);
         faceCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+      }
+
+      const inscription = petName?.trim();
+      if (inscription) {
+        faceCtx.save();
+        const length = inscription.length;
+        const referenceFontSize =
+          length > 16 ? 24 : length > 11 ? 30 : length > 6 ? 36 : 48;
+        let fontSize = Math.max(24, Math.round(referenceFontSize * (faceH / 560)));
+        faceCtx.font = `400 ${fontSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
+        const maxTextWidth = faceW * 0.70;
+        const measuredWidth = faceCtx.measureText(inscription).width;
+        if (measuredWidth > maxTextWidth) {
+          fontSize = Math.max(20, Math.floor(fontSize * (maxTextWidth / measuredWidth)));
+          faceCtx.font = `400 ${fontSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
+        }
+
+        const x = faceW - Math.round(faceW * 0.014);
+        const y = faceH - Math.round(faceH * 0.085);
+        faceCtx.translate(x, y);
+        faceCtx.rotate((-6 * Math.PI) / 180);
+        faceCtx.textAlign = "right";
+        faceCtx.textBaseline = "middle";
+        faceCtx.shadowColor = "rgba(0, 0, 0, 0.72)";
+        faceCtx.shadowBlur = Math.max(8, Math.round(fontSize * 0.18));
+        faceCtx.shadowOffsetX = Math.max(2, Math.round(fontSize * 0.03));
+        faceCtx.shadowOffsetY = Math.max(3, Math.round(fontSize * 0.06));
+        faceCtx.fillStyle = "#FFFFFF";
+        faceCtx.fillText(inscription, 0, 0);
+        faceCtx.restore();
       }
 
       // 2. Calcular los píxeles equivalentes a +5 cm en cada uno de los 4 lados
@@ -577,13 +626,6 @@ export async function exportPrintReadyImage(
         );
         ctx.restore();
 
-        // Líneas guía sutiles de doblez en las 4 esquinas (fuera del área frontal visible) para encuadrar el bastidor
-        ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
-        ctx.lineWidth = Math.max(2, Math.round(Math.min(bleedPxX, bleedPxY) * 0.012));
-        ctx.setLineDash([12, 10]);
-        ctx.strokeRect(bleedPxX, bleedPxY, faceW, faceH);
-        ctx.restore();
       }
 
       const totalCmLabel = `${faceWidthCm + bleedCm * 2} × ${faceHeightCm + bleedCm * 2} cm`;
@@ -621,6 +663,7 @@ export async function exportPrintReadyImage(
 export async function exportWatermarkedPreviewImage(
   imageSrc: string,
   themeName: string = "Atelier Apolena",
+  petName?: string | null,
 ): Promise<{ dataUrl: string; widthPx: number; heightPx: number }> {
   const loadImg = (src: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
@@ -672,6 +715,30 @@ export async function exportWatermarkedPreviewImage(
 
   // 1. Draw the base artwork
   ctx.drawImage(artImg, 0, 0, targetW, targetH);
+
+  const previewInscription = petName?.trim();
+  if (previewInscription) {
+    ctx.save();
+    const length = previewInscription.length;
+    const referenceFontSize =
+      length > 16 ? 24 : length > 11 ? 30 : length > 6 ? 36 : 48;
+    let fontSize = Math.max(24, Math.round(referenceFontSize * (targetH / 560)));
+    ctx.font = `400 ${fontSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
+    const maxTextWidth = targetW * 0.70;
+    if (ctx.measureText(previewInscription).width > maxTextWidth) {
+      fontSize = Math.max(16, Math.floor(fontSize * (maxTextWidth / ctx.measureText(previewInscription).width)));
+      ctx.font = `400 ${fontSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
+    }
+    ctx.translate(targetW - Math.round(targetW * 0.014), targetH - Math.round(targetH * 0.085));
+    ctx.rotate((-6 * Math.PI) / 180);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.72)";
+    ctx.shadowBlur = Math.max(4, Math.round(fontSize * 0.18));
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(previewInscription, 0, 0);
+    ctx.restore();
+  }
 
   // If the image already comes from the server preview generator, return without adding a duplicate watermark layer
   if (imageSrc.includes("/uploads/previews/")) {

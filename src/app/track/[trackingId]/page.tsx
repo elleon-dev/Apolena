@@ -24,6 +24,11 @@ import {
 } from "lucide-react";
 import type { OrderRecord } from "@/lib/db-service";
 import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
+import {
+  CANVAS_WRAP_BLEED_CM,
+  exportPrintReadyImage,
+  resolvePrintBleedSpec,
+} from "@/lib/print-export";
 
 export default function TrackingDetailPage({
   params,
@@ -33,6 +38,51 @@ export default function TrackingDetailPage({
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
+
+  const handleDownloadMemoryHd = async (order: OrderRecord) => {
+    const item = order.packages?.[0]?.items?.[0];
+    if (!item) return;
+    const imageSrc =
+      item.customizations?.master_art_url ||
+      item.generated_art_url ||
+      "/samples/cat-suit.jpg";
+    const bleedSpec = resolvePrintBleedSpec(
+      {
+        sizeId: item.customizations?.size_id,
+        cmDimensions:
+          item.customizations?.cm_dimensions || item.customizations?.size_label,
+      },
+      CANVAS_WRAP_BLEED_CM,
+    );
+    setDownloadingOrderId(order.id);
+    try {
+      const exported = await exportPrintReadyImage(
+        imageSrc,
+        bleedSpec.preset,
+        item.customizations?.finish_mode === "museum-matte"
+          ? "museum-matte"
+          : "full-bleed",
+        CANVAS_WRAP_BLEED_CM,
+        item.customizations?.pet_inscription?.enabled
+          ? item.customizations.pet_inscription.pet_name?.trim()
+          : null,
+      );
+      const link = document.createElement("a");
+      link.href = exported.blob
+        ? URL.createObjectURL(exported.blob)
+        : exported.dataUrl;
+      link.download = `Apolena-Recuerdo-Digital-HD-${order.order_code}-${bleedSpec.faceWidthCm}x${bleedSpec.faceHeightCm}cm.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (exported.blob) setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+    } catch {
+      window.open(imageSrc, "_blank", "noopener,noreferrer");
+    } finally {
+      setDownloadingOrderId(null);
+    }
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -322,18 +372,23 @@ export default function TrackingDetailPage({
                     <div className="pt-1.5">
                       {order.status === "completed" &&
                       order.payment_status === "paid_full" ? (
-                        <a
-                          href={
-                            item.customizations?.master_art_url ||
-                            item.generated_art_url ||
-                            "/samples/cat-suit.jpg"
-                          }
-                          download={`Apolena-Recuerdo-Digital-HD-${order.order_code}.png`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold shadow-xs transition-all"
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadMemoryHd(order)}
+                          disabled={downloadingOrderId === order.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-[11px] font-bold shadow-xs transition-all"
                         >
-                          <Download className="w-3.5 h-3.5 text-[#c6a26c]" />
-                          <span>Descargar Recuerdo Digital HD</span>
-                        </a>
+                          {downloadingOrderId === order.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#c6a26c]" />
+                          ) : (
+                            <Download className="w-3.5 h-3.5 text-[#c6a26c]" />
+                          )}
+                          <span>
+                            {downloadingOrderId === order.id
+                              ? "Generando Recuerdo HD..."
+                              : "Descargar Recuerdo Digital HD"}
+                          </span>
+                        </button>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 font-medium">
                           <Lock className="w-3 h-3 text-[#174B3D]" />
