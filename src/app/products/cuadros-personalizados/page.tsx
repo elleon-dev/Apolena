@@ -61,6 +61,32 @@ import {
   Palette,
 } from "lucide-react";
 
+let petDetectorPromise: Promise<any> | null = null;
+
+const ANIMAL_CLASSES = new Set([
+  "bird",
+  "cat",
+  "dog",
+  "horse",
+  "sheep",
+  "cow",
+  "elephant",
+  "bear",
+  "zebra",
+  "giraffe",
+]);
+
+async function loadPetDetector() {
+  if (!petDetectorPromise) {
+    petDetectorPromise = (async () => {
+      await import("@tensorflow/tfjs");
+      const cocoSsd = await import("@tensorflow-models/coco-ssd");
+      return cocoSsd.load({ base: "lite_mobilenet_v2" });
+    })();
+  }
+  return petDetectorPromise;
+}
+
 /**
  * Coordenadas porcentuales exactas sobre el mockup de sala (public/images/room-sizes-reference.png)
  * Dimensiones base: 819 x 1024 px. Origen inferior-izquierdo alineado con la guía de pared.
@@ -91,6 +117,7 @@ export default function personalizedWallArt() {
   // Pet Images (1 mandatory, 2nd optional for duo portrait)
   const [petImage, setPetImage] = useState<string | null>(null);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
+  const [isValidatingPetPhoto, setIsValidatingPetPhoto] = useState(false);
   const [petSpecies, setPetSpecies] = useState<"dog" | "cat" | "other">("dog");
   const [includePetInscription, setIncludePetInscription] =
     useState<boolean>(false);
@@ -454,7 +481,7 @@ export default function personalizedWallArt() {
     return false;
   };
 
-  // Compress & read uploaded image file into base64 data URL
+  // Comprime y valida que la fotografía cargada sea un animal real antes de aceptarla
   const readAndCompressImage = useCallback(
     (file: File, onDone: (dataUrl: string) => void) => {
       if (!file.type.startsWith("image/")) {
@@ -464,36 +491,73 @@ export default function personalizedWallArt() {
         return;
       }
 
+      setFusionError(null);
+      setIsValidatingPetPhoto(true);
+
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          // 1024px matches the native single-tile resolution of OpenAI/Gemini vision encoders, avoiding 4x multi-tile token charges
-          const maxDim = 1024;
+        img.onload = async () => {
+          try {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1024;
 
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
             }
-          }
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("No se pudo procesar la fotografía.");
+
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+
+            const detector = await loadPetDetector();
+            const predictions = await detector.detect(img);
+            const animalPrediction = predictions.find(
+              (prediction: { class: string; score: number }) =>
+                ANIMAL_CLASSES.has(prediction.class) && prediction.score >= 0.45,
+            ) as { class: string; score: number } | undefined;
+
+            if (!animalPrediction) {
+              setFusionError(
+                "La fotografía debe mostrar claramente una mascota o animal real. No se aceptan personas, paisajes u objetos.",
+              );
+              return;
+            }
+
+            setFusionError(null);
+            if (animalPrediction.class === "dog") setPetSpecies("dog");
+            else if (animalPrediction.class === "cat") setPetSpecies("cat");
+            else setPetSpecies("other");
             onDone(dataUrl);
+          } catch {
+            setFusionError(
+              "No pudimos validar que la fotografía sea de una mascota. Inténtalo nuevamente.",
+            );
+          } finally {
+            setIsValidatingPetPhoto(false);
           }
         };
+        img.onerror = () => {
+          setIsValidatingPetPhoto(false);
+          setFusionError("La fotografía no pudo abrirse. Prueba con otra imagen JPG, PNG o WEBP.");
+        };
         img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        setIsValidatingPetPhoto(false);
+        setFusionError("No pudimos leer la fotografía seleccionada.");
       };
       reader.readAsDataURL(file);
     },
@@ -917,20 +981,23 @@ export default function personalizedWallArt() {
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();
-                        if (e.dataTransfer.files?.[0]) {
+                        if (!isValidatingPetPhoto && e.dataTransfer.files?.[0]) {
                           readAndCompressImage(
                             e.dataTransfer.files[0],
                             setPetImage,
                           );
                         }
                       }}
-                      onClick={() => fileInput1Ref.current?.click()}
+                      onClick={() => {
+                        if (!isValidatingPetPhoto) fileInput1Ref.current?.click();
+                      }}
                       className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl border-2 border-dashed border-cream-300 hover:border-terracotta-500 bg-cream-50/70 hover:bg-terracotta-50/30 flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all group"
                     >
                       <input
                         ref={fileInput1Ref}
                         type="file"
                         accept="image/*"
+                        disabled={isValidatingPetPhoto}
                         onChange={(e) =>
                           e.target.files?.[0] &&
                           readAndCompressImage(e.target.files[0], setPetImage)
@@ -946,6 +1013,16 @@ export default function personalizedWallArt() {
                       <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
                         Haz clic para buscar en tu dispositivo o arrastra el archivo aquí
                       </p>
+                      {isValidatingPetPhoto ? (
+                        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#174B3D] px-4 py-2 text-xs font-semibold text-white">
+                          <Loader2 className="h-4 w-4 animate-spin text-[#c6a26c]" />
+                          Validando que sea una mascota...
+                        </div>
+                      ) : fusionError ? (
+                        <div className="mt-4 max-w-sm rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium leading-relaxed text-red-700">
+                          {fusionError}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl overflow-hidden border border-cream-200 bg-[#f8f6f0] flex items-center justify-center">
@@ -955,16 +1032,28 @@ export default function personalizedWallArt() {
                         className="w-full h-full object-contain object-center"
                       />
                       <button
-                        onClick={() => fileInput1Ref.current?.click()}
+                        onClick={() => {
+                          if (!isValidatingPetPhoto) fileInput1Ref.current?.click();
+                        }}
+                        disabled={isValidatingPetPhoto}
                         className="absolute bottom-3 right-3 px-4 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-cream-200 text-stone-800 hover:text-terracotta-600 text-xs font-semibold flex items-center gap-1.5 shadow-card transition-colors z-10"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Cambiar foto</span>
                       </button>
+                      {isValidatingPetPhoto && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/85 backdrop-blur-sm">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-[#174B3D] px-4 py-2 text-xs font-semibold text-white">
+                            <Loader2 className="h-4 w-4 animate-spin text-[#c6a26c]" />
+                            Validando fotografía...
+                          </div>
+                        </div>
+                      )}
                       <input
                         ref={fileInput1Ref}
                         type="file"
                         accept="image/*"
+                        disabled={isValidatingPetPhoto}
                         onChange={(e) =>
                           e.target.files?.[0] &&
                           readAndCompressImage(e.target.files[0], setPetImage)

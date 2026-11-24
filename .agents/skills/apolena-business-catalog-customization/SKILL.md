@@ -63,7 +63,7 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
 
 ## 3. Flujo de Creación de Retratos en el Atelier Digital
 
-1. **Carga de Fotografía de Mascota y Selección de Especie:** El usuario sube la foto de su mascota y selecciona o confirma su especie (🐶 Perro, 🐱 Gato, 🐾 Otra Mascota) para garantizar fidelidad fisonómica total. Queda estrictamente prohibido inferir la especie mediante búsquedas de texto (`.includes('cat')`) en cadenas base64 o URLs.
+1. **Carga de Fotografía de Mascota y Selección de Especie:** El usuario sube la foto de su mascota y selecciona o confirma su especie (🐶 Perro, 🐱 Gato, 🐾 Otra Mascota) para garantizar fidelidad fisonómica total. Toda fotografía debe validarse antes de aceptarse mediante el modelo local COCO-SSD ejecutado en el navegador (`lite_mobilenet_v2`): se rechazan personas, paisajes, objetos, juguetes, dibujos y fotos sin un animal real claramente visible. Esta validación no utiliza API remota, no consume créditos ni tokens y el procesamiento ocurre localmente en el dispositivo del usuario. La especie detectada puede sincronizarse con el selector para perro, gato u otra mascota. Queda estrictamente prohibido inferir la especie mediante búsquedas de texto (`.includes('cat')`) en cadenas base64 o URLs.
 2. **Selección de Personaje o Temática:** El usuario escoge una obra del catálogo de Apolena o sube una referencia personalizada.
 3. **Generación Dual de Atelier (OpenAI + Gemini en paralelo):**
    - **Invisibilidad de la IA para el cliente:** La plataforma opera bajo la identidad de un atelier artístico de lujo ("Atelier Apolena"). La interfaz del cliente (`/products/cuadros-personalizados`) **NO** expone selectores técnicos de modelos de IA, nombres de motores ni tarifas por generación.
