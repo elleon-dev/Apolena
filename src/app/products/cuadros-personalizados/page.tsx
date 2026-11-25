@@ -440,16 +440,26 @@ export default function personalizedWallArt() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const charParam = params.get("character");
+      const stepParam = params.get("step");
+
       if (charParam) {
         const found = FAMOUS_CHARACTERS.find(
           (c) =>
             c.id === charParam ||
-            c.id.toLowerCase().includes(charParam.toLowerCase()),
+            c.id.toLowerCase() === charParam.toLowerCase() ||
+            c.id.toLowerCase().includes(charParam.toLowerCase()) ||
+            charParam.toLowerCase().includes(c.id.toLowerCase()),
         );
         if (found) {
           setSelectedCharacter(found);
           setUseCustomTheme(false);
         }
+        // Redireccionar directamente al paso 2 (subir foto de mascota) al venir con personaje
+        if (stepParam !== "3") {
+          setStep(2);
+        }
+      } else if (stepParam === "2") {
+        setStep(2);
       }
 
       // Restaurar el Paso 3 al volver desde /checkout (?step=3)
@@ -562,6 +572,7 @@ export default function personalizedWallArt() {
           if (typeof window !== "undefined") {
             const params = new URLSearchParams(window.location.search);
             const charParam = params.get("character");
+            const stepParam = params.get("step");
             if (charParam) {
               const match = activeChars.find(
                 (c) =>
@@ -570,7 +581,13 @@ export default function personalizedWallArt() {
                   c.id.toLowerCase().includes(charParam.toLowerCase()) ||
                   charParam.toLowerCase().includes(c.id.toLowerCase()),
               );
-              if (match) return match;
+              if (match) {
+                setUseCustomTheme(false);
+                if (stepParam !== "3") {
+                  setStep(2);
+                }
+                return match;
+              }
             }
           }
           const found = activeChars.find((c) => c.id === prev.id);

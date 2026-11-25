@@ -138,7 +138,7 @@ export default function StyleSelectionSection({
                 return (
                   <Link
                     key={char.id}
-                    href={`/products/cuadros-personalizados?character=${char.id}`}
+                    href={`/products/cuadros-personalizados?character=${char.id}&step=2`}
                     className="group relative flex-none w-[148px] sm:w-[168px] md:w-[180px] lg:w-[192px] snap-start rounded-2xl overflow-hidden bg-white border border-[#E8DEC8]/80 shadow-sm hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#174B3D] focus:ring-offset-2"
                   >
                     {/* Contenedor Vertical Completo 2:3 */}

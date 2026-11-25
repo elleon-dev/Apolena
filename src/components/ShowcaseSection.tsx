@@ -329,7 +329,7 @@ export default function ShowcaseSection() {
             {CHARACTER_GALLERY.map((char) => (
               <Link
                 key={char.id}
-                href="/products/cuadros-personalizados"
+                href={`/products/cuadros-personalizados?character=${char.id}&step=2`}
                 className="group bg-white rounded-2xl p-2.5 border border-[#E8DEC8] hover:border-[#c6a26c] hover:shadow-md transition-all flex flex-col"
               >
                 <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-[#FFFBF2] mb-2.5">
