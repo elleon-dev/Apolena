@@ -53,9 +53,9 @@ import {
 let petDetectorPromise: Promise<any> | null = null;
 
 const ANIMAL_CLASSES = new Set([
-  "bird",
-  "cat",
   "dog",
+  "cat",
+  "bird",
   "horse",
   "sheep",
   "cow",
@@ -63,14 +63,31 @@ const ANIMAL_CLASSES = new Set([
   "bear",
   "zebra",
   "giraffe",
+  "teddy bear",
+]);
+
+const STRICT_NON_PET_CLASSES = new Set([
+  "car",
+  "truck",
+  "bus",
+  "motorcycle",
+  "airplane",
+  "laptop",
+  "cell phone",
+  "tv",
 ]);
 
 async function loadPetDetector() {
   if (!petDetectorPromise) {
     petDetectorPromise = (async () => {
-      await import("@tensorflow/tfjs");
-      const cocoSsd = await import("@tensorflow-models/coco-ssd");
-      return cocoSsd.load({ base: "lite_mobilenet_v2" });
+      try {
+        await import("@tensorflow/tfjs");
+        const cocoSsd = await import("@tensorflow-models/coco-ssd");
+        return await cocoSsd.load({ base: "lite_mobilenet_v2" });
+      } catch (err) {
+        petDetectorPromise = null;
+        throw err;
+      }
     })();
   }
   return petDetectorPromise;
@@ -678,10 +695,15 @@ export default function personalizedWallArt() {
     return false;
   };
 
-  // Comprime y valida que la fotografía cargada sea un animal real antes de aceptarla
+  // Comprime y valida que la fotografía cargada sea apta para el retrato antes de aceptarla
   const readAndCompressImage = useCallback(
     (file: File, onDone: (dataUrl: string) => void) => {
-      if (!file.type.startsWith("image/")) {
+      const isImage =
+        !file.type ||
+        file.type.startsWith("image/") ||
+        /\.(jpe?g|png|webp|heic|heif|bmp|gif)$/i.test(file.name);
+
+      if (!isImage) {
         triggerErrorNotification(
           "Formato de archivo no válido",
           "Por favor selecciona una imagen válida en formato JPG, PNG o WEBP.",
@@ -698,6 +720,7 @@ export default function personalizedWallArt() {
         const img = new Image();
         img.onload = async () => {
           try {
+            // 1. Canvas principal de compresión para alta resolución (máx 1024px)
             const canvas = document.createElement("canvas");
             let width = img.width;
             let height = img.height;
@@ -721,31 +744,104 @@ export default function personalizedWallArt() {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
 
-            const detector = await loadPetDetector();
-            const predictions = await detector.detect(img);
-            const animalPrediction = predictions.find(
-              (prediction: { class: string; score: number }) =>
-                ANIMAL_CLASSES.has(prediction.class) && prediction.score >= 0.45,
-            ) as { class: string; score: number } | undefined;
+            // 2. Canvas ultraligero específico para inferencia ML en mobile (máx 480px)
+            // Evita bloqueos de GPU, fugas de memoria y WebGL context loss en Safari iOS / Android
+            let detectCanvas: HTMLCanvasElement | null = null;
+            try {
+              const detectDim = 480;
+              let dWidth = img.width;
+              let dHeight = img.height;
+              if (dWidth > detectDim || dHeight > detectDim) {
+                if (dWidth > dHeight) {
+                  dHeight = Math.round((dHeight * detectDim) / dWidth);
+                  dWidth = detectDim;
+                } else {
+                  dWidth = Math.round((dWidth * detectDim) / dHeight);
+                  dHeight = detectDim;
+                }
+              }
+              detectCanvas = document.createElement("canvas");
+              detectCanvas.width = dWidth;
+              detectCanvas.height = dHeight;
+              const dCtx = detectCanvas.getContext("2d");
+              if (dCtx) {
+                dCtx.drawImage(img, 0, 0, dWidth, dHeight);
+              }
+            } catch {
+              detectCanvas = null;
+            }
 
-            if (!animalPrediction) {
-              triggerErrorNotification(
-                "Imagen incorrecta",
-                "La fotografía debe mostrar claramente una mascota o animal real. No se aceptan personas, paisajes u objetos.",
+            // 3. Validación inteligente con detección resiliente para mobile
+            try {
+              const detector = await loadPetDetector();
+              // Ejecutar detección siempre sobre el canvas reducido, NUNCA sobre el img original gigante de cámara mobile
+              const targetForDetect = detectCanvas || canvas;
+              const predictions = await detector.detect(targetForDetect);
+
+              // Filtrar predicciones de animales (umbral permisivo 0.18 para primeros planos de rostros de mascotas)
+              const animalPrediction = predictions.find(
+                (p: { class: string; score: number }) =>
+                  ANIMAL_CLASSES.has(p.class) && p.score >= 0.18,
+              ) as { class: string; score: number } | undefined;
+
+              const personPrediction = predictions.find(
+                (p: { class: string; score: number }) =>
+                  p.class === "person" && p.score >= 0.70,
+              ) as { class: string; score: number } | undefined;
+
+              const inanimatePrediction = predictions.find(
+                (p: { class: string; score: number }) =>
+                  STRICT_NON_PET_CLASSES.has(p.class) && p.score >= 0.75,
+              ) as { class: string; score: number } | undefined;
+
+              // Solo rechazar si se detecta con alta certeza una persona Y cero rasgos de animal
+              if (personPrediction && !animalPrediction) {
+                triggerErrorNotification(
+                  "Foto no recomendada",
+                  "Detectamos una persona en la fotografía. Recuerda que para el cuadro de tu mascota, necesitamos una foto donde tu perro, gato o engreído sea el protagonista.",
+                );
+                return;
+              }
+
+              // Solo rechazar si se detecta con alta certeza un vehículo o maquinaria Y cero rasgos de animal
+              if (inanimatePrediction && !animalPrediction) {
+                triggerErrorNotification(
+                  "Imagen incorrecta",
+                  "La fotografía parece mostrar un objeto o vehículo. Por favor sube una foto clara del rostro o cuerpo de tu mascota.",
+                );
+                return;
+              }
+
+              // Auto-asignación de especie si se detectó positivamente
+              if (animalPrediction) {
+                if (
+                  animalPrediction.class === "dog" ||
+                  animalPrediction.class === "teddy bear"
+                ) {
+                  setPetSpecies("dog");
+                } else if (animalPrediction.class === "cat") {
+                  setPetSpecies("cat");
+                } else {
+                  setPetSpecies("other");
+                }
+              }
+            } catch (detectorErr) {
+              // En caso de que WebGL o TensorFlow.js falle por limitaciones del dispositivo móvil,
+              // permitimos continuar con la foto para no bloquear jamás al cliente que compra.
+              console.warn(
+                "Validación preliminar de mascota en cliente omitida por limitación del dispositivo:",
+                detectorErr,
               );
-              return;
             }
 
             setFusionError(null);
             setErrorNotification(null);
-            if (animalPrediction.class === "dog") setPetSpecies("dog");
-            else if (animalPrediction.class === "cat") setPetSpecies("cat");
-            else setPetSpecies("other");
             onDone(dataUrl);
-          } catch {
+          } catch (processErr) {
+            console.error("Error al procesar la fotografía:", processErr);
             triggerErrorNotification(
-              "Error al validar la fotografía",
-              "No pudimos validar que la fotografía sea de una mascota. Inténtalo nuevamente con otra foto.",
+              "Error al procesar la imagen",
+              "No se pudo procesar la fotografía seleccionada. Prueba con otra imagen.",
             );
           } finally {
             setIsValidatingPetPhoto(false);
