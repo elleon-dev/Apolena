@@ -416,6 +416,7 @@ export default function personalizedWallArt() {
   const themeFileInputRef = useRef<HTMLInputElement>(null);
   const charactersScrollRef = useRef<HTMLDivElement>(null);
   const continueToUploadBtnRef = useRef<HTMLButtonElement>(null);
+  const createPortraitBtnRef = useRef<HTMLButtonElement>(null);
   const customizationsSectionRef = useRef<HTMLDivElement>(null);
   const [previewCharacterModal, setPreviewCharacterModal] =
     useState<FamousCharacter | null>(null);
@@ -450,6 +451,18 @@ export default function personalizedWallArt() {
         continueToUploadBtnRef.current.focus({ preventScroll: true });
       }
     }, 100);
+  };
+
+  const scrollToCreatePortrait = () => {
+    setTimeout(() => {
+      if (createPortraitBtnRef.current) {
+        createPortraitBtnRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        createPortraitBtnRef.current.focus({ preventScroll: true });
+      }
+    }, 250);
   };
 
   // Auto-selección de personaje desde URL (ej. ?character=sapa-inca-imperial o ?character=chef)
@@ -837,6 +850,7 @@ export default function personalizedWallArt() {
             setFusionError(null);
             setErrorNotification(null);
             onDone(dataUrl);
+            scrollToCreatePortrait();
           } catch (processErr) {
             console.error("Error al procesar la fotografía:", processErr);
             triggerErrorNotification(
@@ -875,18 +889,21 @@ export default function personalizedWallArt() {
     setSelectedCharacter(FAMOUS_CHARACTERS[0]);
     setUseCustomTheme(false);
     setPetSpecies("cat");
+    scrollToCreatePortrait();
   };
 
   const loadDemoDog = () => {
     setPetImage("/samples/dog-sample.jpg");
     setSecondPetImage(null);
     setPetSpecies("dog");
+    scrollToCreatePortrait();
   };
 
   const loadDemoCat = () => {
     setPetImage("/samples/cat-sample.jpg");
     setSecondPetImage(null);
     setPetSpecies("cat");
+    scrollToCreatePortrait();
   };
 
   // Start Portrait Generation
@@ -1728,12 +1745,13 @@ export default function personalizedWallArt() {
                 {/* Botón Principal Crear Retrato Ahora */}
                 <div className="pt-2 space-y-2">
                   <button
+                    ref={createPortraitBtnRef}
                     type="button"
                     onClick={handleStartFusion}
                     disabled={!petImage || isValidatingPetPhoto}
-                    className={`w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all ${
+                    className={`w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-[#174B3D]/30 ${
                       petImage && !isValidatingPetPhoto
-                        ? "bg-[#174B3D] hover:bg-[#134034] text-white cursor-pointer"
+                        ? "bg-[#174B3D] hover:bg-[#134034] text-white cursor-pointer shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
                         : "bg-cream-200 text-stone-400 cursor-not-allowed"
                     }`}
                   >
