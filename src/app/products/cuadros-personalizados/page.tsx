@@ -50,49 +50,6 @@ import {
   Palette,
 } from "lucide-react";
 
-let petDetectorPromise: Promise<any> | null = null;
-
-const ANIMAL_CLASSES = new Set([
-  "dog",
-  "cat",
-  "bird",
-  "horse",
-  "sheep",
-  "cow",
-  "elephant",
-  "bear",
-  "zebra",
-  "giraffe",
-  "teddy bear",
-]);
-
-const STRICT_NON_PET_CLASSES = new Set([
-  "car",
-  "truck",
-  "bus",
-  "motorcycle",
-  "airplane",
-  "laptop",
-  "cell phone",
-  "tv",
-]);
-
-async function loadPetDetector() {
-  if (!petDetectorPromise) {
-    petDetectorPromise = (async () => {
-      try {
-        await import("@tensorflow/tfjs");
-        const cocoSsd = await import("@tensorflow-models/coco-ssd");
-        return await cocoSsd.load({ base: "lite_mobilenet_v2" });
-      } catch (err) {
-        petDetectorPromise = null;
-        throw err;
-      }
-    })();
-  }
-  return petDetectorPromise;
-}
-
 /**
  * Coordenadas porcentuales exactas sobre el mockup de sala (public/images/room-sizes-reference-2.png)
  * Dimensiones base: 1296 x 1616 px. El cuadro se posiciona centrado horizontalmente al 50%
@@ -758,94 +715,53 @@ export default function personalizedWallArt() {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
 
-            // 2. Canvas ultraligero específico para inferencia ML en mobile (máx 480px)
-            // Evita bloqueos de GPU, fugas de memoria y WebGL context loss en Safari iOS / Android
-            let detectCanvas: HTMLCanvasElement | null = null;
-            try {
-              const detectDim = 480;
-              let dWidth = img.width;
-              let dHeight = img.height;
-              if (dWidth > detectDim || dHeight > detectDim) {
-                if (dWidth > dHeight) {
-                  dHeight = Math.round((dHeight * detectDim) / dWidth);
-                  dWidth = detectDim;
-                } else {
-                  dWidth = Math.round((dWidth * detectDim) / dHeight);
-                  dHeight = detectDim;
-                }
+            // 2. Canvas ligero optimizado para validación (máx 512px, ~35KB)
+            const detectCanvas = document.createElement("canvas");
+            const detectDim = 512;
+            let dWidth = img.width;
+            let dHeight = img.height;
+            if (dWidth > detectDim || dHeight > detectDim) {
+              if (dWidth > dHeight) {
+                dHeight = Math.round((dHeight * detectDim) / dWidth);
+                dWidth = detectDim;
+              } else {
+                dWidth = Math.round((dWidth * detectDim) / dHeight);
+                dHeight = detectDim;
               }
-              detectCanvas = document.createElement("canvas");
-              detectCanvas.width = dWidth;
-              detectCanvas.height = dHeight;
-              const dCtx = detectCanvas.getContext("2d");
-              if (dCtx) {
-                dCtx.drawImage(img, 0, 0, dWidth, dHeight);
-              }
-            } catch {
-              detectCanvas = null;
             }
+            detectCanvas.width = dWidth;
+            detectCanvas.height = dHeight;
+            const dCtx = detectCanvas.getContext("2d");
+            if (dCtx) {
+              dCtx.drawImage(img, 0, 0, dWidth, dHeight);
+            }
+            const detectDataUrl = detectCanvas.toDataURL("image/jpeg", 0.75);
 
-            // 3. Validación inteligente con detección resiliente para mobile
+            // 3. Validación de mascota inteligente con IA visual precisa (servidor)
             try {
-              const detector = await loadPetDetector();
-              // Ejecutar detección siempre sobre el canvas reducido, NUNCA sobre el img original gigante de cámara mobile
-              const targetForDetect = detectCanvas || canvas;
-              const predictions = await detector.detect(targetForDetect);
+              const res = await fetch("/api/validate-pet", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: detectDataUrl }),
+              });
 
-              // Filtrar predicciones de animales (umbral permisivo 0.18 para primeros planos de rostros de mascotas)
-              const animalPrediction = predictions.find(
-                (p: { class: string; score: number }) =>
-                  ANIMAL_CLASSES.has(p.class) && p.score >= 0.18,
-              ) as { class: string; score: number } | undefined;
-
-              const personPrediction = predictions.find(
-                (p: { class: string; score: number }) =>
-                  p.class === "person" && p.score >= 0.70,
-              ) as { class: string; score: number } | undefined;
-
-              const inanimatePrediction = predictions.find(
-                (p: { class: string; score: number }) =>
-                  STRICT_NON_PET_CLASSES.has(p.class) && p.score >= 0.75,
-              ) as { class: string; score: number } | undefined;
-
-              // Solo rechazar si se detecta con alta certeza una persona Y cero rasgos de animal
-              if (personPrediction && !animalPrediction) {
-                triggerErrorNotification(
-                  "Foto no recomendada",
-                  "Detectamos una persona en la fotografía. Recuerda que para el cuadro de tu mascota, necesitamos una foto donde tu perro, gato o engreído sea el protagonista.",
-                );
-                return;
-              }
-
-              // Solo rechazar si se detecta con alta certeza un vehículo o maquinaria Y cero rasgos de animal
-              if (inanimatePrediction && !animalPrediction) {
-                triggerErrorNotification(
-                  "Imagen incorrecta",
-                  "La fotografía parece mostrar un objeto o vehículo. Por favor sube una foto clara del rostro o cuerpo de tu mascota.",
-                );
-                return;
-              }
-
-              // Auto-asignación de especie si se detectó positivamente
-              if (animalPrediction) {
-                if (
-                  animalPrediction.class === "dog" ||
-                  animalPrediction.class === "teddy bear"
-                ) {
-                  setPetSpecies("dog");
-                } else if (animalPrediction.class === "cat") {
-                  setPetSpecies("cat");
-                } else {
-                  setPetSpecies("other");
+              if (res.ok) {
+                const result = await res.json();
+                if (result.isPet === false) {
+                  triggerErrorNotification(
+                    "Fotografía no válida",
+                    result.reason ||
+                      "La fotografía debe mostrar claramente una mascota real. No se aceptan personas, paisajes u objetos inanimados.",
+                  );
+                  return;
                 }
+
+                if (result.species === "dog") setPetSpecies("dog");
+                else if (result.species === "cat") setPetSpecies("cat");
+                else if (result.species === "other") setPetSpecies("other");
               }
-            } catch (detectorErr) {
-              // En caso de que WebGL o TensorFlow.js falle por limitaciones del dispositivo móvil,
-              // permitimos continuar con la foto para no bloquear jamás al cliente que compra.
-              console.warn(
-                "Validación preliminar de mascota en cliente omitida por limitación del dispositivo:",
-                detectorErr,
-              );
+            } catch (validateErr) {
+              console.warn("Fallo en verificación /api/validate-pet:", validateErr);
             }
 
             setFusionError(null);
