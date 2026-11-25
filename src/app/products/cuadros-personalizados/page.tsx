@@ -94,25 +94,26 @@ async function loadPetDetector() {
 }
 
 /**
- * Coordenadas porcentuales exactas sobre el mockup de sala (public/images/room-sizes-reference.png)
- * Dimensiones base: 819 x 1024 px. Origen inferior-izquierdo alineado con la guía de pared.
+ * Coordenadas porcentuales exactas sobre el mockup de sala (public/images/room-sizes-reference-2.png)
+ * Dimensiones base: 1296 x 1616 px. El cuadro se posiciona centrado horizontalmente al 50%
+ * sobre la pared y encima del mueble/credenza flotante.
  */
 const ROOM_SCALE_COORDINATES: Record<
   string,
   { width: number; height: number; left: number; bottom: number }
 > = {
-  "size-20x30": { width: 10.62, height: 12.4, left: 28.69, bottom: 41.41 },
-  "size-30x20": { width: 10.62, height: 12.4, left: 28.69, bottom: 41.41 },
-  "size-30x40": { width: 14.5, height: 16.5, left: 28.69, bottom: 41.41 },
-  "size-40x60": { width: 21.25, height: 24.71, left: 28.69, bottom: 41.41 },
-  "size-60x40": { width: 21.25, height: 24.71, left: 28.69, bottom: 41.41 },
-  "size-50x70": { width: 25.5, height: 29.5, left: 28.69, bottom: 41.41 },
-  "size-60x90": { width: 31.87, height: 37.01, left: 28.69, bottom: 41.41 },
-  "size-90x60": { width: 31.87, height: 37.01, left: 28.69, bottom: 41.41 },
-  "size-45x30": { width: 15.99, height: 18.55, left: 28.69, bottom: 41.41 },
-  "size-75x50": { width: 26.62, height: 30.96, left: 28.69, bottom: 41.41 },
-  "size-105x70": { width: 37.24, height: 43.36, left: 28.69, bottom: 41.41 },
-  "size-120x80": { width: 42.49, height: 49.51, left: 28.69, bottom: 41.41 },
+  "size-20x30": { width: 10.62, height: 12.4, left: 44.69, bottom: 41.41 },
+  "size-30x20": { width: 10.62, height: 12.4, left: 44.69, bottom: 41.41 },
+  "size-30x40": { width: 14.5, height: 16.5, left: 42.75, bottom: 41.41 },
+  "size-40x60": { width: 21.25, height: 24.71, left: 39.38, bottom: 41.41 },
+  "size-60x40": { width: 21.25, height: 24.71, left: 39.38, bottom: 41.41 },
+  "size-50x70": { width: 25.5, height: 29.5, left: 37.25, bottom: 41.41 },
+  "size-60x90": { width: 31.87, height: 37.01, left: 34.07, bottom: 41.41 },
+  "size-90x60": { width: 31.87, height: 37.01, left: 34.07, bottom: 41.41 },
+  "size-45x30": { width: 15.99, height: 18.55, left: 42.0, bottom: 41.41 },
+  "size-75x50": { width: 26.62, height: 30.96, left: 36.69, bottom: 41.41 },
+  "size-105x70": { width: 37.24, height: 43.36, left: 31.38, bottom: 41.41 },
+  "size-120x80": { width: 42.49, height: 49.51, left: 28.75, bottom: 41.41 },
 };
 
 /**
@@ -2455,7 +2456,8 @@ export default function personalizedWallArt() {
                       {/* Cuadro dinámico posicionado y dimensionado sobre la pared */}
                       <div
                         style={{
-                          left: `${currentRoomCoords.left}%`,
+                          left: "50%",
+                          transform: "translateX(-50%)",
                           bottom: `${currentRoomCoords.bottom}%`,
                           width: `${currentRoomCoords.width}%`,
                           height: `${currentRoomCoords.height}%`,
