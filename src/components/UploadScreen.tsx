@@ -41,6 +41,7 @@ export function UploadScreen({
   const [isCompressing, setIsCompressing] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showFaceGuide, setShowFaceGuide] = useState(true);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,8 +50,11 @@ export function UploadScreen({
    * as specified in Phase 4 of the architectural requirements
    */
   const processAndCompressFile = useCallback((file: File) => {
+    setFileError(null);
     if (!file.type.startsWith("image/")) {
-      alert("Por favor sube un archivo de imagen válido (JPG, PNG o WEBP).");
+      setFileError(
+        "Por favor sube un archivo de imagen válido (JPG, PNG o WEBP).",
+      );
       return;
     }
 
@@ -171,6 +175,12 @@ export function UploadScreen({
                 </button>
               )}
             </div>
+
+            {fileError && (
+              <div className="mb-3 p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
+                {fileError}
+              </div>
+            )}
 
             {/* Drag & Drop Area or Preview */}
             {!petImage ? (

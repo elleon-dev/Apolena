@@ -15,8 +15,8 @@ Antes de realizar cualquier investigación, refactorización, creación o modifi
 2. **Skills de Dominio de Negocio:**
    - [`apolena-business-auth-rbac`](.agents/skills/apolena-business-auth-rbac/SKILL.md): Autenticación con Prisma, Perfiles (`profiles`), Roles (`user` / `admin`) y Rutas Privadas (`/dashboard`, `/admin`).
    - [`apolena-business-catalog-customization`](.agents/skills/apolena-business-catalog-customization/SKILL.md): Catálogo Escalable (`products`, `product_images`), Fusión IA (`generation_jobs`) y Arquitectura Extensible de Personalizaciones (tamaños, acabados, marcos futuros y nuevos productos).
-   - [`apolena-business-checkout-payments`](.agents/skills/apolena-business-checkout-payments/SKILL.md): Checkout, Modalidad 50% Adelanto + 50% Contraentrega, Métodos de Pago (`yape`, `plin`, `bank_transfer`) y Transacciones (`payment_transactions`).
-   - [`apolena-business-logistics-tracking`](.agents/skills/apolena-business-logistics-tracking/SKILL.md): Ciclo de Vida de la Orden, `tracking_id`, 3 Pasos Logísticos (`manufacturing` → `in_transit` → `delivered`) y Cierre Exitoso (`completed`) tras el pago del 50% restante.
+   - [`apolena-business-checkout-payments`](.agents/skills/apolena-business-checkout-payments/SKILL.md): Checkout, Modalidad Pago Total 100% al Ordenar, Mapa con Pin GPS, Métodos de Pago (`yape`, `plin`, `bank_transfer`) y Transacciones (`payment_transactions`).
+   - [`apolena-business-logistics-tracking`](.agents/skills/apolena-business-logistics-tracking/SKILL.md): Ciclo de Vida de la Orden, `tracking_id`, 3 Pasos Logísticos (`manufacturing` → `in_transit` → `delivered`) y Cierre Exitoso (`completed`) con pago 100% verificado.
    - [`apolena-business-notifications-invoicing`](.agents/skills/apolena-business-notifications-invoicing/SKILL.md): Cola de Correos (`email_queue`) al Usuario y Administradores, Comprobantes (`order_invoices`), Reseñas (`reviews`) y Configuración Dinámica (`platform_settings`).
 
 ---

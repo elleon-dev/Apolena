@@ -47,13 +47,13 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 
 ---
 
-### 💳 Dominio 3: Checkout y Pagos Fraccionados 50% / 50%
+### 💳 Dominio 3: Checkout y Pago Total 100% al Ordenar
 
 3. **`apolena-business-checkout-payments`:**
    - Tablas centrales: `orders`, `payment_transactions`, `platform_settings`.
-   - **Regla de Pago 50% / 50% (Adelanto + Contraentrega):**
-     - **Primer Pago (50% de Adelanto al crear la orden):** El usuario abona el `50%` del `total_amount` mediante **Yape**, **Plin** o **Transferencia Bancaria** (`yape`, `plin`, `bank_transfer`) adjuntando código de operación y/o captura de comprobante.
-     - **Segundo Pago (50% Restante Contraentrega):** El usuario abona el `50%` restante al momento de recibir el producto físicamente en su domicilio.
+   - **Regla de Pago Total 100% al Ordenar:**
+     - El usuario abona el **100% del `total_amount`** (`advance_amount = total_amount`, `remaining_amount = 0`) al confirmar la orden mediante **Yape**, **Plin** o **Transferencia Bancaria** (`yape`, `plin`, `bank_transfer`) adjuntando código de operación y/o captura de comprobante.
+     - Se mantiene compatibilidad retroactiva de lectura y cierre para órdenes históricas creadas con `remaining_amount > 0`.
    - Toda transacción queda registrada en `payment_transactions` indicando su etapa (`payment_stage: "advance_50" | "final_50"`), método, monto y estado de verificación.
 
 ---
@@ -61,22 +61,22 @@ Este skill es la **referencia central e inalterable** para el desarrollo de func
 ### 🚚 Dominio 4: Logística, Tracking ID y Máquina de Estados (3 Pasos + Cierre Exitoso)
 
 4. **`apolena-business-logistics-tracking`:**
-   - Tablas centrales: `orders`, `order_shippings`, `order_packages`, `order_items`.
+   - Tablas centrales: `orders`, `order_shippings` (con coordenadas GPS `latitude`, `longitude`, `map_url`), `order_packages`, `order_items`.
    - **Tracking ID Único (`tracking_id`):** Cada orden genera un código único de seguimiento público y amigable (ej. `APO-2026-XXXXXX`) con el cual el usuario puede rastrear su pedido en tiempo real.
    - **Flujo de Tracking en 3 Pasos Operativos + Culminación Exitosa:**
      1. **Paso 1 — Fabricación (`manufacturing`):** El cuadro personalizado está en impresión 300 DPI, enmarcado y control de calidad.
      2. **Paso 2 — En Camino (`in_transit`):** El paquete ha salido del taller hacia la dirección de delivery del cliente.
      3. **Paso 3 — Entregado (`delivered`):** El producto fue entregado en manos del cliente.
    - **Culminación del Proceso (`completed` / Exitoso):**
-     - Una vez entregado el producto (`delivered`) y confirmado el pago del **50% restante** contraentrega (`payment_status = "paid_full"`), el estatus de la orden cambia a **`completed` ("Exitoso")**, culminando el ciclo de vida de la orden.
+     - Una vez entregado el producto (`delivered`) y confirmado el pago total del **100%** (`payment_status = "paid_full"`), el estatus de la orden cambia a **`completed` ("Exitoso")**, culminando el ciclo de vida de la orden y desbloqueando el Recuerdo Digital HD.
 
 ---
 
 ### 📧 Dominio 5: Notificaciones por Email, Facturación, Reseñas y Configuración
 
 5. **`apolena-business-notifications-invoicing`:**
-   - Tablas centrales: `email_queue`, `order_invoices`, `reviews`, `platform_settings`.
+   - Tablas centrales: `email_queue`, `order_invoices`, `reviews`, `platform_settings`, `newsletter_subscribers`.
    - **Doble Notificación Obligatoria al Crear Orden:**
-     1. Email al **Usuario comprador** confirmando su orden exitosa, resumen del 50% abonado, saldo pendiente contraentrega y su `tracking_id`.
-     2. Email a los **Administradores** notificando la nueva orden, archivo HD para fabricación, datos de contacto/ubicación y comprobante del 50% inicial.
+     1. Email al **Usuario comprador** confirmando su orden exitosa, resumen del pago total (100%), dirección/Pin GPS de entrega y su `tracking_id`.
+     2. Email a los **Administradores** notificando la nueva orden, archivo HD para fabricación, datos de contacto/ubicación (con enlace al Pin GPS en Google Maps) y comprobante de pago.
    - Todos los correos se encolan en `email_queue` con soporte de reintentos (`attempts`, `max_attempts`, `last_error`).

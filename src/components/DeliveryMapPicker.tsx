@@ -481,24 +481,27 @@ export function DeliveryMapPicker({
       {/* Contenedor del Mapa Interactivo */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-[#c6a26c]/40 shadow-soft bg-stone-900">
         {/* Botón Superior Derecho: Cambiar entre Satélite Híbrido y Calles */}
-        <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5">
+        <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-[400] flex items-center gap-1.5">
           <button
             type="button"
             onClick={() =>
               setMapMode((prev) => (prev === "hybrid" ? "streets" : "hybrid"))
             }
-            className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-stone-900 border border-stone-200/80 shadow-md text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-xs"
+            className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-stone-900 border border-stone-200/80 shadow-md text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-xs"
           >
-            <Layers className="w-3.5 h-3.5 text-[#174B3D]" />
-            <span>
+            <Layers className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
+            <span className="sm:hidden">
+              {mapMode === "hybrid" ? "Satélite" : "Calles"}
+            </span>
+            <span className="hidden sm:inline">
               {mapMode === "hybrid" ? "Vista: Satélite + Calles" : "Vista: Mapa de Calles"}
             </span>
           </button>
         </div>
 
-        {/* Instrucción Flotante Superior si aún no hay Pin */}
+        {/* Instrucción Flotante Superior si aún no hay Pin (solo en desktop/tablet para no chocar en pantallas pequeñas) */}
         {!value && (
-          <div className="absolute top-3 left-14 z-[400] max-w-[230px] sm:max-w-xs pointer-events-none">
+          <div className="hidden sm:block absolute top-3 left-14 z-[400] max-w-xs pointer-events-none">
             <div className="px-3 py-1.5 rounded-xl bg-stone-900/85 text-white text-[11px] font-medium backdrop-blur-xs shadow-md flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-[#c6a26c] shrink-0" />
               <span>Toca el mapa para colocar el pin en tu puerta</span>
@@ -509,12 +512,12 @@ export function DeliveryMapPicker({
         {/* Lienzo Leaflet */}
         <div
           ref={mapContainerRef}
-          className="w-full h-72 sm:h-80 cursor-crosshair z-10"
+          className="w-full h-64 sm:h-80 cursor-crosshair z-10"
         />
 
-        {/* Tarjeta Flotante Inferior con Coordenadas Exactas (Inspirada en la referencia del usuario) */}
+        {/* Tarjeta Flotante en Desktop / Debajo del Mapa en Mobile */}
         {value && (
-          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-80 z-[400] bg-white/95 backdrop-blur-md border border-stone-200 rounded-2xl p-3 shadow-lg animate-in fade-in duration-200">
+          <div className="sm:absolute sm:bottom-3 sm:right-3 sm:w-80 z-[400] bg-white sm:bg-white/95 backdrop-blur-md border-t sm:border border-stone-200 sm:rounded-2xl p-3 sm:shadow-lg animate-in fade-in duration-200">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-xl bg-[#174B3D] text-[#c6a26c] flex items-center justify-center shrink-0 shadow-xs mt-0.5">

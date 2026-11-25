@@ -98,6 +98,175 @@ const ROOM_SCALE_COORDINATES: Record<
   "size-120x80": { width: 42.49, height: 49.51, left: 28.69, bottom: 41.41 },
 };
 
+/**
+ * Calcula el estilo visual dinámico de la moldura/marco en la vista previa del Paso 3
+ * según el marco elegido por el usuario (solo visual en el visor).
+ */
+function getVisualFramePresentation(frame?: FrameOption | null): {
+  isFramed: boolean;
+  outerStyle: React.CSSProperties;
+  innerStyle: React.CSSProperties;
+  roomOuterStyle: React.CSSProperties;
+  cornerColor: string;
+} {
+  const id = (frame?.id || "").toLowerCase();
+  const name = (frame?.name || "").toLowerCase();
+  const hex = frame?.colorHex || "#1C1917";
+
+  // 1. Canvas - Estilo 3D (Sin marco externo, solo bastidor)
+  if (
+    !frame ||
+    id === "canvas-bastidor" ||
+    (frame.priceModifierPen === 0 &&
+      (id.includes("canvas") ||
+        name.includes("lienzo") ||
+        name.includes("bastidor")))
+  ) {
+    return {
+      isFramed: false,
+      outerStyle: {
+        padding: 0,
+        borderRadius: "0.5rem",
+        boxShadow:
+          "0 25px 50px -12px rgba(28, 25, 23, 0.45), 4px 8px 24px -2px rgba(0, 0, 0, 0.28)",
+      },
+      innerStyle: {
+        borderRadius: "0.5rem",
+      },
+      roomOuterStyle: {
+        padding: 0,
+      },
+      cornerColor: "transparent",
+    };
+  }
+
+  // 2. Marco Minimalista Negro
+  if (id.includes("black") || name.includes("negro")) {
+    return {
+      isFramed: true,
+      outerStyle: {
+        padding: "16px",
+        borderRadius: "6px",
+        background:
+          "linear-gradient(135deg, #2d2a28 0%, #181615 48%, #0d0c0b 100%)",
+        border: "1px solid #3d3936",
+        boxShadow:
+          "0 28px 55px -12px rgba(15, 14, 13, 0.55), 6px 12px 28px -4px rgba(0, 0, 0, 0.38), inset 1px 1px 2px rgba(255, 255, 255, 0.14), inset -2px -2px 4px rgba(0, 0, 0, 0.75)",
+      },
+      innerStyle: {
+        borderRadius: "2px",
+        boxShadow: "0 0 0 3px #090808, 0 4px 12px rgba(0, 0, 0, 0.7)",
+      },
+      roomOuterStyle: {
+        padding: "4px",
+        background: "linear-gradient(135deg, #2d2a28 0%, #121110 100%)",
+        boxShadow: "inset 0 0 0 1px #090808",
+      },
+      cornerColor: "rgba(255,255,255,0.12)",
+    };
+  }
+
+  // 3. Marco Minimalista Natural (Madera)
+  if (id.includes("natural") || name.includes("natural")) {
+    return {
+      isFramed: true,
+      outerStyle: {
+        padding: "16px",
+        borderRadius: "6px",
+        background:
+          "linear-gradient(135deg, #dbb88e 0%, #c39764 45%, #a57946 100%)",
+        border: "1px solid #8f6536",
+        boxShadow:
+          "0 28px 55px -12px rgba(45, 30, 15, 0.48), 6px 12px 28px -4px rgba(0, 0, 0, 0.3), inset 1.5px 1.5px 3px rgba(255, 245, 225, 0.55), inset -2px -2px 5px rgba(85, 50, 18, 0.5)",
+      },
+      innerStyle: {
+        borderRadius: "2px",
+        boxShadow: "0 0 0 3px #5e3f1f, 0 4px 12px rgba(0, 0, 0, 0.55)",
+      },
+      roomOuterStyle: {
+        padding: "4px",
+        background: "linear-gradient(135deg, #dbb88e 0%, #a57946 100%)",
+        boxShadow: "inset 0 0 0 1px #5e3f1f",
+      },
+      cornerColor: "rgba(94, 63, 31, 0.35)",
+    };
+  }
+
+  // 4. Marco Minimalista Blanco
+  if (id.includes("white") || name.includes("blanco")) {
+    return {
+      isFramed: true,
+      outerStyle: {
+        padding: "16px",
+        borderRadius: "6px",
+        background:
+          "linear-gradient(135deg, #ffffff 0%, #f5f2ec 52%, #e5e0d5 100%)",
+        border: "1px solid #d5cfc3",
+        boxShadow:
+          "0 28px 55px -12px rgba(28, 25, 23, 0.42), 6px 12px 28px -4px rgba(0, 0, 0, 0.25), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.95), inset -2px -2px 5px rgba(155, 145, 130, 0.38)",
+      },
+      innerStyle: {
+        borderRadius: "2px",
+        boxShadow: "0 0 0 3px #bdb5a6, 0 4px 12px rgba(0, 0, 0, 0.35)",
+      },
+      roomOuterStyle: {
+        padding: "4px",
+        background: "linear-gradient(135deg, #ffffff 0%, #e5e0d5 100%)",
+        boxShadow: "inset 0 0 0 1px #bdb5a6",
+      },
+      cornerColor: "rgba(160, 150, 135, 0.38)",
+    };
+  }
+
+  // 5. Marco Madera Gold (Dorado Imperial)
+  if (id.includes("gold") || name.includes("gold") || name.includes("dorado")) {
+    return {
+      isFramed: true,
+      outerStyle: {
+        padding: "17px",
+        borderRadius: "6px",
+        background:
+          "linear-gradient(135deg, #f0d584 0%, #cda235 32%, #9e7314 68%, #e2c265 100%)",
+        border: "1px solid #87600d",
+        boxShadow:
+          "0 28px 55px -12px rgba(40, 28, 8, 0.52), 6px 12px 28px -4px rgba(0, 0, 0, 0.34), inset 2px 2px 4px rgba(255, 246, 200, 0.75), inset -2px -2px 5px rgba(90, 60, 8, 0.65)",
+      },
+      innerStyle: {
+        borderRadius: "2px",
+        boxShadow: "0 0 0 3px #5c4007, 0 4px 14px rgba(0, 0, 0, 0.6)",
+      },
+      roomOuterStyle: {
+        padding: "4px",
+        background: "linear-gradient(135deg, #f0d584 0%, #9e7314 100%)",
+        boxShadow: "inset 0 0 0 1px #5c4007",
+      },
+      cornerColor: "rgba(92, 64, 7, 0.45)",
+    };
+  }
+
+  // 6. Cualquier otro marco dinámico configurado en el Dashboard
+  return {
+    isFramed: true,
+    outerStyle: {
+      padding: "16px",
+      borderRadius: "6px",
+      backgroundColor: hex,
+      border: "1px solid rgba(0,0,0,0.25)",
+      boxShadow:
+        "0 28px 55px -12px rgba(28, 25, 23, 0.48), 6px 12px 28px -4px rgba(0, 0, 0, 0.32), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.3), inset -2px -2px 5px rgba(0, 0, 0, 0.4)",
+    },
+    innerStyle: {
+      borderRadius: "2px",
+      boxShadow: "0 0 0 3px rgba(0,0,0,0.6), 0 4px 12px rgba(0, 0, 0, 0.5)",
+    },
+    roomOuterStyle: {
+      padding: "4px",
+      backgroundColor: hex,
+    },
+    cornerColor: "rgba(0,0,0,0.25)",
+  };
+}
+
 export default function personalizedWallArt() {
   const router = useRouter();
   // 3-step state: 1 = Choose Character/Theme, 2 = Upload Pet Photo, 3 = Result Portrait
@@ -126,6 +295,8 @@ export default function personalizedWallArt() {
     useState<PrintPreset[]>(PRINT_PRESETS);
   const [catalogFrames, setCatalogFrames] =
     useState<FrameOption[]>(FRAME_OPTIONS);
+  const [previewFrame, setPreviewFrame] = useState<FrameOption | null>(null);
+  const [previewFrameImgIdx, setPreviewFrameImgIdx] = useState(0);
   const [catalogFinishes, setCatalogFinishes] = useState<ProductFinishOption[]>(
     [
       {
@@ -1673,9 +1844,9 @@ export default function personalizedWallArt() {
             )}
 
             {/* Reference Summary Strip: [Pet 1] + [Pet 2] + [Theme] = [Portrait] */}
-            <div className="p-4 rounded-2xl bg-white border border-cream-200 shadow-soft flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-600">
-              <div className="flex items-center gap-2.5">
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+            <div className="px-3 py-2.5 sm:p-4 rounded-2xl bg-white border border-cream-200 shadow-soft flex items-center justify-center gap-2.5 sm:gap-6 text-[11px] sm:text-xs text-stone-600">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
                   {petImage && (
                     <img
                       src={petImage}
@@ -1691,9 +1862,9 @@ export default function personalizedWallArt() {
 
               {secondPetImage && (
                 <>
-                  <Plus className="w-3.5 h-3.5 text-stone-400" />
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-stone-400 shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
                       <img
                         src={secondPetImage}
                         alt="Mascota 2"
@@ -1707,10 +1878,10 @@ export default function personalizedWallArt() {
                 </>
               )}
 
-              <Plus className="w-3.5 h-3.5 text-stone-400" />
+              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-stone-400 shrink-0" />
 
-              <div className="flex items-center gap-2.5">
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0">
                   <img
                     src={activeThemeImageUrl}
                     alt={activeThemeName}
@@ -1722,39 +1893,39 @@ export default function personalizedWallArt() {
                 </span>
               </div>
 
-              <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-stone-400 shrink-0" />
 
-              <div className="flex items-center gap-1.5 text-terracotta-600 font-medium">
-                <Layers className="w-4 h-4" />
+              <div className="flex items-center gap-1 sm:gap-1.5 text-terracotta-600 font-semibold whitespace-nowrap">
+                <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Composición Final</span>
               </div>
             </div>
 
             {/* Main Stage: Gallery Frame & Print Formats Sidebar */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
               {/* Left 7 Columns: Dual Option Selector + Artwork Viewer */}
-              <div className="lg:col-span-7 xl:col-span-7 space-y-5">
+              <div className="lg:col-span-7 xl:col-span-7 space-y-4 sm:space-y-5">
                 {/* DUAL PROPOSAL ARTWORK SELECTOR */}
                 {generatedVariants.length > 1 && (
-                  <div className="bg-white border border-cream-200 rounded-3xl p-5 shadow-soft space-y-3.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <div>
-                        <h3 className="text-sm font-semibold text-stone-900 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-terracotta-500" />
-                          <span>Elige tu propuesta artística favorita</span>
+                  <div className="bg-white border border-cream-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-soft space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-xs sm:text-sm font-semibold text-stone-900 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-terracotta-500 shrink-0" />
+                          <span>Elige tu propuesta favorita</span>
                         </h3>
-                        <p className="text-xs text-stone-500">
+                        <p className="text-[11px] sm:text-xs text-stone-500 hidden sm:block mt-0.5">
                           Hemos preparado 2 propuestas de retrato para tu
                           mascota. Selecciona la que más te guste para tu
                           cuadro:
                         </p>
                       </div>
-                      <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-cream-100 text-stone-700 self-start sm:self-auto">
-                        1 de 2 seleccionada
+                      <span className="text-[10px] sm:text-[11px] font-medium px-2.5 py-0.5 sm:py-1 rounded-full bg-cream-100 text-stone-700 shrink-0">
+                        1 de 2 elegida
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
                       {generatedVariants.map((variant, idx) => {
                         const isActiveVariant =
                           selectedVariantId === variant.id ||
@@ -1764,6 +1935,8 @@ export default function personalizedWallArt() {
                           (idx === 0
                             ? "Propuesta 1 · Óleo Fine Art"
                             : "Propuesta 2 · Claroscuro y Detalle");
+                        const shortTitle =
+                          idx === 0 ? "Propuesta 1 · Óleo" : "Propuesta 2 · Estudio";
                         const proposalDesc =
                           idx === 0
                             ? "Pinceladas ricas en textura y calidez clásica"
@@ -1777,15 +1950,15 @@ export default function personalizedWallArt() {
                               setFusedResultUrl(variant.imageUrl);
                               setModelUsedLabel(proposalTitle);
                             }}
-                            className={`relative p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-4 ${
+                            className={`relative p-2 sm:p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 ${
                               isActiveVariant
-                                ? "bg-terracotta-50/40 border-terracotta-500 ring-2 ring-terracotta-500/20 shadow-card"
+                                ? "bg-terracotta-50/40 border-[#174B3D] ring-2 ring-[#174B3D]/15 shadow-card"
                                 : "bg-white border-cream-200 hover:border-stone-300 hover:bg-cream-50/40 shadow-soft"
                             }`}
                           >
                             <div
                               onContextMenu={(e) => e.preventDefault()}
-                              className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0 select-none shadow-xs"
+                              className="relative w-full aspect-[4/3] sm:aspect-square sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden border border-cream-200 bg-cream-100 flex-shrink-0 select-none shadow-xs"
                             >
                               <img
                                 src={variant.imageUrl}
@@ -1795,7 +1968,7 @@ export default function personalizedWallArt() {
                                 className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-300"
                               />
                               {isActiveVariant && (
-                                <div className="absolute inset-0 bg-[#174B3D]/15 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="absolute inset-0 bg-[#174B3D]/15 flex items-center justify-center">
                                   <span className="w-7 h-7 rounded-full bg-[#174B3D] text-white flex items-center justify-center shadow-soft ring-2 ring-white/80">
                                     <Check className="w-4 h-4 stroke-[3] text-[#c6a26c]" />
                                   </span>
@@ -1803,35 +1976,40 @@ export default function personalizedWallArt() {
                               )}
                             </div>
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                <span className="text-xs font-bold text-[#174B3D]">
-                                  {proposalTitle}
-                                </span>
-                                {isActiveVariant && (
-                                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#174B3D] bg-[#c6a26c]/25 px-2 py-0.5 rounded-full border border-[#c6a26c]/50">
-                                    Elegida
+                            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[11px] sm:text-xs font-bold text-[#174B3D] leading-tight sm:hidden">
+                                    {shortTitle}
                                   </span>
-                                )}
+                                  <span className="text-xs font-bold text-[#174B3D] hidden sm:inline">
+                                    {proposalTitle}
+                                  </span>
+                                  {isActiveVariant && (
+                                    <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider font-bold text-[#174B3D] bg-[#c6a26c]/25 px-2 py-0.5 rounded-full border border-[#c6a26c]/50 shrink-0">
+                                      Elegida
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="hidden sm:block text-[11px] text-stone-500 mt-1 leading-snug line-clamp-2">
+                                  {proposalDesc}
+                                </p>
                               </div>
-                              <p className="text-[11px] text-stone-500 mt-1 leading-snug line-clamp-2">
-                                {proposalDesc}
-                              </p>
-                              <div className="mt-2.5 flex items-center gap-1.5">
+                              <div className="mt-1.5 sm:mt-2.5 flex items-center">
                                 <span
-                                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${
+                                  className={`w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-1 rounded-full transition-colors ${
                                     isActiveVariant
                                       ? "bg-[#174B3D] text-white shadow-xs"
                                       : "bg-cream-100 text-stone-700 hover:bg-cream-200"
                                   }`}
                                 >
                                   {isActiveVariant ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <Check className="w-3.5 h-3.5" />
-                                      <span>Obra elegida</span>
+                                    <span className="inline-flex items-center justify-center gap-1">
+                                      <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                      <span>Elegida</span>
                                     </span>
                                   ) : (
-                                    "Seleccionar esta"
+                                    "Elegir esta"
                                   )}
                                 </span>
                               </div>
@@ -1843,59 +2021,66 @@ export default function personalizedWallArt() {
                   </div>
                 )}
 
-                {/* Viewer Controls Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-full bg-white border border-cream-200 shadow-soft">
-                  <div className="flex flex-wrap items-center gap-1">
+                {/* Viewer Controls Bar (Segmented Control en Mobile · Pill en Desktop) */}
+                <div className="flex items-center justify-between gap-2 p-1 sm:p-1.5 rounded-2xl sm:rounded-full bg-white border border-cream-200 shadow-soft">
+                  <div className="grid grid-cols-3 sm:flex sm:items-center gap-1 w-full sm:w-auto">
                     <button
+                      type="button"
                       onClick={() => {
                         setViewMode("fusion");
                         setIsZoomActive(false);
                       }}
-                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold sm:font-medium transition-all whitespace-nowrap cursor-pointer ${
                         viewMode === "fusion"
                           ? "bg-stone-900 text-white shadow-xs"
                           : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
                       }`}
                     >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span>Obra Completa</span>
+                      <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                      <span className="sm:hidden">Obra</span>
+                      <span className="hidden sm:inline">Obra Completa</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setViewMode("compare");
                         setIsZoomActive(false);
                       }}
-                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold sm:font-medium transition-all whitespace-nowrap cursor-pointer ${
                         viewMode === "compare"
                           ? "bg-stone-900 text-white shadow-xs"
                           : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
                       }`}
                     >
-                      <Columns className="w-3.5 h-3.5" />
-                      <span>Comparar Original</span>
+                      <Columns className="w-3.5 h-3.5 shrink-0" />
+                      <span className="sm:hidden">Comparar</span>
+                      <span className="hidden sm:inline">Comparar Original</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setViewMode("room");
                         setIsZoomActive(false);
                       }}
-                      className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold sm:font-medium transition-all whitespace-nowrap cursor-pointer ${
                         viewMode === "room"
                           ? "bg-stone-900 text-white shadow-xs"
                           : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
                       }`}
                     >
-                      <Home className="w-3.5 h-3.5 text-[#c6a26c]" />
-                      <span>Ver en Sala (Escala)</span>
+                      <Home className="w-3.5 h-3.5 text-[#c6a26c] shrink-0" />
+                      <span className="sm:hidden">En Sala</span>
+                      <span className="hidden sm:inline">Ver en Sala (Escala)</span>
                     </button>
                   </div>
 
                   {viewMode === "fusion" && (
                     <button
+                      type="button"
                       onClick={() => setIsZoomActive(!isZoomActive)}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-colors ${
+                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-colors cursor-pointer shrink-0 ${
                         isZoomActive
                           ? "bg-terracotta-50 text-terracotta-600 border border-terracotta-100"
                           : "text-stone-600 hover:text-stone-900"
@@ -1933,96 +2118,138 @@ export default function personalizedWallArt() {
                     setLensPos({ x, y });
                     if (isDraggingSlider) setSliderPos(x);
                   }}
-                  className={`relative rounded-3xl overflow-hidden border border-cream-200 min-h-[480px] flex flex-col items-center justify-center p-3 sm:p-6 select-none shadow-soft transition-colors ${
+                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden border border-cream-200 min-h-[340px] sm:min-h-[480px] flex flex-col items-center justify-center p-3 sm:p-6 select-none shadow-soft transition-colors ${
                     viewMode === "room" ? "bg-[#ece9e2]/50" : "bg-cream-100"
                   }`}
                 >
-                  {/* MODE 1: FULL PORTRAIT - BASTIDOR DE MADERA FULL SCREEN (SIN MARCO) */}
-                  {viewMode === "fusion" && (
-                    <div
-                      onContextMenu={(e) => e.preventDefault()}
-                      className="relative rounded-lg overflow-hidden transition-all bg-stone-900 border border-stone-800/20 select-none"
-                      style={{
-                        boxShadow:
-                          "0 25px 50px -12px rgba(28, 25, 23, 0.45), 4px 8px 24px -2px rgba(0, 0, 0, 0.28)",
-                        WebkitTouchCallout: "none",
-                      }}
-                    >
-                      <ProtectedArtworkCanvas
-                        src={
-                          fusedResultUrl || selectedCharacter.fusionSampleUrl
-                        }
-                        alt="Retrato finalizado"
-                        maxHeightPx={560}
-                        className="rounded-sm"
-                      />
-
-                      {/* Nombre de la mascota en tipografía Brush en color blanco estilo autógrafo (esquina inferior derecha en diagonal) */}
-                      {includePetInscription && petInscriptionName.trim() && (
-                        <div className="absolute bottom-12 right-6 sm:bottom-16 sm:right-8 z-20 pointer-events-none select-none max-w-[75%] sm:max-w-[70%] text-right transform -rotate-[6deg] sm:-rotate-[7deg] origin-bottom-right">
-                          <span
-                            className={`font-brush ${
-                              petInscriptionName.trim().length > 16
-                                ? "text-base sm:text-xl md:text-2xl"
-                                : petInscriptionName.trim().length > 11
-                                ? "text-xl sm:text-2xl md:text-3xl"
-                                : petInscriptionName.trim().length > 6
-                                ? "text-2xl sm:text-3xl md:text-4xl"
-                                : "text-3xl sm:text-4xl md:text-5xl"
-                            } text-white tracking-wide font-normal leading-none select-none whitespace-nowrap block`}
-                          >
-                            {petInscriptionName.trim()}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Escudo invisible interactivo anti-descarga y anti-arrastre (la marca de agua sutil ya viene integrada en el lienzo) */}
+                  {/* MODE 1: FULL PORTRAIT - CON MARCO DINÁMICO VISUAL O BASTIDOR 3D */}
+                  {viewMode === "fusion" && (() => {
+                    const visualFrame = getVisualFramePresentation(selectedFrame);
+                    return (
                       <div
                         onContextMenu={(e) => e.preventDefault()}
-                        className="absolute inset-0 z-10 pointer-events-auto select-none"
-                      />
+                        className="relative transition-all duration-300 select-none"
+                        style={{
+                          ...visualFrame.outerStyle,
+                          WebkitTouchCallout: "none",
+                        }}
+                      >
+                        {/* Uniones de inglete (45°) en las 4 esquinas cuando lleva moldura */}
+                        {visualFrame.isFramed && (
+                          <>
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute top-0 left-0 w-5 h-5 z-20"
+                              style={{
+                                background: `linear-gradient(45deg, transparent 48%, ${visualFrame.cornerColor} 49%, ${visualFrame.cornerColor} 51%, transparent 52%)`,
+                              }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute top-0 right-0 w-5 h-5 z-20"
+                              style={{
+                                background: `linear-gradient(135deg, transparent 48%, ${visualFrame.cornerColor} 49%, ${visualFrame.cornerColor} 51%, transparent 52%)`,
+                              }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute bottom-0 left-0 w-5 h-5 z-20"
+                              style={{
+                                background: `linear-gradient(135deg, transparent 48%, ${visualFrame.cornerColor} 49%, ${visualFrame.cornerColor} 51%, transparent 52%)`,
+                              }}
+                            />
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute bottom-0 right-0 w-5 h-5 z-20"
+                              style={{
+                                background: `linear-gradient(45deg, transparent 48%, ${visualFrame.cornerColor} 49%, ${visualFrame.cornerColor} 51%, transparent 52%)`,
+                              }}
+                            />
+                          </>
+                        )}
 
-                      {/* Deep Zoom Magnifier Loupe (also watermarked) */}
-                      {isZoomActive && (
                         <div
-                          className="absolute z-30 w-44 h-44 rounded-full border-4 border-white pointer-events-none shadow-card overflow-hidden hidden sm:block"
-                          style={{
-                            left: `calc(${lensPos.x}% - 88px)`,
-                            top: `calc(${lensPos.y}% - 88px)`,
-                          }}
+                          className="relative overflow-hidden bg-stone-900 transition-all duration-300"
+                          style={visualFrame.innerStyle}
                         >
-                          <div
-                            className="w-full h-full relative"
-                            style={{
-                              backgroundImage: `url(${
-                                fusedResultUrl ||
-                                selectedCharacter.fusionSampleUrl
-                              })`,
-                              backgroundPosition: `${lensPos.x}% ${lensPos.y}%`,
-                              backgroundSize: "280%",
-                              backgroundRepeat: "no-repeat",
-                            }}
-                          >
-                            <div className="absolute inset-0 flex items-center justify-center opacity-35">
-                              <img
-                                src="/logo-light.png"
-                                alt=""
-                                className="w-20 object-contain -rotate-12"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                          <ProtectedArtworkCanvas
+                            src={
+                              fusedResultUrl || selectedCharacter.fusionSampleUrl
+                            }
+                            alt="Retrato finalizado"
+                            maxHeightPx={560}
+                            className="rounded-none block"
+                          />
 
-                  {/* MODE 2: BEFORE / AFTER SLIDER (Also Protected) */}
+                          {/* Nombre de la mascota en tipografía Brush en color blanco estilo autógrafo (esquina inferior derecha en diagonal) */}
+                          {includePetInscription && petInscriptionName.trim() && (
+                            <div className="absolute bottom-12 right-6 sm:bottom-16 sm:right-8 z-20 pointer-events-none select-none max-w-[75%] sm:max-w-[70%] text-right transform -rotate-[6deg] sm:-rotate-[7deg] origin-bottom-right">
+                              <span
+                                className={`font-brush ${
+                                  petInscriptionName.trim().length > 16
+                                    ? "text-base sm:text-xl md:text-2xl"
+                                    : petInscriptionName.trim().length > 11
+                                    ? "text-xl sm:text-2xl md:text-3xl"
+                                    : petInscriptionName.trim().length > 6
+                                    ? "text-2xl sm:text-3xl md:text-4xl"
+                                    : "text-3xl sm:text-4xl md:text-5xl"
+                                } text-white tracking-wide font-normal leading-none select-none whitespace-nowrap block`}
+                              >
+                                {petInscriptionName.trim()}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Escudo invisible interactivo anti-descarga y anti-arrastre (la marca de agua sutil ya viene integrada en el lienzo) */}
+                          <div
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="absolute inset-0 z-10 pointer-events-auto select-none"
+                          />
+
+                          {/* Deep Zoom Magnifier Loupe (also watermarked) */}
+                          {isZoomActive && (
+                            <div
+                              className="absolute z-30 w-44 h-44 rounded-full border-4 border-white pointer-events-none shadow-card overflow-hidden hidden sm:block"
+                              style={{
+                                left: `calc(${lensPos.x}% - 88px)`,
+                                top: `calc(${lensPos.y}% - 88px)`,
+                              }}
+                            >
+                              <div
+                                className="w-full h-full relative"
+                                style={{
+                                  backgroundImage: `url(${
+                                    fusedResultUrl ||
+                                    selectedCharacter.fusionSampleUrl
+                                  })`,
+                                  backgroundPosition: `${lensPos.x}% ${lensPos.y}%`,
+                                  backgroundSize: "280%",
+                                  backgroundRepeat: "no-repeat",
+                                }}
+                              >
+                                <div className="absolute inset-0 flex items-center justify-center opacity-35">
+                                  <img
+                                    src="/logo-light.png"
+                                    alt=""
+                                    className="w-20 object-contain -rotate-12"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* MODE 2: BEFORE / AFTER SLIDER (Also Protected & 100% Responsive Mobile) */}
                   {viewMode === "compare" && petImage && (
                     <div
                       onContextMenu={(e) => e.preventDefault()}
-                      className="relative max-h-[560px] aspect-[4/3] w-full max-w-[660px] rounded-2xl overflow-hidden border border-cream-200 bg-white shadow-card cursor-ew-resize select-none"
+                      className="relative max-h-[560px] aspect-[3/4] sm:aspect-[4/3] w-full max-w-[660px] rounded-2xl overflow-hidden border border-cream-200 bg-white shadow-card cursor-ew-resize select-none touch-none"
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onMouseUp={() => setIsDraggingSlider(false)}
+                      onMouseLeave={() => setIsDraggingSlider(false)}
                       onTouchMove={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const touchX = e.touches[0].clientX;
@@ -2046,23 +2273,25 @@ export default function personalizedWallArt() {
                         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
                       />
 
-                      {/* Before Pet Image (Clipped) */}
+                      {/* Before Pet Image (Clipped with responsive clip-path so it works on all screen sizes) */}
                       <div
                         className="absolute inset-0 overflow-hidden"
-                        style={{ width: `${sliderPos}%` }}
+                        style={{
+                          clipPath: `inset(0 ${100 - sliderPos}% 0 0)`,
+                        }}
                       >
                         <img
                           src={petImage}
                           alt="Fotografía Original"
-                          className="absolute inset-0 w-full h-full object-cover max-w-none"
-                          style={{ width: "660px" }}
+                          draggable={false}
+                          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
                         />
-                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-[11px] font-medium text-stone-800 border border-cream-200 shadow-soft">
-                          Fotografía original
+                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-medium text-stone-800 border border-cream-200 shadow-soft">
+                          Original
                         </div>
                       </div>
 
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-[11px] font-medium text-stone-900 border border-cream-200 shadow-soft">
+                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-medium text-stone-900 border border-cream-200 shadow-soft max-w-[45%] truncate">
                         {activeThemeName}
                       </div>
 
@@ -2103,8 +2332,14 @@ export default function personalizedWallArt() {
                         className="absolute transition-all duration-500 ease-out z-10 pointer-events-auto group cursor-pointer"
                         title={`${selectedPrintPreset.cmDimensions} - ${selectedPrintPreset.tier}`}
                       >
-                        {/* Efecto bastidor de lienzo 3D con sombra profunda sobre la pared */}
-                        <div className="relative w-full h-full rounded-xs shadow-[0_14px_36px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-black/20 overflow-hidden bg-stone-900 transition-shadow">
+                        {/* Efecto bastidor de lienzo 3D o Marco seleccionado sobre la pared */}
+                        <div
+                          style={
+                            getVisualFramePresentation(selectedFrame)
+                              .roomOuterStyle
+                          }
+                          className="relative w-full h-full rounded-xs shadow-[0_14px_36px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-black/20 overflow-hidden bg-stone-900 transition-all duration-300"
+                        >
                           <img
                             src={
                               fusedResultUrl ||
@@ -2404,65 +2639,119 @@ export default function personalizedWallArt() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                    <div className="space-y-2.5">
                       {catalogFrames
                         .filter((frame) => frame.isAvailable !== false)
                         .map((frame) => {
                           const isFrameSelected = selectedFrame.id === frame.id;
-                          const frameImg =
-                            (Array.isArray(frame.images) &&
+                          const allFrameImages =
+                            Array.isArray(frame.images) &&
                             frame.images.length > 0
-                              ? frame.images[0]
-                              : frame.imageUrl) || null;
+                              ? frame.images.filter(Boolean)
+                              : frame.imageUrl
+                                ? [frame.imageUrl]
+                                : [];
+                          const frameImg = allFrameImages[0] || null;
                           return (
-                            <button
+                            <div
                               key={frame.id}
-                              type="button"
+                              role="button"
+                              tabIndex={0}
                               onClick={() => setSelectedFrame(frame)}
-                              className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setSelectedFrame(frame);
+                                }
+                              }}
+                              className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3.5 cursor-pointer group ${
                                 isFrameSelected
                                   ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25 shadow-xs"
                                   : "border-cream-200 bg-cream-50/50 hover:border-stone-300 hover:bg-white"
                               }`}
                             >
-                              <div>
-                                {frameImg && (
-                                  <div className="mb-2 aspect-[4/3] w-full rounded-xl overflow-hidden border border-cream-200 bg-cream-100">
-                                    <img
-                                      src={frameImg}
-                                      alt={frame.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <div className="flex items-center justify-between gap-1">
+                              {/* Miniatura del Marco con acceso directo al Preview ampliado */}
+                              {frameImg && (
+                                <button
+                                  type="button"
+                                  title={`Ver detalle de ${frame.name}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPreviewFrame(frame);
+                                    setPreviewFrameImgIdx(0);
+                                  }}
+                                  className="relative w-16 h-16 sm:w-24 sm:h-20 rounded-xl overflow-hidden border border-cream-200 bg-cream-100 shrink-0 cursor-zoom-in group/thumb"
+                                >
+                                  <img
+                                    src={frameImg}
+                                    alt={frame.name}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-105"
+                                  />
+                                  <span className="absolute bottom-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-stone-900/75 text-white flex items-center justify-center shadow-xs backdrop-blur-xs group-hover/thumb:bg-[#174B3D] transition-colors">
+                                    <ZoomIn className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                  </span>
+                                  {allFrameImages.length > 1 && (
+                                    <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-stone-900/75 text-white text-[9px] font-bold backdrop-blur-xs">
+                                      +{allFrameImages.length}
+                                    </span>
+                                  )}
+                                </button>
+                              )}
+
+                              {/* Información Completa del Marco (Sin textos cortados) */}
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex flex-wrap items-center justify-between gap-1.5">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span
-                                      className="w-3.5 h-3.5 rounded-full border border-stone-300 shrink-0"
+                                      className="w-3.5 h-3.5 rounded-full border border-stone-300 shrink-0 shadow-2xs"
                                       style={{ backgroundColor: frame.colorHex }}
                                     />
-                                    <span className="text-xs font-bold text-stone-900 truncate">
+                                    <span className="text-xs sm:text-[13px] font-bold text-stone-900 leading-snug">
                                       {frame.name}
                                     </span>
                                   </div>
-                                  {isFrameSelected && (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#174B3D] shrink-0" />
-                                  )}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <span
+                                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                                        frame.priceModifierPen === 0
+                                          ? "bg-sage-50 text-[#174B3D] border-sage-200"
+                                          : "bg-white text-[#174B3D] border-[#c6a26c]/40"
+                                      }`}
+                                    >
+                                      {frame.priceModifierPen === 0
+                                        ? "Incluido"
+                                        : `+ S/ ${frame.priceModifierPen.toFixed(2)}`}
+                                    </span>
+                                    {isFrameSelected && (
+                                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-[10px] text-stone-500 mt-1 leading-relaxed line-clamp-2">
+
+                                <p className="text-[11px] text-stone-600 leading-relaxed">
                                   {frame.description}
                                 </p>
-                              </div>
 
-                              <div className="mt-2 pt-1.5 border-t border-cream-200/60 flex items-center justify-between text-[11px]">
-                                <span className="text-stone-500 text-[10px]">Moldura:</span>
-                                <span className="font-bold text-[#174B3D]">
-                                  {frame.priceModifierPen === 0
-                                    ? "Incluido (S/ 0)"
-                                    : `+ S/ ${frame.priceModifierPen.toFixed(2)}`}
-                                </span>
+                                {frameImg && (
+                                  <div className="pt-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewFrame(frame);
+                                        setPreviewFrameImgIdx(0);
+                                      }}
+                                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#174B3D] hover:text-[#c6a26c] transition-colors cursor-pointer"
+                                    >
+                                      <ZoomIn className="w-3 h-3" />
+                                      <span>
+                                        Ver foto{allFrameImages.length > 1 ? `s (${allFrameImages.length})` : ""} en detalle
+                                      </span>
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            </button>
+                            </div>
                           );
                         })}
                     </div>
@@ -2708,6 +2997,123 @@ export default function personalizedWallArt() {
             </div>
           </div>
         )}
+
+        {/* Modal de Vista Previa Ampliada de Imágenes del Marco */}
+        {previewFrame && (() => {
+          const modalImages =
+            Array.isArray(previewFrame.images) && previewFrame.images.length > 0
+              ? previewFrame.images.filter(Boolean)
+              : previewFrame.imageUrl
+                ? [previewFrame.imageUrl]
+                : [];
+          const activeImg = modalImages[previewFrameImgIdx] || modalImages[0] || null;
+          const isCurrentlySelected = selectedFrame.id === previewFrame.id;
+
+          return (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Vista previa de ${previewFrame.name}`}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-sm animate-in fade-in duration-200"
+              onClick={() => setPreviewFrame(null)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-lg w-full bg-white rounded-3xl overflow-hidden border border-cream-200 shadow-2xl animate-in zoom-in-95 duration-150"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPreviewFrame(null)}
+                  aria-label="Cerrar vista previa"
+                  className="absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-stone-700 shadow-md flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {activeImg && (
+                  <div className="relative bg-cream-100 aspect-[4/3] w-full overflow-hidden">
+                    <img
+                      src={activeImg}
+                      alt={previewFrame.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {modalImages.length > 1 && (
+                  <div className="px-5 pt-3 flex items-center gap-2 overflow-x-auto">
+                    {modalImages.map((imgUrl, idx) => (
+                      <button
+                        key={`${previewFrame.id}-img-${idx}`}
+                        type="button"
+                        onClick={() => setPreviewFrameImgIdx(idx)}
+                        className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                          idx === previewFrameImgIdx
+                            ? "border-[#174B3D] ring-2 ring-[#174B3D]/25"
+                            : "border-cream-200 opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`${previewFrame.name} vista ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="p-5 sm:p-6 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className="w-4 h-4 rounded-full border border-stone-300 shrink-0 shadow-2xs"
+                        style={{ backgroundColor: previewFrame.colorHex }}
+                      />
+                      <h3 className="font-serif text-lg font-bold text-stone-900 leading-snug">
+                        {previewFrame.name}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#174B3D]/10 text-[#174B3D] border border-[#174B3D]/20 shrink-0">
+                      {previewFrame.priceModifierPen === 0
+                        ? "Incluido (S/ 0)"
+                        : `+ S/ ${previewFrame.priceModifierPen.toFixed(2)}`}
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    {previewFrame.description}
+                  </p>
+
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFrame(previewFrame);
+                        setPreviewFrame(null);
+                      }}
+                      className="flex-1 py-3 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-[#c6a26c]" />
+                      <span>
+                        {isCurrentlySelected
+                          ? "Marco seleccionado actualmente"
+                          : "Elegir este marco"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewFrame(null)}
+                      className="py-3 px-4 rounded-full bg-cream-100 hover:bg-cream-200 text-stone-700 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </main>
     </div>
   );

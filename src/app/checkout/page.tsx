@@ -1073,8 +1073,8 @@ function CheckoutContent() {
               </div>
             </div>
 
-            {/* Right 5 Columns: Order Summary & 50/50 Split Breakdown */}
-            <div className="lg:col-span-5 space-y-5 sticky top-28">
+            {/* Right 5 Columns: Order Summary & Payment Breakdown */}
+            <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-28">
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
                 <h3 className="font-serif text-xl font-semibold text-stone-900">
                   Resumen de tu Cuadro Personalizado

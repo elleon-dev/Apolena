@@ -957,7 +957,10 @@ export default function AdminDashboardPage() {
   const handleSaveCharacterForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!charForm.characterImageUrl) {
-      alert("Por favor, sube o selecciona una imagen para el personaje.");
+      showToast(
+        "error",
+        "Por favor, sube o selecciona una imagen para el personaje.",
+      );
       return;
     }
 
