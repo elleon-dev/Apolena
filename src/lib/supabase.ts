@@ -365,6 +365,7 @@ export async function getRecentCompletedJobsByUser(
         user_id: userId,
         status: "completed",
         output_image_url: { not: null },
+        orderItems: { none: {} },
       },
       orderBy: { updated_at: "desc" },
       take: limit,

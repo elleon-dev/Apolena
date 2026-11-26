@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
+import { removeSavedCreation } from "@/lib/studio-drafts";
 import {
   ArrowLeft,
   MapPin,
@@ -330,6 +331,10 @@ function CheckoutContent() {
 
       try {
         localStorage.removeItem("apolena_pending_checkout");
+        sessionStorage.removeItem("apolena_studio_state");
+        if (draft.generation_job_id) {
+          removeSavedCreation(draft.generation_job_id);
+        }
       } catch {}
 
       setCreatedOrder(data.order);
