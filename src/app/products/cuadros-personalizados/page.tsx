@@ -398,6 +398,39 @@ export default function personalizedWallArt() {
   const [savedCreations, setSavedCreations] = useState<SavedStudioCreation[]>(
     [],
   );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [showAuthGateModal, setShowAuthGateModal] = useState<boolean>(false);
+  const [pendingAutoGenerate, setPendingAutoGenerate] =
+    useState<boolean>(false);
+
+  const savePendingGenerationForAuth = useCallback(() => {
+    try {
+      sessionStorage.setItem(
+        "apolena_pending_generation_v1",
+        JSON.stringify({
+          petImage,
+          secondPetImage,
+          petSpecies,
+          selectedCharacter,
+          useCustomTheme,
+          customThemeImage,
+          customPrompt,
+          includePetInscription,
+          petInscriptionName,
+        }),
+      );
+    } catch {}
+  }, [
+    petImage,
+    secondPetImage,
+    petSpecies,
+    selectedCharacter,
+    useCustomTheme,
+    customThemeImage,
+    customPrompt,
+    includePetInscription,
+    petInscriptionName,
+  ]);
 
   const catalogCharactersRef = useRef(catalogCharacters);
   catalogCharactersRef.current = catalogCharacters;
@@ -522,14 +555,25 @@ export default function personalizedWallArt() {
     }, 250);
   };
 
-  // Restauración inteligente: ?job=<id>, ?character=<slug>, ?step=3 o borrador persistente al refrescar
+  // Restauración inteligente: ?resumeGenerate=1, ?job=<id>, ?character=<slug>, ?step=3 o borrador persistente
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
+    const resumeGenerateParam = params.get("resumeGenerate");
     const jobParam = params.get("job");
     const charParam = params.get("character");
     const stepParam = params.get("step");
+
+    // Verificar estado de sesión actual
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        setIsAuthenticated(Boolean(data?.user));
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
 
     const localCreations = loadSavedCreations();
     setSavedCreations(localCreations);
@@ -540,6 +584,63 @@ export default function personalizedWallArt() {
         FAMOUS_CHARACTERS.find((c) => c.id === id);
       return match?.name || id;
     };
+
+    // Caso 0: Usuario acaba de iniciar sesión para continuar su 2da+ generación
+    if (resumeGenerateParam === "1") {
+      try {
+        const rawPending = sessionStorage.getItem(
+          "apolena_pending_generation_v1",
+        );
+        if (rawPending) {
+          const pending = JSON.parse(rawPending);
+          sessionStorage.removeItem("apolena_pending_generation_v1");
+          if (pending.petImage) setPetImage(pending.petImage);
+          if (pending.secondPetImage !== undefined)
+            setSecondPetImage(pending.secondPetImage);
+          if (pending.petSpecies) setPetSpecies(pending.petSpecies);
+          if (pending.selectedCharacter) {
+            pendingCharacterIdRef.current = pending.selectedCharacter.id;
+            setSelectedCharacter(pending.selectedCharacter);
+          }
+          if (pending.useCustomTheme !== undefined)
+            setUseCustomTheme(pending.useCustomTheme);
+          if (pending.customThemeImage !== undefined)
+            setCustomThemeImage(pending.customThemeImage);
+          if (typeof pending.customPrompt === "string")
+            setCustomPrompt(pending.customPrompt);
+          if (pending.includePetInscription !== undefined)
+            setIncludePetInscription(pending.includePetInscription);
+          if (typeof pending.petInscriptionName === "string")
+            setPetInscriptionName(pending.petInscriptionName);
+          setStep(2);
+          setPendingAutoGenerate(true);
+          window.history.replaceState({}, "", window.location.pathname);
+          // Sincronizar en segundo plano sus creaciones previas de BD sin pisar la nueva generación
+          fetch("/api/jobs", { cache: "no-store" })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (!Array.isArray(data?.jobs) || data.jobs.length === 0) return;
+              const dbCreations = data.jobs
+                .map((j: any) => mapJobToSavedCreation(j, resolveCharName))
+                .filter(
+                  (item: SavedStudioCreation | null): item is SavedStudioCreation =>
+                    Boolean(item),
+                );
+              if (dbCreations.length > 0) {
+                setSavedCreations((prev) => {
+                  const map = new Map<string, SavedStudioCreation>();
+                  for (const item of [...prev, ...dbCreations]) {
+                    if (!map.has(item.jobId)) map.set(item.jobId, item);
+                  }
+                  return Array.from(map.values()).slice(0, 8);
+                });
+              }
+            })
+            .catch(() => {});
+          return;
+        }
+      } catch {}
+    }
 
     // Sincronizar historial de creaciones desde PostgreSQL si el usuario tiene sesión iniciada
     fetch("/api/jobs", { cache: "no-store" })
@@ -1090,6 +1191,13 @@ export default function personalizedWallArt() {
   const handleStartFusion = async () => {
     if (!petImage) return;
 
+    // Modelo Híbrido: 1ra creación gratis sin login; 2da+ requiere iniciar sesión conservando la foto
+    if (isAuthenticated === false && savedCreations.length >= 1) {
+      savePendingGenerationForAuth();
+      setShowAuthGateModal(true);
+      return;
+    }
+
     setIsGenerating(true);
     setFusionError(null);
     setErrorNotification(null);
@@ -1120,6 +1228,16 @@ export default function personalizedWallArt() {
       });
 
       const data = await response.json();
+      if (
+        response.status === 401 ||
+        data.code === "AUTH_REQUIRED_FOR_NEXT_GENERATION"
+      ) {
+        savePendingGenerationForAuth();
+        setIsGenerating(false);
+        setShowAuthGateModal(true);
+        return;
+      }
+
       if (!response.ok || !data.jobId) {
         throw new Error(
           data.error || "No se pudo iniciar el revelado del retrato",
@@ -1257,6 +1375,20 @@ export default function personalizedWallArt() {
       );
     }
   };
+
+  // Reanudar automáticamente la generación pendiente al volver del inicio de sesión
+  useEffect(() => {
+    if (
+      pendingAutoGenerate &&
+      isAuthenticated === true &&
+      petImage &&
+      !isGenerating
+    ) {
+      setPendingAutoGenerate(false);
+      void handleStartFusion();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAutoGenerate, isAuthenticated, petImage, isGenerating]);
 
   const handleDownload = async (_presetOverride?: PrintPreset) => {
     const sourceUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
@@ -3609,6 +3741,96 @@ export default function personalizedWallArt() {
               : null
           }
         />
+
+        {/* Modal Modelo Híbrido: Solicitud de inicio de sesión para la 2da+ creación */}
+        {showAuthGateModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+            onClick={() => setShowAuthGateModal(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-gate-modal-title"
+          >
+            <div
+              className="relative w-full max-w-md rounded-3xl bg-[#FFFBF2] border border-[#E8DEC8] shadow-2xl p-6 sm:p-7 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setShowAuthGateModal(false)}
+                aria-label="Cerrar"
+                className="absolute top-4 right-4 p-2 rounded-full bg-white border border-[#E8DEC8] text-stone-500 hover:text-stone-900 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-2 text-center pt-1">
+                <div className="w-12 h-12 rounded-2xl bg-[#174B3D]/10 border border-[#c6a26c]/40 text-[#174B3D] flex items-center justify-center mx-auto">
+                  <Sparkles className="w-5 h-5 text-[#94713F]" />
+                </div>
+                <h3
+                  id="auth-gate-modal-title"
+                  className="font-serif text-xl sm:text-2xl font-semibold text-[#174B3D]"
+                >
+                  Inicia sesión para seguir creando
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                  Ya disfrutaste tu primera creación gratuita de prueba. Inicia
+                  sesión para seguir probando todos los estilos y guardar tus
+                  obras en tu cuenta.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-[#E8DEC8] p-3.5 space-y-2 text-xs text-stone-700">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                  <span>Tu foto y personaje elegidos quedan guardados</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                  <span>Al iniciar sesión tu retrato comenzará automáticamente</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                  <span>Tu creación anterior se vinculará a tu cuenta</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    savePendingGenerationForAuth();
+                    const callbackUrl =
+                      "/products/cuadros-personalizados?resumeGenerate=1";
+                    router.push(
+                      `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+                    );
+                  }}
+                  className="w-full py-3.5 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer"
+                >
+                  <span>Iniciar sesión o continuar con Google</span>
+                  <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    savePendingGenerationForAuth();
+                    const callbackUrl =
+                      "/products/cuadros-personalizados?resumeGenerate=1";
+                    router.push(
+                      `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+                    );
+                  }}
+                  className="w-full py-3 px-5 rounded-full bg-white hover:bg-cream-100 border border-[#E8DEC8] text-[#174B3D] text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Crear cuenta nueva gratis
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

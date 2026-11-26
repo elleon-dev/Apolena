@@ -90,7 +90,25 @@ export async function POST(req: NextRequest) {
 
     // UUID so the job can be persisted in `generation_jobs` and linked to `order_items.generation_job_id`
     const jobId = randomUUID();
-    const sessionUser = await getSessionUser().catch(() => null);
+    const sessionUser = await getSessionUser(req).catch(() => null);
+
+    // Modelo Híbrido: 1ra generación gratis sin sesión; a partir de la 2da se requiere iniciar sesión
+    if (!sessionUser) {
+      const guestGenCount = Number(
+        req.cookies.get("apolena_guest_gen_count")?.value || "0",
+      );
+      if (guestGenCount >= 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "AUTH_REQUIRED_FOR_NEXT_GENERATION",
+            error:
+              "Ya utilizaste tu creación gratuita de prueba. Inicia sesión para seguir probando estilos y guardar todas tus creaciones en tu cuenta.",
+          },
+          { status: 401 },
+        );
+      }
+    }
 
     const job = await enqueueJob({
       jobId,
@@ -106,7 +124,7 @@ export async function POST(req: NextRequest) {
       species,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         message: "Tarea de fusión multimodal encolada con éxito",
@@ -118,6 +136,20 @@ export async function POST(req: NextRequest) {
       },
       { status: 202 },
     );
+
+    if (!sessionUser) {
+      const cookieOptions = {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30, // 30 días
+      };
+      response.cookies.set("apolena_guest_gen_count", "1", cookieOptions);
+      response.cookies.set("apolena_guest_last_job", job.id, cookieOptions);
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Error in POST /api/generate:", error);
     return NextResponse.json(

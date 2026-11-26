@@ -376,3 +376,33 @@ export async function getRecentCompletedJobsByUser(
     return [];
   }
 }
+
+/**
+ * Links a guest-created GenerationJob (where user_id is still null) to a newly signed-in user.
+ */
+export async function claimGuestJobForUser(
+  jobId: string,
+  userId: string,
+): Promise<void> {
+  if (!isDatabaseAvailable() || !isUuid(jobId) || !isUuid(userId)) {
+    return;
+  }
+
+  try {
+    await prisma.generationJob.updateMany({
+      where: {
+        id: jobId,
+        user_id: null,
+      },
+      data: {
+        user_id: userId,
+      },
+    });
+    const local = localJobs.get(jobId);
+    if (local && !local.userId) {
+      localJobs.update(jobId, { userId });
+    }
+  } catch (err) {
+    console.warn("Prisma claimGuestJobForUser warning:", err);
+  }
+}
