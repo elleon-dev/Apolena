@@ -70,6 +70,17 @@ export interface GeneratedVariant {
   executionSeconds: number;
 }
 
+export interface GenerationJobSettings {
+  productSlug?: string;
+  selectedVariantId?: string | null;
+  selectedPrintPresetId?: string | null;
+  selectedFrameId?: string | null;
+  includePetInscription?: boolean;
+  petInscriptionName?: string;
+  dedicationNote?: string;
+  updatedAt?: string;
+}
+
 export interface GenerationJob {
   id: string;
   userId?: string | null;
@@ -88,6 +99,7 @@ export interface GenerationJob {
   outputImageUrl?: string | null;
   hdOutputImageUrl?: string | null;
   variants?: GeneratedVariant[];
+  settings?: GenerationJobSettings | null;
   falRequestId?: string | null;
   falUpscaleRequestId?: string | null;
   errorMessage?: string | null;

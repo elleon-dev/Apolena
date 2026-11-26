@@ -7,6 +7,7 @@ import { protectAndStoreJobVariants } from "./server-watermark";
 
 export interface EnqueueJobParams {
   jobId: string;
+  userId?: string | null;
   characterId: string;
   petImageUrl: string;
   secondPetImageUrl?: string | null;
@@ -143,6 +144,7 @@ export async function enqueueJob(
 ): Promise<GenerationJob> {
   const newJob: GenerationJob = {
     id: params.jobId,
+    userId: params.userId || null,
     templateId: params.characterId,
     petName: params.petName || "Mi Mascota",
     species: params.species || "cat",

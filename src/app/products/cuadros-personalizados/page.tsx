@@ -18,6 +18,15 @@ import {
   FrameOption,
   exportWatermarkedPreviewImage,
 } from "@/lib/print-export";
+import {
+  SavedStudioCreation,
+  loadSavedCreations,
+  upsertSavedCreation,
+  removeSavedCreation,
+  getActiveCreationId,
+  setActiveCreationId,
+  mapJobToSavedCreation,
+} from "@/lib/studio-drafts";
 import type { ProductFinishOption, ProductRecord } from "@/lib/db-service";
 import {
   Upload,
@@ -386,6 +395,82 @@ export default function personalizedWallArt() {
     useState<boolean>(false);
   const [showSocialShareModal, setShowSocialShareModal] =
     useState<boolean>(false);
+  const [savedCreations, setSavedCreations] = useState<SavedStudioCreation[]>(
+    [],
+  );
+
+  const catalogCharactersRef = useRef(catalogCharacters);
+  catalogCharactersRef.current = catalogCharacters;
+  const catalogSizesRef = useRef(catalogSizes);
+  catalogSizesRef.current = catalogSizes;
+  const catalogFramesRef = useRef(catalogFrames);
+  catalogFramesRef.current = catalogFrames;
+
+  const applySavedCreationToStudio = useCallback(
+    (creation: SavedStudioCreation, goToStep3: boolean = true) => {
+      setActiveGenerationJobId(creation.jobId);
+      if (creation.petImageUrl) setPetImage(creation.petImageUrl);
+      setSecondPetImage(creation.secondPetImageUrl || null);
+      setPetSpecies(creation.petSpecies || "dog");
+      setFusedResultUrl(creation.fusedResultUrl);
+      if (Array.isArray(creation.variants) && creation.variants.length > 0) {
+        setGeneratedVariants(creation.variants);
+        const activeVar =
+          creation.variants.find((v) => v.id === creation.selectedVariantId) ||
+          creation.variants[0];
+        setSelectedVariantId(activeVar.id);
+        setFusedResultUrl(activeVar.imageUrl);
+        if (activeVar.modelUsed) setModelUsedLabel(activeVar.modelUsed);
+      }
+      setIncludePetInscription(Boolean(creation.includePetInscription));
+      setPetInscriptionName(creation.petInscriptionName || "");
+      setDedicationNote(creation.dedicationNote || "");
+      setIsSimulationJob(false);
+      setSimulationNotice(null);
+
+      // Restaurar personaje desde catálogo activo o fallback
+      const allChars =
+        catalogCharactersRef.current.length > 0
+          ? catalogCharactersRef.current
+          : FAMOUS_CHARACTERS;
+      const matchedChar = allChars.find(
+        (c) =>
+          c.id === creation.characterId ||
+          c.id.toLowerCase() === creation.characterId.toLowerCase(),
+      );
+      if (matchedChar) {
+        setSelectedCharacter(matchedChar);
+        setUseCustomTheme(false);
+      }
+
+      // Restaurar tamaño de impresión elegido
+      if (creation.selectedPrintPresetId) {
+        const matchedSize = catalogSizesRef.current.find(
+          (s) => s.id === creation.selectedPrintPresetId,
+        );
+        if (matchedSize) setSelectedPrintPreset(matchedSize);
+      }
+
+      // Restaurar marco elegido
+      if (creation.selectedFrameId) {
+        const matchedFrame = catalogFramesRef.current.find(
+          (f) => f.id === creation.selectedFrameId,
+        );
+        if (matchedFrame) setSelectedFrame(matchedFrame);
+      }
+
+      setActiveCreationId(creation.jobId);
+      if (typeof window !== "undefined") {
+        const nextUrl = `${window.location.pathname}?job=${encodeURIComponent(creation.jobId)}`;
+        window.history.replaceState({}, "", nextUrl);
+      }
+
+      if (goToStep3) {
+        setStep(3);
+      }
+    },
+    [],
+  );
 
   const triggerErrorNotification = useCallback(
     (title: string, description: string) => {
@@ -427,77 +512,232 @@ export default function personalizedWallArt() {
     }, 250);
   };
 
-  // Auto-selección de personaje desde URL (ej. ?character=sapa-inca-imperial o ?character=chef)
+  // Restauración inteligente: ?job=<id>, ?character=<slug>, ?step=3 o borrador persistente al refrescar
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const charParam = params.get("character");
-      const stepParam = params.get("step");
+    if (typeof window === "undefined") return;
 
-      if (charParam) {
-        const found = FAMOUS_CHARACTERS.find(
-          (c) =>
-            c.id === charParam ||
-            c.id.toLowerCase() === charParam.toLowerCase() ||
-            c.id.toLowerCase().includes(charParam.toLowerCase()) ||
-            charParam.toLowerCase().includes(c.id.toLowerCase()),
-        );
-        if (found) {
-          setSelectedCharacter(found);
-          setUseCustomTheme(false);
+    const params = new URLSearchParams(window.location.search);
+    const jobParam = params.get("job");
+    const charParam = params.get("character");
+    const stepParam = params.get("step");
+
+    const localCreations = loadSavedCreations();
+    setSavedCreations(localCreations);
+
+    const resolveCharName = (id: string) => {
+      const match =
+        catalogCharactersRef.current.find((c) => c.id === id) ||
+        FAMOUS_CHARACTERS.find((c) => c.id === id);
+      return match?.name || id;
+    };
+
+    // Sincronizar historial de creaciones desde PostgreSQL si el usuario tiene sesión iniciada
+    fetch("/api/jobs", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!Array.isArray(data?.jobs) || data.jobs.length === 0) return;
+        const dbCreations = data.jobs
+          .map((j: any) => mapJobToSavedCreation(j, resolveCharName))
+          .filter((item: SavedStudioCreation | null): item is SavedStudioCreation =>
+            Boolean(item),
+          );
+        if (dbCreations.length === 0) return;
+
+        setSavedCreations((prev) => {
+          const map = new Map<string, SavedStudioCreation>();
+          for (const item of [...prev, ...dbCreations]) {
+            if (!map.has(item.jobId)) {
+              map.set(item.jobId, item);
+            }
+          }
+          const merged = Array.from(map.values())
+            .sort(
+              (a, b) =>
+                new Date(b.updatedAt).getTime() -
+                new Date(a.updatedAt).getTime(),
+            )
+            .slice(0, 8);
+          return merged;
+        });
+
+        // Si no había nada en localStorage y el usuario entró sin parámetros, restaurar su última creación de BD
+        if (
+          !jobParam &&
+          !charParam &&
+          !stepParam &&
+          localCreations.length === 0 &&
+          dbCreations[0]
+        ) {
+          applySavedCreationToStudio(dbCreations[0], true);
         }
-        // Redireccionar directamente al paso 2 (subir foto de mascota) al venir con personaje
-        if (stepParam !== "3") {
-          setStep(2);
-        }
-      } else if (stepParam === "2") {
+      })
+      .catch(() => {});
+
+    // Caso 1: Deep-link o recarga directa con ?job=<id>
+    if (jobParam) {
+      const localMatch = localCreations.find((c) => c.jobId === jobParam);
+      if (localMatch) {
+        applySavedCreationToStudio(localMatch, true);
+      }
+      // Hidratar también desde la base de datos para garantizar datos completos y actualizados
+      fetch(`/api/jobs/${encodeURIComponent(jobParam)}`, { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data?.job) return;
+          const mapped = mapJobToSavedCreation(data.job, resolveCharName);
+          if (mapped) {
+            const updatedList = upsertSavedCreation(mapped);
+            setSavedCreations(updatedList);
+            applySavedCreationToStudio(mapped, true);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
+    // Caso 2: Navegación explícita con ?character=<slug> desde la página principal
+    if (charParam) {
+      const found = FAMOUS_CHARACTERS.find(
+        (c) =>
+          c.id === charParam ||
+          c.id.toLowerCase() === charParam.toLowerCase() ||
+          c.id.toLowerCase().includes(charParam.toLowerCase()) ||
+          charParam.toLowerCase().includes(c.id.toLowerCase()),
+      );
+      if (found) {
+        setSelectedCharacter(found);
+        setUseCustomTheme(false);
+      }
+      if (stepParam !== "3") {
         setStep(2);
       }
+    } else if (stepParam === "2") {
+      setStep(2);
+    }
 
-      // Restaurar el Paso 3 al volver desde /checkout (?step=3)
-      if (params.get("step") === "3") {
-        try {
-          const raw = sessionStorage.getItem("apolena_studio_state");
-          if (raw) {
-            const saved = JSON.parse(raw);
-            if (saved.petImage !== undefined) setPetImage(saved.petImage);
-            if (saved.secondPetImage !== undefined)
-              setSecondPetImage(saved.secondPetImage);
-            if (saved.petSpecies) setPetSpecies(saved.petSpecies);
-            if (saved.selectedCharacter)
-              setSelectedCharacter(saved.selectedCharacter);
-            if (saved.useCustomTheme !== undefined)
-              setUseCustomTheme(saved.useCustomTheme);
-            if (saved.customThemeImage !== undefined)
-              setCustomThemeImage(saved.customThemeImage);
-            if (typeof saved.fusedResultUrl === "string")
-              setFusedResultUrl(saved.fusedResultUrl);
-            if (Array.isArray(saved.generatedVariants))
-              setGeneratedVariants(saved.generatedVariants);
-            if (saved.selectedVariantId)
-              setSelectedVariantId(saved.selectedVariantId);
-            if (saved.activeGenerationJobId !== undefined)
-              setActiveGenerationJobId(saved.activeGenerationJobId);
-            if (saved.modelUsedLabel) setModelUsedLabel(saved.modelUsedLabel);
-            if (saved.isSimulationJob !== undefined)
-              setIsSimulationJob(saved.isSimulationJob);
-            if (saved.simulationNotice !== undefined)
-              setSimulationNotice(saved.simulationNotice);
-            if (saved.selectedPrintPreset)
-              setSelectedPrintPreset(saved.selectedPrintPreset);
-            if (saved.selectedFrame) setSelectedFrame(saved.selectedFrame);
-            if (saved.includePetInscription !== undefined)
-              setIncludePetInscription(saved.includePetInscription);
-            if (typeof saved.petInscriptionName === "string")
-              setPetInscriptionName(saved.petInscriptionName);
-            if (typeof saved.dedicationNote === "string")
-              setDedicationNote(saved.dedicationNote);
-            setStep(3);
-          }
-        } catch {}
+    // Caso 3: Volver desde /checkout (?step=3)
+    if (stepParam === "3") {
+      try {
+        const raw = sessionStorage.getItem("apolena_studio_state");
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.petImage !== undefined) setPetImage(saved.petImage);
+          if (saved.secondPetImage !== undefined)
+            setSecondPetImage(saved.secondPetImage);
+          if (saved.petSpecies) setPetSpecies(saved.petSpecies);
+          if (saved.selectedCharacter)
+            setSelectedCharacter(saved.selectedCharacter);
+          if (saved.useCustomTheme !== undefined)
+            setUseCustomTheme(saved.useCustomTheme);
+          if (saved.customThemeImage !== undefined)
+            setCustomThemeImage(saved.customThemeImage);
+          if (typeof saved.fusedResultUrl === "string")
+            setFusedResultUrl(saved.fusedResultUrl);
+          if (Array.isArray(saved.generatedVariants))
+            setGeneratedVariants(saved.generatedVariants);
+          if (saved.selectedVariantId)
+            setSelectedVariantId(saved.selectedVariantId);
+          if (saved.activeGenerationJobId !== undefined)
+            setActiveGenerationJobId(saved.activeGenerationJobId);
+          if (saved.modelUsedLabel) setModelUsedLabel(saved.modelUsedLabel);
+          if (saved.isSimulationJob !== undefined)
+            setIsSimulationJob(saved.isSimulationJob);
+          if (saved.simulationNotice !== undefined)
+            setSimulationNotice(saved.simulationNotice);
+          if (saved.selectedPrintPreset)
+            setSelectedPrintPreset(saved.selectedPrintPreset);
+          if (saved.selectedFrame) setSelectedFrame(saved.selectedFrame);
+          if (saved.includePetInscription !== undefined)
+            setIncludePetInscription(saved.includePetInscription);
+          if (typeof saved.petInscriptionName === "string")
+            setPetInscriptionName(saved.petInscriptionName);
+          if (typeof saved.dedicationNote === "string")
+            setDedicationNote(saved.dedicationNote);
+          setStep(3);
+          return;
+        }
+      } catch {}
+    }
+
+    // Caso 4: Recarga normal o regreso sin parámetros -> restaurar última creación activa (ahorra tokens)
+    if (!charParam && stepParam !== "2") {
+      const activeId = getActiveCreationId();
+      const targetCreation =
+        (activeId
+          ? localCreations.find((c) => c.jobId === activeId)
+          : null) || localCreations[0];
+      if (targetCreation) {
+        applySavedCreationToStudio(targetCreation, true);
       }
     }
-  }, []);
+  }, [applySavedCreationToStudio]);
+
+  // Auto-guardado en tiempo real de selecciones del Paso 3 (localStorage + PostgreSQL)
+  useEffect(() => {
+    if (step !== 3 || !activeGenerationJobId || !fusedResultUrl) return;
+
+    const resolvedThemeName = useCustomTheme
+      ? "Diseño Propio"
+      : selectedCharacter.name;
+
+    const currentSnapshot: SavedStudioCreation = {
+      jobId: activeGenerationJobId,
+      characterId: selectedCharacter.id,
+      characterName: resolvedThemeName,
+      petImageUrl: petImage || "",
+      secondPetImageUrl: secondPetImage,
+      petSpecies,
+      fusedResultUrl,
+      variants: generatedVariants,
+      selectedVariantId,
+      selectedPrintPresetId: selectedPrintPreset?.id || null,
+      selectedFrameId: selectedFrame?.id || null,
+      includePetInscription,
+      petInscriptionName,
+      dedicationNote,
+      productSlug: "cuadros-personalizados",
+      updatedAt: new Date().toISOString(),
+    };
+
+    const nextList = upsertSavedCreation(currentSnapshot);
+    setSavedCreations(nextList);
+    setActiveCreationId(activeGenerationJobId);
+
+    const timer = setTimeout(() => {
+      fetch(`/api/jobs/${encodeURIComponent(activeGenerationJobId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: "cuadros-personalizados",
+          selectedVariantId,
+          selectedPrintPresetId: selectedPrintPreset?.id || null,
+          selectedFrameId: selectedFrame?.id || null,
+          includePetInscription,
+          petInscriptionName,
+          dedicationNote,
+        }),
+      }).catch(() => {});
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [
+    step,
+    activeGenerationJobId,
+    fusedResultUrl,
+    useCustomTheme,
+    selectedCharacter.id,
+    selectedCharacter.name,
+    petImage,
+    secondPetImage,
+    petSpecies,
+    generatedVariants,
+    selectedVariantId,
+    selectedPrintPreset?.id,
+    selectedFrame?.id,
+    includePetInscription,
+    petInscriptionName,
+    dedicationNote,
+  ]);
 
   // Cerrar lightbox / modal de confirmación con tecla Escape
   useEffect(() => {
@@ -873,20 +1113,58 @@ export default function personalizedWallArt() {
       const handleJobCompletion = (job: any) => {
         setIsSimulationJob(Boolean(job.isSimulation));
         setSimulationNotice(job.simulationReason || null);
+        let finalSelectedVariantId: string | null = null;
+        let finalUrl =
+          job.hdOutputImageUrl ||
+          job.outputImageUrl ||
+          selectedCharacter.fusionSampleUrl;
+
         if (Array.isArray(job.variants) && job.variants.length > 0) {
           setGeneratedVariants(job.variants);
-          setSelectedVariantId(job.variants[0].id);
-          setFusedResultUrl(job.variants[0].imageUrl);
+          const firstVarId: string = String(job.variants[0].id);
+          finalSelectedVariantId = firstVarId;
+          finalUrl = job.variants[0].imageUrl;
+          setSelectedVariantId(firstVarId);
+          setFusedResultUrl(finalUrl);
           setModelUsedLabel(job.variants[0].modelUsed);
         } else {
-          const finalUrl =
-            job.hdOutputImageUrl ||
-            job.outputImageUrl ||
-            selectedCharacter.fusionSampleUrl;
           setFusedResultUrl(finalUrl);
           if (job.modelUsed) setModelUsedLabel(job.modelUsed);
         }
         if (job.executionSeconds) setExecutionSeconds(job.executionSeconds);
+
+        // Guardar inmediatamente el resultado en el carrito de creaciones y fijar ?job=<id> en URL
+        if (finalUrl && !job.isSimulation) {
+          const snapshot: SavedStudioCreation = {
+            jobId,
+            characterId: selectedCharacter.id,
+            characterName: activeThemeName,
+            petImageUrl: job.petImageUrl || petImage || "",
+            secondPetImageUrl: job.secondPetImageUrl || secondPetImage,
+            petSpecies,
+            fusedResultUrl: finalUrl,
+            variants: Array.isArray(job.variants) ? job.variants : [],
+            selectedVariantId: finalSelectedVariantId,
+            selectedPrintPresetId: selectedPrintPreset?.id || null,
+            selectedFrameId: selectedFrame?.id || null,
+            includePetInscription,
+            petInscriptionName,
+            dedicationNote,
+            productSlug: "cuadros-personalizados",
+            updatedAt: new Date().toISOString(),
+          };
+          const updatedList = upsertSavedCreation(snapshot);
+          setSavedCreations(updatedList);
+          setActiveCreationId(jobId);
+          if (typeof window !== "undefined") {
+            window.history.replaceState(
+              {},
+              "",
+              `${window.location.pathname}?job=${encodeURIComponent(jobId)}`,
+            );
+          }
+        }
+
         setIsGenerating(false);
         setStep(3);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -990,6 +1268,7 @@ export default function personalizedWallArt() {
     setPetImage(null);
     setSecondPetImage(null);
     setFusedResultUrl("");
+    setActiveGenerationJobId(null);
     setFusionError(null);
     setErrorNotification(null);
     setIsGenerating(false);
@@ -999,11 +1278,13 @@ export default function personalizedWallArt() {
     setPetInscriptionName("");
     setDedicationNote("");
     setGeneratedVariants([]);
+    setActiveCreationId(null);
     try {
       sessionStorage.removeItem("apolena_studio_state");
       if (
         typeof window !== "undefined" &&
-        window.location.search.includes("step=")
+        (window.location.search.includes("step=") ||
+          window.location.search.includes("job="))
       ) {
         window.history.replaceState({}, "", window.location.pathname);
       }
@@ -1148,6 +1429,94 @@ export default function personalizedWallArt() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-[1440px] xl:max-w-[1520px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
+        {/* Barra Persistente de Creaciones Guardadas (Carrito de Retratos) */}
+        {!isGenerating && savedCreations.length > 0 && (
+          <div className="mb-6 bg-white/95 border border-cream-200 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="w-7 h-7 rounded-xl bg-[#174B3D]/10 text-[#174B3D] flex items-center justify-center shrink-0">
+                <ShoppingBag className="w-3.5 h-3.5" />
+              </div>
+              <div className="leading-tight">
+                <span className="text-xs font-bold text-stone-900 block">
+                  Mis creaciones guardadas ({savedCreations.length})
+                </span>
+                <span className="text-[10px] text-stone-500 block">
+                  Tu avance se guarda automáticamente al refrescar
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {savedCreations.map((item) => {
+                const isActive =
+                  step === 3 && activeGenerationJobId === item.jobId;
+                return (
+                  <div
+                    key={item.jobId}
+                    className={`group relative flex items-center gap-2 pl-1.5 pr-7 py-1 rounded-full border text-left transition-all shrink-0 cursor-pointer ${
+                      isActive
+                        ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                        : "bg-cream-50 hover:bg-cream-100 text-stone-800 border-cream-200"
+                    }`}
+                    onClick={() => applySavedCreationToStudio(item, true)}
+                  >
+                    <img
+                      src={item.fusedResultUrl}
+                      alt={item.characterName}
+                      className="w-7 h-7 rounded-full object-cover border border-white/40 shrink-0"
+                    />
+                    <div className="min-w-0 max-w-[120px] leading-tight">
+                      <span className="text-[11px] font-semibold block truncate">
+                        {item.petInscriptionName.trim()
+                          ? `${item.petInscriptionName.trim()} · ${item.characterName}`
+                          : item.characterName}
+                      </span>
+                      <span
+                        className={`text-[9px] block truncate ${
+                          isActive ? "text-[#DFC18D]" : "text-stone-500"
+                        }`}
+                      >
+                        {isActive ? "Viendo ahora" : "Retomar obra"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const nextList = removeSavedCreation(item.jobId);
+                        setSavedCreations(nextList);
+                        if (activeGenerationJobId === item.jobId) {
+                          if (nextList[0]) {
+                            applySavedCreationToStudio(nextList[0], true);
+                          } else {
+                            handleReset();
+                          }
+                        }
+                      }}
+                      aria-label={`Eliminar creación ${item.characterName}`}
+                      className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                        isActive
+                          ? "text-white/70 hover:text-white hover:bg-white/15"
+                          : "text-stone-400 hover:text-stone-700 hover:bg-stone-200/70"
+                      }`}
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-dashed border-[#c6a26c] text-[#174B3D] text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#94713F]" />
+                <span>Nuevo retrato</span>
+              </button>
+            </div>
+          </div>
+        )}
         {/* ========================================================================= */}
         {/* PANTALLA DE REVELADO / CARGA (MINIMALIST STUDIO LIGHT VIEW) */}
         {/* ========================================================================= */}

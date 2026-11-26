@@ -4,6 +4,7 @@ import { enqueueJob } from "@/lib/queue";
 import { FAMOUS_CHARACTERS } from "@/data/characters";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { AIProviderId, ApiKeysOverride } from "@/lib/types";
+import { getSessionUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,9 +90,11 @@ export async function POST(req: NextRequest) {
 
     // UUID so the job can be persisted in `generation_jobs` and linked to `order_items.generation_job_id`
     const jobId = randomUUID();
+    const sessionUser = await getSessionUser().catch(() => null);
 
     const job = await enqueueJob({
       jobId,
+      userId: sessionUser?.id || null,
       characterId,
       petImageUrl,
       secondPetImageUrl,
