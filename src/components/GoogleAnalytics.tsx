@@ -33,17 +33,35 @@ export function GoogleAnalytics() {
 
   return (
     <>
+      <Script id="google-analytics-bootstrap" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = window.gtag || gtag;
+          gtag('js', new Date());
+          ${
+            isGaEnabled
+              ? `gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });`
+              : ""
+          }
+          ${
+            isGtmEnabled
+              ? `window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });`
+              : ""
+          }
+        `}
+      </Script>
+
+      {isGaEnabled && (
+        <Script
+          id="google-analytics-script"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+      )}
+
       {isGtmEnabled && (
         <>
-          <Script id="google-tag-manager-init" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              window.gtag = window.gtag || gtag;
-              gtag('js', new Date());
-              window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-            `}
-          </Script>
           <Script
             id="google-tag-manager-script"
             src={`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`}
@@ -58,27 +76,6 @@ export function GoogleAnalytics() {
               title="Google Tag Manager"
             />
           </noscript>
-        </>
-      )}
-
-      {isGaEnabled && (
-        <>
-          <Script
-            id="google-analytics-script"
-            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-            strategy="afterInteractive"
-          />
-          <Script id="google-analytics-init" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              window.gtag = gtag;
-              gtag('js', new Date());
-              gtag('config', '${GA_MEASUREMENT_ID}', {
-                send_page_view: false
-              });
-            `}
-          </Script>
         </>
       )}
 

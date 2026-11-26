@@ -5,12 +5,13 @@
  */
 
 export const DEFAULT_GTM_ID = "GTM-54JPQQK2";
+export const DEFAULT_GA_MEASUREMENT_ID = "G-QK22TGKT0M";
 
 export const GTM_CONTAINER_ID =
   process.env.NEXT_PUBLIC_GTM_ID?.trim() || DEFAULT_GTM_ID;
 
 export const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "";
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || DEFAULT_GA_MEASUREMENT_ID;
 
 export const isGtmEnabled = Boolean(
   GTM_CONTAINER_ID &&
