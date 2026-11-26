@@ -132,9 +132,9 @@ export function sanitizeCharacterPromptToSpeciesNeutral(
     `a majestic portrait of ${replacementSubject}`,
   );
 
-  // Replace remaining standalone species terms that might bias generation
+  // Replace remaining standalone species terms (English & Spanish) that might bias generation
   cleaned = cleaned.replace(
-    /\b(?:orange\s+tabby\s+cat|tabby\s+cat|tuxedo\s+cat|siamese\s+cat|feline|cat|kitten)\b/gi,
+    /\b(?:orange\s+tabby\s+cat|tabby\s+cat|tuxedo\s+cat|siamese\s+cat|feline|cat|kitten|gato|gata|gatito|felino|perro|perra|perrito|canino)\b/gi,
     replacementSubject,
   );
 
@@ -283,12 +283,17 @@ function buildFusionPrompt(
   const hasVisualRef = isCustomRef || hasThemeRefImage;
   const refImageIndex = hasSecondPet ? 3 : 2;
 
+  const safeCatalogDescription = sanitizeCharacterPromptToSpeciesNeutral(
+    character.description || "",
+    hasSecondPet,
+  );
+
   const themeGuideText = isCustomRef
     ? extractedWardrobeDescription ||
       customPrompt?.trim() ||
       `Copy 100% of the exact clothing, headwear, accessories, lighting mood, and exact background architecture/scenery shown in Image ${refImageIndex} (the user's custom reference image).`
     : extractedWardrobeDescription ||
-      `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${character.description}`;
+      `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${safeCatalogDescription}`;
 
   const multiImageAssignment = hasVisualRef
     ? `INPUT IMAGES ROLE ASSIGNMENT (STRICT, NON-NEGOTIABLE SEPARATION):
@@ -482,7 +487,10 @@ async function runOpenAIFusion(
     customPrompt,
     onProgress,
   } = input;
-  const themeSource = customThemeImageUrl || character.characterImageUrl;
+  const themeSource =
+    customThemeImageUrl ||
+    character.characterImageUrl ||
+    character.fusionSampleUrl;
   const hasSecondPet = Boolean(secondPetImageUrl);
   const isCustomRef =
     Boolean(customThemeImageUrl) || character.id === "custom-reference";
@@ -810,7 +818,10 @@ async function runGeminiFusion(
     customPrompt,
     onProgress,
   } = input;
-  const themeSource = customThemeImageUrl || character.characterImageUrl;
+  const themeSource =
+    customThemeImageUrl ||
+    character.characterImageUrl ||
+    character.fusionSampleUrl;
   const hasSecondPet = Boolean(secondPetImageUrl);
   const isCustomRef =
     Boolean(customThemeImageUrl) || character.id === "custom-reference";
@@ -1259,7 +1270,10 @@ export async function runMultiModelFusionPipeline(
     let sharedPetFingerprint: string | null = null;
     let sharedWardrobeDesc: string | null = null;
     let sharedAssets: PrecomputedFusionAssets | undefined = undefined;
-    const themeSource = customThemeImageUrl || character.characterImageUrl;
+    const themeSource =
+    customThemeImageUrl ||
+    character.characterImageUrl ||
+    character.fusionSampleUrl;
     const isCustomRef =
       Boolean(customThemeImageUrl) || character.id === "custom-reference";
     const hasDetailedCatalogDesc =
