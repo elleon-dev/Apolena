@@ -771,7 +771,7 @@ export default function personalizedWallArt() {
     }
 
     // Caso 4: Recarga normal o regreso sin parámetros -> restaurar última creación activa (ahorra tokens)
-    if (!charParam && stepParam !== "2") {
+    if (!charParam && stepParam !== "1" && stepParam !== "2") {
       const activeId = getActiveCreationId();
       const targetCreation =
         (activeId

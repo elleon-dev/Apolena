@@ -106,7 +106,7 @@ export default function BannerCarousel() {
             <div className="pt-2 xl:pt-4 flex flex-col items-start gap-3.5">
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  href="#estilos"
+                  href="/products/cuadros-personalizados?step=1"
                   className="inline-flex items-center justify-center gap-2.5 bg-[#174B3D] hover:bg-[#0E2F26] text-white px-8 py-3.5 rounded-full font-bold text-sm lg:text-base shadow-md hover:shadow-lg transition-all active:scale-95 group"
                 >
                   <span>Elegir mi estilo</span>
@@ -198,7 +198,7 @@ export default function BannerCarousel() {
 
           {/* Botón CTA Elegir mi estilo */}
           <Link
-            href="#estilos"
+            href="/products/cuadros-personalizados?step=1"
             className="w-full inline-flex items-center justify-center gap-2.5 bg-[#174B3D] hover:bg-[#0E2F26] text-white py-3.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all mb-3.5"
           >
             <span>Elegir mi estilo</span>
