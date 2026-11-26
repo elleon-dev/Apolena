@@ -157,12 +157,12 @@ async function extractPetIdentityFingerprint(
   openaiKey?: string,
   geminiKey?: string,
 ): Promise<string | null> {
-  const promptText = `Inspect the uploaded pet photo(s) carefully. Write a concise, exact physical description (max 65 words) of ${pet2Data ? "Pet #1 (first image) and Pet #2 (second image)" : "the pet in the image"} to lock its identity for a portrait artist.
+  const promptText = `Inspect the uploaded pet photo(s) at high visual detail. Write a concise, forensic physical identity sheet (max 85 words) of ${pet2Data ? "Pet #1 (first image) and Pet #2 (second image)" : "the pet in the image"} so a master portrait painter reproduces this EXACT individual animal without changing a single marking.
 Explicitly state:
-1. Exact animal species (state clearly: DOG or CAT) and specific breed/mix.
-2. Exact fur/coat colors, pattern/markings on face and chest, and fur length/texture.
-3. Exact snout/muzzle shape, nose color, eye color, ear shape/posture (e.g., floppy retriever ears vs upright ears), and natural expression.
-Output ONLY the factual physical description of the pet(s), nothing else.`;
+1. Exact animal species (DOG, CAT, or other) and specific breed/mix.
+2. Exact fur/coat base colors, EVERY distinctive facial marking (stripes, tabby M, white blaze, eye patches, cheek fur, muzzle spots, chin/chest fur), and exact fur length/texture (short, silky, curly, fluffy, wiry).
+3. Exact eye color (precise iris hue), exact nose color/shape, exact muzzle/snout length & width, exact ear shape/size/posture (upright, half-folded, floppy), and natural gaze/expression.
+Output ONLY the factual physical description, nothing else.`;
 
   if (openaiKey && !openaiKey.includes("your_")) {
     try {
@@ -172,7 +172,7 @@ Output ONLY the factual physical description of the pet(s), nothing else.`;
           type: "image_url",
           image_url: {
             url: `data:${pet1Data.mimeType};base64,${pet1Data.base64}`,
-            detail: "low",
+            detail: "high",
           },
         },
       ];
@@ -181,7 +181,7 @@ Output ONLY the factual physical description of the pet(s), nothing else.`;
           type: "image_url",
           image_url: {
             url: `data:${pet2Data.mimeType};base64,${pet2Data.base64}`,
-            detail: "low",
+            detail: "high",
           },
         });
       }
@@ -194,7 +194,8 @@ Output ONLY the factual physical description of the pet(s), nothing else.`;
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [{ role: "user", content }],
-          max_tokens: 150,
+          max_tokens: 180,
+          temperature: 0.1,
         }),
       });
       if (res.ok) {
@@ -271,6 +272,7 @@ function buildFusionPrompt(
   extractedWardrobeDescription?: string | null,
   petIdentityFingerprint?: string | null,
   hasCustomReferenceImage: boolean = false,
+  hasThemeRefImage: boolean = false,
 ): string {
   const petCountText = hasSecondPet
     ? "BOTH uploaded pets (Pet #1 from Image 1 and Pet #2 from Image 2) side by side"
@@ -278,6 +280,7 @@ function buildFusionPrompt(
 
   const isCustomRef =
     hasCustomReferenceImage || character.id === "custom-reference";
+  const hasVisualRef = isCustomRef || hasThemeRefImage;
   const refImageIndex = hasSecondPet ? 3 : 2;
 
   const themeGuideText = isCustomRef
@@ -287,39 +290,38 @@ function buildFusionPrompt(
     : extractedWardrobeDescription ||
       `Theme: ${character.name} (${character.characterTitle || character.universe}). Wardrobe and atmosphere: ${character.description}`;
 
-  const multiImageAssignment = isCustomRef
-    ? `INPUT IMAGES ROLE ASSIGNMENT (STRICT SEPARATION):
-- IMAGE 1${hasSecondPet ? " & IMAGE 2" : ""}: THE PROTAGONIST PET. Keep 100% of this exact animal's species, breed, facial structure, fur color, snout, eyes, and ears.
-- IMAGE ${refImageIndex}: THE CUSTOM WARDROBE & BACKGROUND REFERENCE. Copy 100% of the exact garments/clothing, exact headwear (or lack of headwear), and the exact background landmark, architecture, sky, and environment from Image ${refImageIndex} onto the pet from Image 1. Replace any human or other subject in Image ${refImageIndex} with the pet from Image 1.\n\n`
+  const multiImageAssignment = hasVisualRef
+    ? `INPUT IMAGES ROLE ASSIGNMENT (STRICT, NON-NEGOTIABLE SEPARATION):
+- IMAGE 1${hasSecondPet ? " & IMAGE 2" : ""}: THE PROTAGONIST PET (IDENTITY LOCK). Preserve 100% of this exact animal's species, breed, facial bone structure, muzzle/snout shape, exact fur colors, exact facial markings/spots/stripes, exact eye color, nose color, and ear shape/posture. NEVER blend or replace this face with the subject from Image ${refImageIndex}.
+- IMAGE ${refImageIndex}: THE EXACT COSTUME, HEADWEAR, LIGHTING & BACKGROUND BLUEPRINT ONLY. Replicate 100% of the exact outfit design, fabric textures, embroidery, jewelry, headwear style, color palette, studio lighting, and background scenery from Image ${refImageIndex}, and fit them organically onto the pet from Image 1. COMPLETELY DISCARD AND REPLACE the face, fur color, eyes, and animal species originally wearing the costume in Image ${refImageIndex}.\n\n`
     : "";
 
-  const protagonistSection = `${multiImageAssignment}PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST ALWAYS BE CLEARLY VISIBLE AND RECOGNIZABLE):
+  const protagonistSection = `${multiImageAssignment}PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST BE INSTANTLY RECOGNIZABLE):
 Create an ultra-realistic 8K fine art portrait of ${petCountText}.${
     petIdentityFingerprint
-      ? `\nEXACT UPLOADED PET IDENTITY TO PRESERVE 100%: ${petIdentityFingerprint}`
+      ? `\nFORENSIC PET IDENTITY TO LOCK 100% (DO NOT ALTER ANY COLOR OR MARKING): ${petIdentityFingerprint}`
       : ""
   }`;
 
-  const themeGuideSection = isCustomRef
+  const themeGuideSection = hasVisualRef
     ? `
-CUSTOM REFERENCE WARDROBE & EXACT BACKGROUND SCENE (MANDATORY FIDELITY TO USER'S REFERENCE IMAGE):
-Dress the user's pet in the EXACT outfit/headwear and place it in the EXACT background environment and architecture from the uploaded reference image:
+EXACT COSTUME, ACCESSORIES & BACKGROUND FIDELITY (FROM IMAGE ${refImageIndex}):
+Dress the pet from Image 1 in the EXACT outfit, jewelry, headwear, lighting mood, and background environment shown in Image ${refImageIndex} ("${character.name}"):
 ${themeGuideText}
-CRITICAL: Do NOT invent pirate hats, tricorn hats, armor, or unrelated costumes. Match the reference image's exact clothing colors, headwear style, and background scenery/landmarks.`
+CRITICAL COSTUME TRANSFER RULE: Match Image ${refImageIndex}'s exact wardrobe colors, embroidery, props, and background scenery faithfully, while ensuring ZERO facial features, fur colors, or species traits from Image ${refImageIndex}'s original model leak onto the user's pet.`
     : `
-THEMATIC WARDROBE & SCENE GUIDE (SECONDARY - USE "${character.name}" ONLY AS A COSTUME & ENVIRONMENT GUIDE AROUND THE USER'S PET):
+THEMATIC WARDROBE & SCENE GUIDE (USE "${character.name}" AS COSTUME & ENVIRONMENT GUIDE AROUND THE USER'S PET):
 Adapt the following thematic attire, accessories, lighting mood, and background setting onto the user's pet:
 ${themeGuideText}`;
 
   const identityRules = `
-MANDATORY PET VISIBILITY, PROTAGONIST & UNCROPPED CANVAS FRAMING RULES:
-1. THE USER'S PET IS THE STAR: The generated portrait MUST unmistakably look like the user's specific uploaded pet. Preserve 100% of its exact species (DOG vs CAT), breed, facial bone structure, snout/muzzle length, nose color, eye color, fur colors, facial markings, and authentic expression from the input pet photo.
-2. COMPLETE UNCROPPED HEAD, FACE & EARS (CRITICAL FOR STRETCHED CANVAS): This artwork is for a stretched wall-art canvas where edges wrap around a wooden stretcher frame. NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet reference photo is tightly cropped at the top or sides, you MUST reconstruct and render the COMPLETE head, full skull crown, both complete ears, and upper torso/chest in a balanced medium-wide portrait shot (waist-up / chest-up framing).
-3. MANDATORY 20% HEADROOM & SIDE BREATHING ROOM: Leave at least 20% to 25% of open background space above the highest point of the pet's head, ears, or headwear, and 15% breathing room on the left and right edges so the entire head and costume are 100% inside the frame with generous gallery margins.
-4. UNOBSTRUCTED PET FACE & EARS: Never let crowns, hats, helmets, wigs, collars, or costumes hide, replace, or distort the pet's face, eyes, muzzle, or distinctive ears. Any headwear from the theme guide must sit lightly and naturally on top of the head as an accessory so the pet's natural ears, forehead fur, and head silhouette remain 100% visible.
-5. NATURAL ANATOMICAL PROPORTIONS: Maintain realistic, natural canine/feline head-to-shoulder and neck proportions. Never make the head bobble-headed, zoomed-in, cartoon, 3D-rendered, or plastic.
-6. ORGANIC WARDROBE FIT: Tailor the garments, collar, and accessories around the pet's natural neck, shoulders, and chest with real fur micro-textures overlapping the collar edge.
-7. PHOTOGRAPHY SPECS: Medium-wide half-body portrait (35mm full-frame camera, 50mm gallery portrait lens, camera positioned slightly stepped back so the full head, ears, and chest are framed with ample headroom), museum-grade fine art lighting, sharp eye catchlights. No watermarks, no text.`;
+MANDATORY PET IDENTITY, COLOR FIDELITY & UNCROPPED CANVAS FRAMING RULES:
+1. 100% FACIAL & COLOR FIDELITY: The generated portrait MUST unmistakably be the EXACT individual pet from Image 1. Lock its exact species (DOG vs CAT vs OTHER), breed, facial proportions, muzzle/snout geometry, nose color, exact eye iris color, exact fur shades, asymmetric markings, and authentic expression. Never change a dark dog into a light one, never alter eye color, and never genericize its face.
+2. COMPLETE UNCROPPED HEAD, FACE & EARS (CRITICAL FOR STRETCHED CANVAS): This artwork is for a stretched wall-art canvas where edges wrap around a wooden stretcher frame. NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet photo is tightly cropped, reconstruct the COMPLETE head, both complete ears, and upper chest in a balanced medium-wide portrait shot.
+3. MANDATORY 20% HEADROOM & SIDE BREATHING ROOM: Leave 20% to 25% of open background space above the highest point of the head, ears, or headwear, and 15% breathing room on the left and right edges.
+4. UNOBSTRUCTED PET FACE & EARS: Any crown, hat, helmet, or headwear from Image ${refImageIndex} must sit lightly and naturally on top of the head so the pet's eyes, muzzle, forehead markings, and natural ears remain clearly visible and true to Image 1.
+5. NATURAL ANATOMICAL PROPORTIONS & ORGANIC FIT: Maintain realistic head-to-shoulder proportions with real fur micro-textures naturally overlapping the collar and neckline of the garment. Never make the portrait look cartoon, 3D-rendered, or plastic.
+6. PHOTOGRAPHY SPECS: Medium-wide half-body fine-art portrait (35mm full-frame camera, 50mm portrait lens), museum-grade painterly lighting matching Image ${refImageIndex}, crisp eye catchlights. No watermarks, no text.`;
 
   const extraUserPrompt = customPrompt?.trim()
     ? `\nADDITIONAL STUDIO DIRECTION: ${customPrompt.trim()}`
@@ -454,6 +456,12 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
  * 1. OPENAI PIPELINE: gpt-image-1.5 (Pet Image Edit) + GPT-4o Vision Fallback
  * ============================================================================
  */
+interface PrecomputedFusionAssets {
+  pet1Data: ResolvedImageData;
+  pet2Data: ResolvedImageData | null;
+  themeData: ResolvedImageData | null;
+}
+
 async function runOpenAIFusion(
   input: MultiModelFusionInput,
   character: FamousCharacter,
@@ -465,6 +473,7 @@ async function runOpenAIFusion(
   ],
   precomputedPetFingerprint?: string | null,
   precomputedWardrobeDesc?: string | null,
+  precomputedAssets?: PrecomputedFusionAssets,
 ): Promise<{ imageUrl: string; modelUsed: string }> {
   const {
     petImageUrl,
@@ -484,23 +493,31 @@ async function runOpenAIFusion(
     "analyzing",
   );
 
-  const pet1Data = await resolveImageData(petImageUrl);
-  const pet2Data = secondPetImageUrl
-    ? await resolveImageData(secondPetImageUrl)
-    : null;
-  const customThemeData = customThemeImageUrl
-    ? await resolveImageData(customThemeImageUrl).catch(() => null)
-    : null;
+  const pet1Data =
+    precomputedAssets?.pet1Data ?? (await resolveImageData(petImageUrl));
+  const pet2Data =
+    precomputedAssets !== undefined
+      ? precomputedAssets.pet2Data
+      : secondPetImageUrl
+        ? await resolveImageData(secondPetImageUrl)
+        : null;
+  const themeData =
+    precomputedAssets !== undefined
+      ? precomputedAssets.themeData
+      : themeSource
+        ? await resolveImageData(themeSource).catch(() => null)
+        : null;
 
   const petIdentityFingerprint =
     precomputedPetFingerprint ??
     (await extractPetIdentityFingerprint(pet1Data, pet2Data, openaiKey));
 
+  const hasDetailedCatalogDesc =
+    !isCustomRef && (character.description?.trim().length ?? 0) >= 40;
+
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
-  if (!wardrobeDesc && themeSource) {
+  if (!wardrobeDesc && themeData && !hasDetailedCatalogDesc) {
     try {
-      const themeData =
-        customThemeData || (await resolveImageData(themeSource));
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
         character.name,
@@ -521,10 +538,53 @@ async function runOpenAIFusion(
     wardrobeDesc,
     petIdentityFingerprint,
     isCustomRef,
+    Boolean(themeData),
   );
 
-  // Attempt 1: Native Pet Image Transformation (/v1/images/edits)
+  // Attempt 1: Native Multi-Image Fusion (/v1/images/edits) with High Input Fidelity
   const editModels = preferredModels;
+
+  const buildEditFormData = (editModel: string, withHighFidelity: boolean) => {
+    const formData = new FormData();
+    formData.append("model", editModel);
+    formData.append("prompt", fusionPrompt);
+    formData.append("size", hasSecondPet ? "1536x1024" : "1024x1536");
+    // Cost-optimized quality tier: 'medium' reduces cost by ~75% ($0.034 vs $0.133) while preserving photorealism
+    formData.append("quality", "medium");
+    if (withHighFidelity) {
+      // High input fidelity locks the pet's exact facial geometry, fur colors, markings, and eye color
+      formData.append("input_fidelity", "high");
+    }
+
+    // Append Pet 1 (and optional Pet 2) first for #1 identity lock,
+    // followed by the character/theme reference image so the model faithfully reproduces the exact outfit & scene.
+    formData.append(
+      "image[]",
+      new Blob([new Uint8Array(pet1Data.buffer)], {
+        type: pet1Data.mimeType,
+      }),
+      `pet1.${pet1Data.ext}`,
+    );
+    if (pet2Data) {
+      formData.append(
+        "image[]",
+        new Blob([new Uint8Array(pet2Data.buffer)], {
+          type: pet2Data.mimeType,
+        }),
+        `pet2.${pet2Data.ext}`,
+      );
+    }
+    if (themeData) {
+      formData.append(
+        "image[]",
+        new Blob([new Uint8Array(themeData.buffer)], {
+          type: themeData.mimeType,
+        }),
+        `character_reference.${themeData.ext}`,
+      );
+    }
+    return formData;
+  };
 
   for (const editModel of editModels) {
     try {
@@ -534,48 +594,33 @@ async function runOpenAIFusion(
         "inpainting",
       );
 
-      const formData = new FormData();
-      formData.append("model", editModel);
-      formData.append("prompt", fusionPrompt);
-      formData.append("size", hasSecondPet ? "1536x1024" : "1024x1536");
-      // Cost-optimized quality tier: 'medium' reduces cost by ~75% ($0.034 vs $0.133) while preserving photorealism
-      formData.append("quality", "medium");
-
-      // Append Pet 1 (and optional Pet 2) first, and if the user uploaded a custom reference image,
-      // append it last so the model can visually match the exact custom outfit and background landmark!
-      formData.append(
-        "image[]",
-        new Blob([new Uint8Array(pet1Data.buffer)], {
-          type: pet1Data.mimeType,
-        }),
-        `pet1.${pet1Data.ext}`,
-      );
-      if (pet2Data) {
-        formData.append(
-          "image[]",
-          new Blob([new Uint8Array(pet2Data.buffer)], {
-            type: pet2Data.mimeType,
-          }),
-          `pet2.${pet2Data.ext}`,
-        );
-      }
-      if (customThemeData) {
-        formData.append(
-          "image[]",
-          new Blob([new Uint8Array(customThemeData.buffer)], {
-            type: customThemeData.mimeType,
-          }),
-          `custom_reference.${customThemeData.ext}`,
-        );
-      }
-
-      const editRes = await fetch("https://api.openai.com/v1/images/edits", {
+      let editRes = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${openaiKey}`,
         },
-        body: formData,
+        body: buildEditFormData(editModel, true),
       });
+
+      // If a specific model rejects `input_fidelity`, retry immediately without it
+      if (!editRes.ok && editRes.status === 400) {
+        const firstErr = await editRes.text();
+        if (firstErr.includes("input_fidelity")) {
+          console.warn(
+            `[OpenAI ${editModel}] input_fidelity not supported, retrying without it.`,
+          );
+          editRes = await fetch("https://api.openai.com/v1/images/edits", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${openaiKey}`,
+            },
+            body: buildEditFormData(editModel, false),
+          });
+        } else {
+          console.warn(`[OpenAI ${editModel} fallback notice]:`, firstErr);
+          continue;
+        }
+      }
 
       if (editRes.ok) {
         const editJson = await editRes.json();
@@ -756,6 +801,7 @@ async function runGeminiFusion(
   openaiKeyFallback?: string,
   precomputedPetFingerprint?: string | null,
   precomputedWardrobeDesc?: string | null,
+  precomputedAssets?: PrecomputedFusionAssets,
 ): Promise<{ imageUrl: string; modelUsed: string }> {
   const {
     petImageUrl,
@@ -775,13 +821,20 @@ async function runGeminiFusion(
     "analyzing",
   );
 
-  const pet1Data = await resolveImageData(petImageUrl);
-  const pet2Data = secondPetImageUrl
-    ? await resolveImageData(secondPetImageUrl)
-    : null;
-  const customThemeData = customThemeImageUrl
-    ? await resolveImageData(customThemeImageUrl).catch(() => null)
-    : null;
+  const pet1Data =
+    precomputedAssets?.pet1Data ?? (await resolveImageData(petImageUrl));
+  const pet2Data =
+    precomputedAssets !== undefined
+      ? precomputedAssets.pet2Data
+      : secondPetImageUrl
+        ? await resolveImageData(secondPetImageUrl)
+        : null;
+  const themeData =
+    precomputedAssets !== undefined
+      ? precomputedAssets.themeData
+      : themeSource
+        ? await resolveImageData(themeSource).catch(() => null)
+        : null;
 
   const petIdentityFingerprint =
     precomputedPetFingerprint ??
@@ -792,11 +845,12 @@ async function runGeminiFusion(
       geminiKey,
     ));
 
+  const hasDetailedCatalogDesc =
+    !isCustomRef && (character.description?.trim().length ?? 0) >= 40;
+
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
-  if (!wardrobeDesc && themeSource) {
+  if (!wardrobeDesc && themeData && !hasDetailedCatalogDesc) {
     try {
-      const themeData =
-        customThemeData || (await resolveImageData(themeSource));
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
         character.name,
@@ -817,6 +871,7 @@ async function runGeminiFusion(
     wardrobeDesc,
     petIdentityFingerprint,
     isCustomRef,
+    Boolean(themeData),
   );
 
   const petParts: any[] = [
@@ -839,12 +894,12 @@ async function runGeminiFusion(
 
   const parts: any[] = [
     ...petParts,
-    ...(customThemeData
+    ...(themeData
       ? [
           {
             inlineData: {
-              mimeType: customThemeData.mimeType,
-              data: customThemeData.base64,
+              mimeType: themeData.mimeType,
+              data: themeData.base64,
             },
           },
         ]
@@ -1203,20 +1258,31 @@ export async function runMultiModelFusionPipeline(
 
     let sharedPetFingerprint: string | null = null;
     let sharedWardrobeDesc: string | null = null;
+    let sharedAssets: PrecomputedFusionAssets | undefined = undefined;
     const themeSource = customThemeImageUrl || character.characterImageUrl;
     const isCustomRef =
       Boolean(customThemeImageUrl) || character.id === "custom-reference";
+    const hasDetailedCatalogDesc =
+      !isCustomRef && (character.description?.trim().length ?? 0) >= 40;
 
     try {
-      const pet1Data = await resolveImageData(petImageUrl);
-      const pet2Data = secondPetImageUrl
-        ? await resolveImageData(secondPetImageUrl)
-        : null;
-      const themeDataPromise = themeSource
-        ? resolveImageData(themeSource).catch(() => null)
-        : Promise.resolve(null);
+      const [pet1Data, pet2Data, themeData] = await Promise.all([
+        resolveImageData(petImageUrl),
+        secondPetImageUrl
+          ? resolveImageData(secondPetImageUrl)
+          : Promise.resolve(null),
+        themeSource
+          ? resolveImageData(themeSource).catch(() => null)
+          : Promise.resolve(null),
+      ]);
 
-      const themeData = await themeDataPromise;
+      sharedAssets = { pet1Data, pet2Data, themeData };
+
+      // Skip extra Vision API wardrobe extraction for catalog characters that already have a
+      // detailed description AND visual themeData attached directly to the image editors.
+      const shouldExtractWardrobe = Boolean(
+        themeData && (isCustomRef || !hasDetailedCatalogDesc),
+      );
 
       const [fpResult, wardrobeResult] = await Promise.all([
         extractPetIdentityFingerprint(
@@ -1225,7 +1291,7 @@ export async function runMultiModelFusionPipeline(
           hasValidOpenAI ? openaiKey : undefined,
           hasValidGemini ? geminiKey : undefined,
         ),
-        themeData
+        shouldExtractWardrobe && themeData
           ? extractWardrobeFromThemeImage(
               themeData,
               character.name,
@@ -1251,7 +1317,7 @@ export async function runMultiModelFusionPipeline(
 
     const variants: GeneratedVariant[] = [];
 
-    // Run both models concurrently with the locked pet identity fingerprint and visual wardrobe guide
+    // Run both models concurrently reusing pre-resolved images, locked pet identity fingerprint, and character blueprint
     const [openaiResult, geminiResult] = await Promise.allSettled([
       hasValidOpenAI
         ? runOpenAIFusion(
@@ -1261,6 +1327,7 @@ export async function runMultiModelFusionPipeline(
             undefined,
             sharedPetFingerprint,
             sharedWardrobeDesc,
+            sharedAssets,
           )
         : Promise.reject(new Error("OpenAI no configurado")),
       hasValidGemini
@@ -1271,6 +1338,7 @@ export async function runMultiModelFusionPipeline(
             openaiKey,
             sharedPetFingerprint,
             sharedWardrobeDesc,
+            sharedAssets,
           )
         : Promise.reject(new Error("Gemini no configurado")),
     ]);
