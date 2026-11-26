@@ -27,6 +27,8 @@ import {
   Download,
   Lock,
   Gift,
+  Eye,
+  X,
 } from "lucide-react";
 import type { OrderRecord, OrderStatus } from "@/lib/db-service";
 import type { SessionUser } from "@/lib/auth";
@@ -34,6 +36,7 @@ import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
 import {
   CANVAS_WRAP_BLEED_CM,
   exportPrintReadyImage,
+  exportWatermarkedPreviewImage,
   resolvePrintBleedSpec,
 } from "@/lib/print-export";
 
@@ -59,6 +62,43 @@ export default function CommonUserOrdersPage() {
   const [reviewComment, setReviewComment] = useState("");
   const [isSavingReview, setIsSavingReview] = useState(false);
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
+  const [downloadingPreviewId, setDownloadingPreviewId] = useState<string | null>(null);
+  const [previewArtwork, setPreviewArtwork] = useState<{
+    order: OrderRecord;
+    imageUrl: string;
+    themeName: string;
+  } | null>(null);
+
+  const handleDownloadWatermarkedPreview = async (order: OrderRecord) => {
+    const item = order.packages?.[0]?.items?.[0];
+    if (!item) return;
+    const previewSrc = item.generated_art_url || "/samples/cat-suit.jpg";
+    const themeName = item.customizations?.theme_name || "Apolena";
+    const petName =
+      (item.customizations?.pet_inscription?.enabled &&
+        item.customizations?.pet_inscription?.pet_name?.trim()) ||
+      item.customizations?.pet_name?.trim() ||
+      null;
+
+    setDownloadingPreviewId(order.id);
+    try {
+      const exported = await exportWatermarkedPreviewImage(
+        previewSrc,
+        themeName,
+        petName,
+      );
+      const link = document.createElement("a");
+      link.href = exported.dataUrl;
+      link.download = `Apolena-Muestra-${order.order_code}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      window.open(previewSrc, "_blank", "noopener,noreferrer");
+    } finally {
+      setDownloadingPreviewId(null);
+    }
+  };
 
   const handleDownloadMemoryHd = async (order: OrderRecord) => {
     const item = order.packages?.[0]?.items?.[0];
@@ -517,20 +557,48 @@ export default function CommonUserOrdersPage() {
 
                   {/* Artwork & 50/50 Payment Breakdown */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
-                    {item && (
+                    {item && (() => {
+                      const watermarkedPreviewUrl =
+                        item.generated_art_url || "/samples/cat-suit.jpg";
+                      const isOrderOwner = Boolean(
+                        user &&
+                          (user.id === order.buyer_id ||
+                            (order.shipping?.email &&
+                              user.email.toLowerCase() ===
+                                order.shipping.email.toLowerCase())),
+                      );
+                      const canDownloadCleanHd =
+                        order.status === "completed" &&
+                        isPaidFull &&
+                        isOrderOwner;
+
+                      return (
                       <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] flex flex-col sm:flex-row sm:items-center gap-4">
-                        <img
-                          src={
-                            order.status === "completed" &&
-                            isPaidFull &&
-                            item.customizations?.master_art_url
-                              ? item.customizations.master_art_url
-                              : item.generated_art_url ||
-                                "/samples/cat-suit.jpg"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPreviewArtwork({
+                              order,
+                              imageUrl: watermarkedPreviewUrl,
+                              themeName:
+                                item.customizations?.theme_name ||
+                                "Arte Personalizado",
+                            })
                           }
-                          alt="Retrato Personalizado"
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-[#c6a26c]/50 shrink-0 shadow-xs"
-                        />
+                          title="Ver muestra con marca de agua"
+                          className="group relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-[#c6a26c]/50 shrink-0 shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
+                        >
+                          <img
+                            src={watermarkedPreviewUrl}
+                            alt="Retrato Personalizado"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors flex items-center justify-center">
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-white/95 text-[#174B3D] flex items-center justify-center shadow-sm">
+                              <Eye className="w-4 h-4" />
+                            </span>
+                          </div>
+                        </button>
                         <div className="text-xs space-y-1.5 flex-1">
                           <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#174B3D] bg-[#c6a26c]/25 px-2.5 py-0.5 rounded-full border border-[#c6a26c]/45">
                             {item.customizations?.theme_name ||
@@ -561,14 +629,53 @@ export default function CommonUserOrdersPage() {
                             </div>
                           )}
 
-                          {/* Recuerdo Digital HD Post-Entrega (Unlocked only when status === 'completed' & paid_full) */}
-                          <div className="pt-2">
-                            {order.status === "completed" && isPaidFull ? (
+                          {/* Acciones de imagen: Ver y descargar muestra con marca de agua + Recuerdo HD solo para el dueño */}
+                          <div className="pt-2 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewArtwork({
+                                    order,
+                                    imageUrl: watermarkedPreviewUrl,
+                                    themeName:
+                                      item.customizations?.theme_name ||
+                                      "Arte Personalizado",
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-[#E8DEC8] text-[#174B3D] text-[11px] font-semibold shadow-2xs transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-[#94713F]" />
+                                <span>Ver imagen</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDownloadWatermarkedPreview(order)
+                                }
+                                disabled={downloadingPreviewId === order.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-[#E8DEC8] disabled:opacity-60 text-stone-800 text-[11px] font-semibold shadow-2xs transition-colors cursor-pointer"
+                              >
+                                {downloadingPreviewId === order.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#174B3D]" />
+                                ) : (
+                                  <Download className="w-3.5 h-3.5 text-[#174B3D]" />
+                                )}
+                                <span>
+                                  {downloadingPreviewId === order.id
+                                    ? "Preparando muestra..."
+                                    : "Descargar con marca"}
+                                </span>
+                              </button>
+                            </div>
+
+                            {canDownloadCleanHd ? (
                               <button
                                 type="button"
                                 onClick={() => handleDownloadMemoryHd(order)}
                                 disabled={downloadingOrderId === order.id}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-[11px] font-bold shadow-xs transition-all"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer"
                               >
                                 {downloadingOrderId === order.id ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin text-[#c6a26c]" />
@@ -581,9 +688,17 @@ export default function CommonUserOrdersPage() {
                                     : "Descargar Recuerdo Digital HD (Sin Marca de Agua)"}
                                 </span>
                               </button>
+                            ) : order.status === "completed" && isPaidFull && !isOrderOwner ? (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[11px] text-stone-600 font-medium">
+                                <Lock className="w-3 h-3 text-[#174B3D] shrink-0" />
+                                <span>
+                                  Solo el dueño de la orden puede descargar la
+                                  imagen HD sin marca de agua
+                                </span>
+                              </div>
                             ) : (
                               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[11px] text-stone-600 font-medium">
-                                <Lock className="w-3 h-3 text-[#174B3D]" />
+                                <Lock className="w-3 h-3 text-[#174B3D] shrink-0" />
                                 <span>
                                   Recuerdo Digital HD sin marca se desbloquea al
                                   completar la entrega (100%)
@@ -593,7 +708,8 @@ export default function CommonUserOrdersPage() {
                           </div>
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
 
                     <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] space-y-3 text-xs flex flex-col justify-between">
                       <div className="space-y-2">
@@ -784,6 +900,79 @@ export default function CommonUserOrdersPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Modal de Vista Previa con Marca de Agua */}
+        {previewArtwork && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+            onClick={() => setPreviewArtwork(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="relative w-full max-w-lg rounded-3xl bg-[#FFFBF2] border border-[#E8DEC8] shadow-2xl p-4 sm:p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94713F] block">
+                    Muestra protegida con marca de agua
+                  </span>
+                  <h4 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] truncate">
+                    {previewArtwork.themeName} · {previewArtwork.order.order_code}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewArtwork(null)}
+                  aria-label="Cerrar vista previa"
+                  className="p-2 rounded-full bg-white border border-[#E8DEC8] text-stone-500 hover:text-stone-900 transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden bg-stone-900 border border-[#E8DEC8] max-h-[65vh] flex items-center justify-center">
+                <img
+                  src={previewArtwork.imageUrl}
+                  alt={`Muestra de ${previewArtwork.themeName}`}
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="max-h-[65vh] w-auto object-contain select-none"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDownloadWatermarkedPreview(previewArtwork.order)
+                  }
+                  disabled={downloadingPreviewId === previewArtwork.order.id}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-60 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                >
+                  {downloadingPreviewId === previewArtwork.order.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#c6a26c]" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5 text-[#c6a26c]" />
+                  )}
+                  <span>
+                    {downloadingPreviewId === previewArtwork.order.id
+                      ? "Preparando muestra..."
+                      : "Descargar muestra con marca"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewArtwork(null)}
+                  className="px-4 py-2 rounded-full bg-white hover:bg-cream-100 border border-[#E8DEC8] text-stone-700 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>

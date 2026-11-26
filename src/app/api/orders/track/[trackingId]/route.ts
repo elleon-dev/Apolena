@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { findOrderByTrackingId } from "@/lib/db-service";
+import { getSessionUser } from "@/lib/auth";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { trackingId: string } },
 ) {
   const order = await findOrderByTrackingId(params.trackingId);
@@ -16,10 +17,22 @@ export async function GET(
     );
   }
 
+  const sessionUser = await getSessionUser(request).catch(() => null);
+  const isOwner = Boolean(
+    sessionUser &&
+      (sessionUser.id === order.buyer_id ||
+        (order.shipping?.email &&
+          sessionUser.email.toLowerCase() ===
+            order.shipping.email.toLowerCase())),
+  );
+
   const isCompletedAndPaid =
     order.status === "completed" && order.payment_status === "paid_full";
 
-  const safeOrder = isCompletedAndPaid
+  // Solo el usuario dueño de la orden puede acceder al archivo maestro HD sin marca de agua cuando esté disponible
+  const canDownloadHdMaster = isOwner && isCompletedAndPaid;
+
+  const safeOrder = canDownloadHdMaster
     ? order
     : {
         ...order,
@@ -37,5 +50,9 @@ export async function GET(
         })),
       };
 
-  return NextResponse.json({ order: safeOrder });
+  return NextResponse.json({
+    order: safeOrder,
+    isOwner,
+    canDownloadHdMaster,
+  });
 }
