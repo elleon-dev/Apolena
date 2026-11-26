@@ -2580,7 +2580,11 @@ export default function personalizedWallArt() {
             <div className="pb-6 border-b border-cream-200">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sage-600" />
-                <span>2 propuestas artísticas listas para tu elección</span>
+                <span>
+                  {generatedVariants.length > 1
+                    ? `${generatedVariants.length} propuestas artísticas listas para tu elección`
+                    : "Tu retrato artístico está listo"}
+                </span>
               </div>
               <h2 className="font-serif text-2xl sm:text-4xl font-semibold text-stone-900">
                 {secondPetImage ? "Retrato Doble" : "Retrato"} ·{" "}

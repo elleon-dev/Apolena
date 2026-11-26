@@ -919,7 +919,11 @@ async function runGeminiFusion(
   ];
 
   // Ordered from lowest cost ($0.039/img) to standard ($0.067/img), avoiding expensive pro tier ($0.134/img)
-  const candidateModels = ["gemini-2.5-flash-image", "gemini-3.1-flash-image"];
+  const candidateModels = [
+    "gemini-2.5-flash-image",
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-image-preview",
+  ];
 
   let lastError = "";
 
@@ -1355,6 +1359,8 @@ export async function runMultiModelFusionPipeline(
         .join("\n"),
     };
 
+    // Arquitectura extensible: 1 propuesta = 1 modelo específico en paralelo.
+    // Propuesta 1: OpenAI | Propuesta 2: Google Gemini | (Futuro: 3er modelo como Propuesta 3)
     const [openaiResult, geminiResult] = await Promise.allSettled([
       hasValidOpenAI
         ? runOpenAIFusion(
@@ -1367,27 +1373,17 @@ export async function runMultiModelFusionPipeline(
             sharedAssets,
           )
         : Promise.reject(new Error("OpenAI no configurado")),
-      hasValidOpenAI
-        ? runOpenAIFusion(
+      hasValidGemini
+        ? runGeminiFusion(
             proposal2Input,
             character,
+            geminiKey,
             openaiKey,
-            undefined,
             sharedPetFingerprint,
             sharedWardrobeDesc,
             sharedAssets,
           )
-        : hasValidGemini
-          ? runGeminiFusion(
-              proposal2Input,
-              character,
-              geminiKey,
-              openaiKey,
-              sharedPetFingerprint,
-              sharedWardrobeDesc,
-              sharedAssets,
-            )
-          : Promise.reject(new Error("Proveedor secundario no configurado")),
+        : Promise.reject(new Error("Gemini no configurado")),
     ]);
 
     if (openaiResult.status === "fulfilled") {
@@ -1426,27 +1422,17 @@ export async function runMultiModelFusionPipeline(
       );
     }
 
-    // Ensure customer ALWAYS receives 2 proposals derived from their uploaded pet
-    if (variants.length === 1) {
-      const first = variants[0];
-      variants.push({
-        id: first.id === "variant-1" ? "variant-2" : "variant-1",
-        provider: first.provider === "openai" ? "gemini" : "openai",
-        providerTitle:
-          first.id === "variant-1"
-            ? "Propuesta 2 · Claroscuro y Detalle"
-            : "Propuesta 1 · Óleo Fine Art",
-        modelUsed:
-          first.id === "variant-1"
-            ? "Técnica Claroscuro de Estudio"
-            : "Técnica Óleo Bellas Artes",
-        imageUrl: first.imageUrl,
-        executionSeconds: first.executionSeconds,
-      });
-    }
-
-    if (variants.length >= 2) {
-      onProgress?.(100, "¡2 propuestas artísticas listas!", "finishing");
+    // Entregar exclusivamente las propuestas reales generadas por los modelos que respondieron
+    // (sin duplicar propuestas si un modelo falló o agotó cuota).
+    if (variants.length >= 1) {
+      const count = variants.length;
+      onProgress?.(
+        100,
+        count > 1
+          ? `¡${count} propuestas artísticas listas!`
+          : "¡Tu retrato artístico está listo!",
+        "finishing",
+      );
       const executionSeconds = parseFloat(
         ((Date.now() - startTime) / 1000).toFixed(2),
       );
@@ -1455,7 +1441,10 @@ export async function runMultiModelFusionPipeline(
         hdOutputImageUrl: variants[0].imageUrl,
         executionSeconds,
         providerUsed: variants[0].provider,
-        modelUsed: "Composición Doble de Atelier",
+        modelUsed:
+          count > 1
+            ? `Composición Multi-Modelo (${count} propuestas)`
+            : variants[0].modelUsed,
         variants,
       };
     }
