@@ -27,6 +27,11 @@ import {
   setActiveCreationId,
   mapJobToSavedCreation,
 } from "@/lib/studio-drafts";
+import {
+  trackPetPhotoUploaded,
+  trackPortraitGenerated,
+  trackBeginCheckout,
+} from "@/lib/analytics";
 import type { ProductFinishOption, ProductRecord } from "@/lib/db-service";
 import {
   Upload,
@@ -1105,6 +1110,7 @@ export default function personalizedWallArt() {
             const detectDataUrl = detectCanvas.toDataURL("image/jpeg", 0.75);
 
             // 3. Validación de mascota inteligente con IA visual precisa (servidor)
+            let detectedSpecies: string = petSpecies;
             try {
               const res = await fetch("/api/validate-pet", {
                 method: "POST",
@@ -1123,9 +1129,16 @@ export default function personalizedWallArt() {
                   return;
                 }
 
-                if (result.species === "dog") setPetSpecies("dog");
-                else if (result.species === "cat") setPetSpecies("cat");
-                else if (result.species === "other") setPetSpecies("other");
+                if (result.species === "dog") {
+                  setPetSpecies("dog");
+                  detectedSpecies = "dog";
+                } else if (result.species === "cat") {
+                  setPetSpecies("cat");
+                  detectedSpecies = "cat";
+                } else if (result.species === "other") {
+                  setPetSpecies("other");
+                  detectedSpecies = "other";
+                }
               }
             } catch (validateErr) {
               console.warn("Fallo en verificación /api/validate-pet:", validateErr);
@@ -1134,6 +1147,7 @@ export default function personalizedWallArt() {
             setFusionError(null);
             setErrorNotification(null);
             onDone(dataUrl);
+            trackPetPhotoUploaded(detectedSpecies);
             scrollToCreatePortrait();
           } catch (processErr) {
             console.error("Error al procesar la fotografía:", processErr);
@@ -1298,6 +1312,12 @@ export default function personalizedWallArt() {
           const updatedList = upsertSavedCreation(snapshot);
           setSavedCreations(updatedList);
           setActiveCreationId(jobId);
+          trackPortraitGenerated({
+            characterId: selectedCharacter.id,
+            characterName: activeThemeName,
+            species: petSpecies,
+            jobId,
+          });
           if (typeof window !== "undefined") {
             window.history.replaceState(
               {},
@@ -1522,6 +1542,14 @@ export default function personalizedWallArt() {
         }),
       );
     } catch {}
+
+    trackBeginCheckout({
+      value: currentUnitPrice,
+      characterId: selectedCharacter.id,
+      characterName: activeThemeName,
+      sizeLabel: selectedPrintPreset.cmDimensions,
+      frameName: selectedFrame.name,
+    });
 
     // Para ordenar se requiere obligatoriamente iniciar sesión
     if (!isAuthenticated) {

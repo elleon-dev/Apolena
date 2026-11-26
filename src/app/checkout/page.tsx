@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { removeSavedCreation } from "@/lib/studio-drafts";
+import { trackPurchase } from "@/lib/analytics";
 import {
   ArrowLeft,
   MapPin,
@@ -342,6 +343,16 @@ function CheckoutContent() {
       } catch {}
 
       setCreatedOrder(data.order);
+      trackPurchase({
+        transactionId: data.order?.order_code || data.order?.id || "order",
+        value: totalAmount,
+        shipping: shippingCost,
+        paymentMethod,
+        itemName: draft.customizations?.theme_name
+          ? `Cuadro Personalizado - ${draft.customizations.theme_name}`
+          : "Cuadro Personalizado",
+        itemVariant: draft.customizations?.size_label || undefined,
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError("Error de conexión al generar la orden.");

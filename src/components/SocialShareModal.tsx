@@ -19,6 +19,7 @@ import {
   type SocialShareCardResult,
 } from "@/lib/social-share";
 import type { FrameOption } from "@/lib/print-export";
+import { trackSocialShare } from "@/lib/analytics";
 
 interface SocialShareModalProps {
   isOpen: boolean;
@@ -176,6 +177,13 @@ export default function SocialShareModal({
 
   useEffect(() => {
     if (isOpen) {
+      trackSocialShare({ method: "modal_open", characterId, format });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
       buildCard();
     }
   }, [isOpen, buildCard]);
@@ -192,6 +200,7 @@ export default function SocialShareModal({
 
   const handleDownloadCard = () => {
     if (!card) return;
+    trackSocialShare({ method: "download_card", characterId, format });
     const link = document.createElement("a");
     link.href = card.dataUrl;
     link.download = card.file.name;
@@ -212,6 +221,7 @@ export default function SocialShareModal({
           title: `Retrato ${themeName} · Apolena`,
           text: buildShareText(targetUrl),
         });
+        trackSocialShare({ method: "native_share", characterId, format });
         setShareFeedback("Gracias por compartir tu creación.");
         setTimeout(() => setShareFeedback(null), 3500);
         return;
@@ -228,6 +238,7 @@ export default function SocialShareModal({
     try {
       const targetUrl = await resolveActiveShareUrl();
       await navigator.clipboard.writeText(targetUrl);
+      trackSocialShare({ method: "copy_link", characterId, format });
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     } catch {
@@ -238,6 +249,7 @@ export default function SocialShareModal({
 
   const handleWhatsAppShare = async () => {
     const targetUrl = publishedShareUrl || (await resolveActiveShareUrl());
+    trackSocialShare({ method: "whatsapp", characterId, format });
     const waUrl = `https://wa.me/?text=${encodeURIComponent(buildShareText(targetUrl))}`;
     window.open(waUrl, "_blank", "noopener,noreferrer");
   };

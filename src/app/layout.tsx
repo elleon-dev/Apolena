@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthHashListener } from "@/components/AuthHashListener";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { JsonLd } from "@/components/JsonLd";
 import { resolveAppUrl } from "@/lib/app-url";
 
@@ -110,6 +111,7 @@ export default function RootLayout({
         <JsonLd />
       </head>
       <body className="bg-[#FFFBF2] text-[#141414] min-h-screen selection:bg-[#c6a26c]/30 selection:text-[#174B3D]">
+        <GoogleAnalytics />
         <AuthHashListener />
         {children}
       </body>
