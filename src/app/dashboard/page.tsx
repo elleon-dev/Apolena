@@ -250,6 +250,23 @@ export default function AdminDashboardPage() {
     | "completed"
   >("priority_all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [aiHealthData, setAiHealthData] = useState<{
+    health: {
+      activeAlert: boolean;
+      alertCount: number;
+      lastAlertAt: string | null;
+      lastProvider: string;
+      lastReason: string;
+      lastReporterEmail: string | null;
+      resolvedAt: string | null;
+    };
+    envStatus: { openai: boolean; gemini: boolean; fal: boolean };
+    providerStats: Record<
+      string,
+      { total: number; thisMonth: number; lastUsedAt: string | null }
+    >;
+  } | null>(null);
+  const [isResolvingAiAlert, setIsResolvingAiAlert] = useState(false);
   const [voucherPreviewModal, setVoucherPreviewModal] = useState<{
     url: string;
     title: string;
@@ -518,8 +535,38 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const loadAiHealth = async () => {
+    try {
+      const res = await fetch("/api/admin/ai-health", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setAiHealthData(data);
+      }
+    } catch {}
+  };
+
+  const handleResolveAiAlert = async () => {
+    setIsResolvingAiAlert(true);
+    try {
+      const res = await fetch("/api/admin/ai-health", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resolve_alert" }),
+      });
+      if (res.ok) {
+        showToast("success", "Alerta de créditos IA marcada como resuelta.");
+        await loadAiHealth();
+      }
+    } catch {
+      showToast("error", "No se pudo actualizar la alerta.");
+    } finally {
+      setIsResolvingAiAlert(false);
+    }
+  };
+
   useEffect(() => {
     loadAdminData();
+    loadAiHealth();
   }, []);
 
   const isSuperAdmin = currentUser?.role === "super_admin";
@@ -1828,6 +1875,52 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
             </button>
           </div>
         </div>
+
+        {/* ALERTA CRÍTICA DE CRÉDITOS IA REPORTADA POR USUARIOS */}
+        {aiHealthData?.health?.activeAlert && (
+          <div className="mb-5 p-4 sm:px-6 rounded-2xl bg-red-50 border-2 border-red-300 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="text-xs space-y-0.5">
+                <p className="font-bold text-red-950 text-sm">
+                  Alerta de Créditos IA ({aiHealthData.health.lastProvider.toUpperCase()}) ·{" "}
+                  {aiHealthData.health.alertCount}{" "}
+                  {aiHealthData.health.alertCount === 1 ? "reporte" : "reportes"}
+                </p>
+                <p className="text-red-800">{aiHealthData.health.lastReason}</p>
+                {aiHealthData.health.lastAlertAt && (
+                  <p className="text-[11px] text-red-700">
+                    Último reporte:{" "}
+                    {new Date(aiHealthData.health.lastAlertAt).toLocaleString("es-PE")}{" "}
+                    ({aiHealthData.health.lastReporterEmail || "Visitante"})
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="https://platform.openai.com/settings/organization/billing/overview"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-full bg-white hover:bg-red-100 border border-red-300 text-red-900 text-xs font-bold inline-flex items-center gap-1 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Recargar</span>
+              </a>
+              <button
+                type="button"
+                disabled={isResolvingAiAlert}
+                onClick={handleResolveAiAlert}
+                className="px-4 py-2 rounded-full bg-[#174B3D] hover:bg-[#123B30] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-60 cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Marcar recargado</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {activeTab === "orders" ? (
           /* ================================================================= */
@@ -4322,8 +4415,131 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
           </div>
         ) : activeTab === "settings" ? (
           /* ================================================================= */
-          /* TAB 3: CONFIGURACIÓN DE APOLENA Y CATÁLOGO                        */
+          /* TAB 3: CONFIGURACIÓN DE APOLENA, MOTORES IA Y CATÁLOGO            */
           /* ================================================================= */
+          <div className="space-y-6">
+            {/* Monitor de Consumo y Estado por Modelo IA */}
+            <div className="bg-white border border-cream-200 rounded-3xl p-6 sm:p-8 shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 text-terracotta-600 text-xs font-semibold uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Monitoreo de Motores IA</span>
+                  </div>
+                  <h2 className="font-serif text-2xl font-semibold text-stone-900 mt-0.5">
+                    Consumo y Estado por Modelo
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={loadAiHealth}
+                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-cream-100 hover:bg-cream-200 border border-cream-300 text-stone-700 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Actualizar</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    key: "openai",
+                    label: "OpenAI (gpt-image-1 / gpt-4o-mini)",
+                    billingUrl:
+                      "https://platform.openai.com/settings/organization/billing/overview",
+                  },
+                  {
+                    key: "gemini",
+                    label: "Google Gemini (Flash Vision / Imagen)",
+                    billingUrl: "https://aistudio.google.com/apikey",
+                  },
+                ].map((item) => {
+                  const stats = aiHealthData?.providerStats?.[item.key] || {
+                    total: 0,
+                    thisMonth: 0,
+                    lastUsedAt: null,
+                  };
+                  const hasKey = Boolean(
+                    aiHealthData?.envStatus?.[
+                      item.key as "openai" | "gemini"
+                    ],
+                  );
+                  const hasActiveAlert = Boolean(
+                    aiHealthData?.health?.activeAlert &&
+                      aiHealthData.health.lastProvider
+                        .toLowerCase()
+                        .includes(item.key),
+                  );
+
+                  return (
+                    <div
+                      key={item.key}
+                      className={`p-4 rounded-2xl border space-y-3 ${
+                        hasActiveAlert
+                          ? "bg-red-50/70 border-red-300"
+                          : "bg-cream-50 border-cream-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <strong className="text-sm text-stone-900">
+                          {item.label}
+                        </strong>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            hasActiveAlert
+                              ? "bg-red-600 text-white"
+                              : hasKey
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-stone-200 text-stone-600"
+                          }`}
+                        >
+                          {hasActiveAlert
+                            ? "Alerta de créditos"
+                            : hasKey
+                              ? "Clave activa"
+                              : "Sin configurar"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-white border border-cream-200">
+                          <span className="text-[10px] text-stone-500 block">
+                            Retratos este mes
+                          </span>
+                          <span className="font-mono text-lg font-bold text-[#174B3D]">
+                            {stats.thisMonth}
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white border border-cream-200">
+                          <span className="text-[10px] text-stone-500 block">
+                            Total histórico
+                          </span>
+                          <span className="font-mono text-lg font-bold text-stone-900">
+                            {stats.total}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
+                        <span>
+                          {stats.lastUsedAt
+                            ? `Último uso: ${new Date(stats.lastUsedAt).toLocaleDateString("es-PE")}`
+                            : "Sin registros aún"}
+                        </span>
+                        <a
+                          href={item.billingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-[#174B3D] hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>Ver saldo</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white border border-cream-200 rounded-3xl p-6 sm:p-8 shadow-soft space-y-4">
               <div className="flex items-center gap-2 text-terracotta-600 text-xs font-semibold uppercase tracking-wider">
@@ -4641,6 +4857,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 )}
               </form>
             )}
+          </div>
           </div>
         ) : (
           /* ================================================================= */

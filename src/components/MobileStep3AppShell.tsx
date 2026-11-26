@@ -74,6 +74,9 @@ interface MobileStep3AppShellProps {
   onTryAnotherStyle: () => void;
   isSimulationJob: boolean;
   simulationNotice: string | null;
+  isSendingQuotaAlert?: boolean;
+  quotaAlertSent?: boolean;
+  onSendQuotaAlert?: () => void;
 }
 
 type ActiveSheet = "size" | "frame" | "customize" | "details" | null;
@@ -130,6 +133,9 @@ export function MobileStep3AppShell({
   onTryAnotherStyle,
   isSimulationJob,
   simulationNotice,
+  isSendingQuotaAlert = false,
+  quotaAlertSent = false,
+  onSendQuotaAlert,
 }: MobileStep3AppShellProps) {
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
   const [previewFrameModal, setPreviewFrameModal] = useState<{
@@ -160,14 +166,42 @@ export function MobileStep3AppShell({
 
   return (
     <div className="lg:hidden pb-28 space-y-3 animate-in fade-in duration-200">
-      {/* Aviso compacto si fue modo simulación */}
+      {/* Aviso compacto si fue modo simulación + botón 1-clic de alerta */}
       {isSimulationJob && (
-        <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-[11px] leading-snug">
-          <p className="font-bold text-red-950">Modo Demostración</p>
-          <p className="mt-0.5 text-red-800">
-            {simulationNotice ||
-              "Mostrando vista ilustrativa por cuota temporal del motor IA."}
-          </p>
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-[11px] leading-snug space-y-2.5">
+          <div>
+            <p className="font-bold text-red-950">Modo Demostración</p>
+            <p className="mt-0.5 text-red-800">
+              {simulationNotice ||
+                "Mostrando vista ilustrativa por cuota temporal del motor IA."}
+            </p>
+          </div>
+          {onSendQuotaAlert && (
+            <button
+              type="button"
+              disabled={isSendingQuotaAlert || quotaAlertSent}
+              onClick={onSendQuotaAlert}
+              className={`w-full py-2 px-3 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors ${
+                quotaAlertSent
+                  ? "bg-emerald-700 text-white"
+                  : "bg-red-700 hover:bg-red-800 text-white disabled:opacity-60"
+              }`}
+            >
+              {isSendingQuotaAlert ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Enviando aviso...</span>
+                </>
+              ) : quotaAlertSent ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Aviso enviado al equipo Apolena</span>
+                </>
+              ) : (
+                <span>Avisar al equipo de Apolena para recargar</span>
+              )}
+            </button>
+          )}
         </div>
       )}
 

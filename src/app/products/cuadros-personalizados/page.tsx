@@ -279,6 +279,8 @@ export default function personalizedWallArt() {
   const [dedicationNote, setDedicationNote] = useState<string>("");
   const [isSimulationJob, setIsSimulationJob] = useState<boolean>(false);
   const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
+  const [isSendingQuotaAlert, setIsSendingQuotaAlert] = useState(false);
+  const [quotaAlertSent, setQuotaAlertSent] = useState(false);
 
   // Dynamic Catalog from Supabase (products.customization_config)
   const [wallArtProductId, setWallArtProductId] = useState<string>(
@@ -324,6 +326,30 @@ export default function personalizedWallArt() {
   // Multi-Model Provider selection (credenciales gestionadas exclusivamente en el servidor .env)
   const [selectedProvider, setSelectedProvider] =
     useState<AIProviderId>("openai");
+
+  const handleSendQuotaAlert = useCallback(async () => {
+    if (isSendingQuotaAlert || quotaAlertSent) return;
+    setIsSendingQuotaAlert(true);
+    try {
+      const res = await fetch("/api/ai-quota-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          reason:
+            simulationNotice ||
+            "Límite de cuota o saldo alcanzado en la generación de retratos.",
+        }),
+      });
+      if (res.ok) {
+        setQuotaAlertSent(true);
+      }
+    } catch {
+      // ignore network error
+    } finally {
+      setIsSendingQuotaAlert(false);
+    }
+  }, [isSendingQuotaAlert, quotaAlertSent, selectedProvider, simulationNotice]);
   const [envStatus, setEnvStatus] = useState<{
     openai: boolean;
     gemini: boolean;
@@ -2543,6 +2569,9 @@ export default function personalizedWallArt() {
               }}
               isSimulationJob={isSimulationJob}
               simulationNotice={simulationNotice}
+              isSendingQuotaAlert={isSendingQuotaAlert}
+              quotaAlertSent={quotaAlertSent}
+              onSendQuotaAlert={handleSendQuotaAlert}
             />
 
             {/* EXPERIENCIA DESKTOP STUDIO (2 COLUMNAS CON RETRATO SIEMPRE VISIBLE) */}
@@ -2573,6 +2602,32 @@ export default function personalizedWallArt() {
                     {simulationNotice ||
                       "Las claves de API de los motores de IA (OpenAI / Google Gemini) alcanzaron su cuota o saldo disponible (Error 429 Quota Exceeded). Por ello, el sistema desplegó una muestra ilustrativa del atelier en lugar de la transformación en vivo de tu foto. Para fusionar en tiempo real conservando al 100% las facciones exactas de tu mascota, por favor recarga los créditos de tu cuenta de OpenAI o habilita facturación en Google Cloud / AI Studio."}
                   </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      disabled={isSendingQuotaAlert || quotaAlertSent}
+                      onClick={handleSendQuotaAlert}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                        quotaAlertSent
+                          ? "bg-emerald-700 text-white"
+                          : "bg-red-700 hover:bg-red-800 text-white disabled:opacity-60"
+                      }`}
+                    >
+                      {isSendingQuotaAlert ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Enviando aviso...</span>
+                        </>
+                      ) : quotaAlertSent ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Aviso enviado al equipo Apolena</span>
+                        </>
+                      ) : (
+                        <span>Avisar al equipo de Apolena para recargar</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

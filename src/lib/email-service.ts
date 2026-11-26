@@ -124,6 +124,39 @@ export async function renderEmailHtml(
         }),
       );
 
+    case "ai_quota_alert": {
+      const providerLabel = String(data.provider || "OpenAI / Gemini").toUpperCase();
+      const alertReason = String(
+        data.reason || "Límite de créditos o cuota alcanzado (Error 429).",
+      );
+      const alertCount = Number(data.alert_count || 1);
+      const reporter = String(data.reporter || "Visitante");
+      const targetUrl = String(data.app_url || appUrl);
+      return `
+        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 30px; border-radius: 22px; color: #141414; border: 2px solid #DC2626;">
+          <p style="font-family: sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #DC2626; margin: 0 0 10px;">
+            ALERTA OPERATIVA · CRÉDITOS IA AGOTADOS
+          </p>
+          <h1 style="color: #174B3D; font-size: 24px; margin: 0 0 14px; line-height: 1.3;">
+            Un usuario reportó falta de créditos en ${providerLabel}
+          </h1>
+          <p style="font-family: sans-serif; font-size: 14px; color: #3E3C37; line-height: 1.6; margin: 0 0 14px;">
+            <strong>Detalle:</strong> ${alertReason}<br/>
+            <strong>Reportado por:</strong> ${reporter}<br/>
+            <strong>Total de reportes acumulados:</strong> ${alertCount}
+          </p>
+          <div style="margin: 22px 0;">
+            <a href="${targetUrl}/dashboard" style="display: inline-block; background: #174B3D; color: #FFFFFF; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-family: sans-serif; font-size: 13px; font-weight: 700; margin-right: 10px;">
+              Abrir Dashboard Apolena
+            </a>
+            <a href="https://platform.openai.com/settings/organization/billing/overview" style="display: inline-block; background: #c6a26c; color: #174B3D; text-decoration: none; padding: 12px 20px; border-radius: 999px; font-family: sans-serif; font-size: 13px; font-weight: 700;">
+              Recargar OpenAI
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
     case "country_launch_notification": {
       const countryName = String(data.country_name || "tu país");
       const targetUrl = String(data.app_url || appUrl);
