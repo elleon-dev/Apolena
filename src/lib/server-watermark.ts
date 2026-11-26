@@ -107,7 +107,9 @@ export async function burnServerSideWatermark(
     const width = Math.max(320, Math.round(origW * scale));
     const height = Math.max(320, Math.round(origH * scale));
 
-    // Prepare official logo as base64 for embedding inside the SVG watermark
+    // Prepare official logo and pre-rendered watermark text PNGs as base64.
+    // Using pre-rendered PNGs avoids librsvg/fontconfig tofu boxes ("□□□") on
+    // Vercel serverless Linux where system fonts (Georgia/Arial) are not installed.
     let logoDataUri = "";
     const logoLightPath = path.join(process.cwd(), "public", "logo-light.png");
     const logoNormalPath = path.join(process.cwd(), "public", "logo.png");
@@ -122,10 +124,34 @@ export async function burnServerSideWatermark(
       logoDataUri = `data:image/png;base64,${resizedLogoBuf.toString("base64")}`;
     }
 
+    let tileTextDataUri = "";
+    const tileTextPath = path.join(
+      process.cwd(),
+      "public",
+      "watermarks",
+      "wm-tile-text.png",
+    );
+    if (fs.existsSync(tileTextPath)) {
+      tileTextDataUri = `data:image/png;base64,${fs.readFileSync(tileTextPath).toString("base64")}`;
+    }
+
+    let footerTextDataUri = "";
+    const footerTextPath = path.join(
+      process.cwd(),
+      "public",
+      "watermarks",
+      "wm-footer-text.png",
+    );
+    if (fs.existsSync(footerTextPath)) {
+      footerTextDataUri = `data:image/png;base64,${fs.readFileSync(footerTextPath).toString("base64")}`;
+    }
+
     // Build SVG overlay with subtle, well-spaced diagonal pattern + clean bottom security banner
     const patternW = 340;
     const patternH = 240;
     const footerH = 48;
+    const footerTextW = Math.min(320, Math.max(210, width - 92));
+    const footerTextH = Math.round((footerTextW * 72) / 640);
 
     const svgOverlay = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -135,8 +161,11 @@ export async function burnServerSideWatermark(
               ? `<image href="${logoDataUri}" x="115" y="18" width="110" height="40" opacity="0.14" />`
               : ""
           }
-          <text x="170" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="12" fill="#174B3D" fill-opacity="0.16">APOLENA · MUESTRA PROTEGIDA</text>
-          <text x="169" y="77" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="12" fill="#FFFFFF" fill-opacity="0.22">APOLENA · MUESTRA PROTEGIDA</text>
+          ${
+            tileTextDataUri
+              ? `<image href="${tileTextDataUri}" x="40" y="60" width="260" height="28" opacity="0.95" />`
+              : ""
+          }
         </pattern>
         <linearGradient id="footerGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#174B3D" stop-opacity="0" />
@@ -154,11 +183,14 @@ export async function burnServerSideWatermark(
       ${
         logoDataUri
           ? `<image href="${logoDataUri}" x="16" y="${height - 40}" width="58" height="32" />`
-          : `<text x="46" y="${height - 20}" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#FFFFFF">Apolena</text>`
+          : ""
       }
 
-      <text x="${width - 14}" y="${height - 24}" text-anchor="end" font-family="Arial, sans-serif" font-weight="bold" font-size="9.5" fill="#c6a26c">VISTA PREVIA PROTEGIDA</text>
-      <text x="${width - 14}" y="${height - 12}" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#FFFBF2">El lienzo físico se imprime sin marcas a 300 DPI</text>
+      ${
+        footerTextDataUri
+          ? `<image href="${footerTextDataUri}" x="${width - footerTextW - 12}" y="${height - footerTextH - 6}" width="${footerTextW}" height="${footerTextH}" />`
+          : ""
+      }
     </svg>`;
 
     const outBuffer = await baseImage
