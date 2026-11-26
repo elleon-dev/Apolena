@@ -320,13 +320,13 @@ Adapt the following thematic attire, accessories, lighting mood, and background 
 ${themeGuideText}`;
 
   const identityRules = `
-MANDATORY PET IDENTITY, COLOR FIDELITY & UNCROPPED CANVAS FRAMING RULES:
+MANDATORY PET IDENTITY, COLOR FIDELITY & FULL-BLEED PORTRAIT RULES:
 1. 100% FACIAL & COLOR FIDELITY: The generated portrait MUST unmistakably be the EXACT individual pet from Image 1. Lock its exact species (DOG vs CAT vs OTHER), breed, facial proportions, muzzle/snout geometry, nose color, exact eye iris color, exact fur shades, asymmetric markings, and authentic expression. Never change a dark dog into a light one, never alter eye color, and never genericize its face.
-2. COMPLETE UNCROPPED HEAD, FACE & EARS (CRITICAL FOR STRETCHED CANVAS): This artwork is for a stretched wall-art canvas where edges wrap around a wooden stretcher frame. NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet photo is tightly cropped, reconstruct the COMPLETE head, both complete ears, and upper chest in a balanced medium-wide portrait shot.
-3. MANDATORY 20% HEADROOM & SIDE BREATHING ROOM: Leave 20% to 25% of open background space above the highest point of the head, ears, or headwear, and 15% breathing room on the left and right edges.
+2. FULL-BLEED EDGE-TO-EDGE ARTWORK ONLY (CRITICAL): Render a flat, full-bleed 2D portrait filling 100% of the image rectangle edge-to-edge. NEVER draw a picture frame, 3D canvas edge, wooden stretcher, white border, margin, mat, wall, or product mockup around the portrait.
+3. COMPLETE UNCROPPED HEAD, EARS & 20% HEADROOM: NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet photo is tightly cropped, reconstruct the COMPLETE head, both complete ears, and upper chest/torso in a balanced medium-wide chest-up portrait shot with 20% to 25% of open background space above the highest point of the head/ears/headwear and 15% breathing room on both sides.
 4. UNOBSTRUCTED PET FACE & EARS: Any crown, hat, helmet, or headwear from Image ${refImageIndex} must sit lightly and naturally on top of the head so the pet's eyes, muzzle, forehead markings, and natural ears remain clearly visible and true to Image 1.
-5. NATURAL ANATOMICAL PROPORTIONS & ORGANIC FIT: Maintain realistic head-to-shoulder proportions with real fur micro-textures naturally overlapping the collar and neckline of the garment. Never make the portrait look cartoon, 3D-rendered, or plastic.
-6. PHOTOGRAPHY SPECS: Medium-wide half-body fine-art portrait (35mm full-frame camera, 50mm portrait lens), museum-grade painterly lighting matching Image ${refImageIndex}, crisp eye catchlights. No watermarks, no text.`;
+5. NATURAL ANATOMICAL PROPORTIONS & COMPLETE COSTUME FIT: Reproduce the FULL torso costume, uniform, collar, badges, jewelry, and props from Image ${refImageIndex} with realistic head-to-shoulder proportions and real fur micro-textures naturally overlapping the collar and neckline. Never make the portrait look cartoon, 3D-rendered, or plastic.
+6. PHOTOGRAPHY SPECS: Medium-wide half-body fine-art portrait (35mm full-frame camera, 50mm portrait lens), museum-grade lighting matching Image ${refImageIndex}, crisp eye catchlights. No watermarks, no text, no borders, no frames.`;
 
   const extraUserPrompt = customPrompt?.trim()
     ? `\nADDITIONAL STUDIO DIRECTION: ${customPrompt.trim()}`
@@ -980,8 +980,8 @@ async function runGeminiFusion(
   const visionPrompt = `You are a master pet portrait director. Inspect the attached pet photo(s) carefully.
 Write a concise English photographic direction note (max 95 words) specifying:
 1. The exact animal species (explicitly state whether it is a DOG or a CAT), exact breed, snout/muzzle structure, ear shape, coat coloration, fur texture, eye color, nose color, and natural head-to-body anatomical proportions of the pet in Image 1${pet2Data ? " and Image 2" : ""}.
-2. How this exact ${hasSecondPet ? "pair of pets is" : "pet is"} dressed in the following wardrobe and scene with dramatic chiaroscuro lighting and natural fur overlapping the collar: "${wardrobeSpec}".
-3. Crucial framing rule: Medium-wide chest-up portrait shot with generous 25% headroom above the top of the head/ears/hat so the entire head, skull crown, and both ears are 100% complete and uncropped for a stretched wall canvas.
+2. How this exact ${hasSecondPet ? "pair of pets is" : "pet is"} dressed in the FULL wardrobe, uniform, accessories, and scene with dramatic chiaroscuro lighting and natural fur overlapping the collar: "${wardrobeSpec}".
+3. Crucial framing rule: Full-bleed edge-to-edge 2D portrait (NO frames, NO borders, NO 3D canvas edges, NO walls) in a medium-wide chest-up shot with 25% open painted background headroom above the head/ears/hat so the entire head and ears are uncropped.
 Output ONLY the direction note, nothing else.`;
 
   const visionParts = [...petParts, { text: visionPrompt }];
@@ -1038,6 +1038,7 @@ Output ONLY the direction note, nothing else.`;
       ["gpt-image-1.5", "chatgpt-image-latest"],
       petIdentityFingerprint,
       wardrobeDesc,
+      { pet1Data, pet2Data, themeData },
     );
     return {
       imageUrl: openAiResult.imageUrl,
@@ -1331,11 +1332,33 @@ export async function runMultiModelFusionPipeline(
 
     const variants: GeneratedVariant[] = [];
 
-    // Run both models concurrently reusing pre-resolved images, locked pet identity fingerprint, and character blueprint
+    // Run both artistic proposals concurrently using the highest-fidelity image editor with
+    // distinct museum lighting directions (Óleo Fine Art vs Claroscuro y Detalle),
+    // reusing pre-resolved images, locked pet identity fingerprint, and character blueprint.
+    const proposal1Input: MultiModelFusionInput = {
+      ...input,
+      customPrompt: [
+        input.customPrompt?.trim(),
+        "ARTISTIC DIRECTION (PROPOSAL 1 - OIL FINE ART): Rich classic museum oil-painting finish with warm golden gallery key lighting, velvety brush texture on the costume and background, and soft lifelike fur depth.",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+
+    const proposal2Input: MultiModelFusionInput = {
+      ...input,
+      customPrompt: [
+        input.customPrompt?.trim(),
+        "ARTISTIC DIRECTION (PROPOSAL 2 - CHIAROSCURO & CRISP DETAIL): Dramatic sculptural studio chiaroscuro lighting with warm golden rim light separating the fur and costume from deeper rich shadows, ultra-crisp micro-detail in the eyes and coat, and full-bleed edge-to-edge composition (strictly NO frames, NO canvas borders, NO walls).",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+
     const [openaiResult, geminiResult] = await Promise.allSettled([
       hasValidOpenAI
         ? runOpenAIFusion(
-            input,
+            proposal1Input,
             character,
             openaiKey,
             undefined,
@@ -1344,17 +1367,27 @@ export async function runMultiModelFusionPipeline(
             sharedAssets,
           )
         : Promise.reject(new Error("OpenAI no configurado")),
-      hasValidGemini
-        ? runGeminiFusion(
-            input,
+      hasValidOpenAI
+        ? runOpenAIFusion(
+            proposal2Input,
             character,
-            geminiKey,
             openaiKey,
+            undefined,
             sharedPetFingerprint,
             sharedWardrobeDesc,
             sharedAssets,
           )
-        : Promise.reject(new Error("Gemini no configurado")),
+        : hasValidGemini
+          ? runGeminiFusion(
+              proposal2Input,
+              character,
+              geminiKey,
+              openaiKey,
+              sharedPetFingerprint,
+              sharedWardrobeDesc,
+              sharedAssets,
+            )
+          : Promise.reject(new Error("Proveedor secundario no configurado")),
     ]);
 
     if (openaiResult.status === "fulfilled") {
