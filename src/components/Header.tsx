@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -60,6 +60,8 @@ const MOBILE_NAV_ITEMS = [
 
 export function Header(_props: HeaderProps = {}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [sessionUser, setSessionUser] = useState<SessionUserInfo | null>(() =>
@@ -144,13 +146,15 @@ export function Header(_props: HeaderProps = {}) {
 
   return (
     <header className="sticky top-0 z-50 transition-all shadow-xs">
-      {/* 1. Barra Superior de Anuncio: Delivery Incluido (Fiel al concepto visual) */}
-      <div className="bg-[#0e362b] text-white py-2 px-4 text-center border-b border-[#174B3D]/30">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-xs sm:text-sm font-bold tracking-[0.12em] uppercase">
-          <Truck className="w-4 h-4 text-[#c6a26c] shrink-0" />
-          <span>Delivery incluido en tu pedido</span>
+      {/* 1. Barra Superior de Anuncio: Delivery Incluido (solo visible en Home) */}
+      {isHomePage && (
+        <div className="bg-[#0e362b] text-white py-2 px-4 text-center border-b border-[#174B3D]/30">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-xs sm:text-sm font-bold tracking-[0.12em] uppercase">
+            <Truck className="w-4 h-4 text-[#c6a26c] shrink-0" />
+            <span>Delivery incluido en tu pedido</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Barra Principal de Navegación (Fondo Marfil Cálido #FFFBF2) */}
       <div className="bg-[#FFFBF2] text-[#174B3D] border-b border-[#E8DEC8]">
