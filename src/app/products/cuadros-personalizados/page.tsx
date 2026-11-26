@@ -1843,6 +1843,8 @@ export default function personalizedWallArt() {
                             setSelectedCharacter(char);
                             setHasSelectedCharacter(true);
                             setUseCustomTheme(false);
+                            setErrorNotification(null);
+                            setFusionError(null);
                             scrollToContinueUpload();
                           }}
                           title={char.description || char.name}
@@ -1927,15 +1929,20 @@ export default function personalizedWallArt() {
                 ref={continueToUploadBtnRef}
                 type="button"
                 onClick={() => {
-                  if (!hasSelectedCharacter && !useCustomTheme) return;
+                  if (!hasSelectedCharacter && !useCustomTheme) {
+                    triggerErrorNotification(
+                      "Selecciona un personaje",
+                      "Es necesario elegir un personaje del catálogo para continuar al siguiente paso.",
+                    );
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    return;
+                  }
+                  setErrorNotification(null);
                   setStep(2);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                disabled={
-                  (!hasSelectedCharacter && !useCustomTheme) ||
-                  (!useCustomTheme && catalogCharacters.length === 0)
-                }
-                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
+                disabled={!useCustomTheme && catalogCharacters.length === 0}
+                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30 cursor-pointer"
               >
                 <span>Continuar a subir foto</span>
                 <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
