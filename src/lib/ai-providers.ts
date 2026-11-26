@@ -160,7 +160,7 @@ async function extractPetIdentityFingerprint(
   const promptText = `Inspect the uploaded pet photo(s) at high visual detail. Write a concise, forensic physical identity sheet (max 85 words) of ${pet2Data ? "Pet #1 (first image) and Pet #2 (second image)" : "the pet in the image"} so a master portrait painter reproduces this EXACT individual animal without changing a single marking.
 Explicitly state:
 1. Exact animal species (DOG, CAT, or other) and specific breed/mix.
-2. Exact fur/coat base colors, EVERY distinctive facial marking (stripes, tabby M, white blaze, eye patches, cheek fur, muzzle spots, chin/chest fur), and exact fur length/texture (short, silky, curly, fluffy, wiry).
+2. Exact fur/coat base colors, EVERY distinctive facial marking (stripes, tabby M, white blaze, eye patches, cheek fur, muzzle spots, chin/chest fur), exact fur length/texture (short sleek, smooth, silky, curly, fluffy, wiry), and the matching coat color/texture expected on its neck, chest, and paws.
 3. Exact eye color (precise iris hue), exact nose color/shape, exact muzzle/snout length & width, exact ear shape/size/posture (upright, half-folded, floppy), and natural gaze/expression.
 Output ONLY the factual physical description, nothing else.`;
 
@@ -297,14 +297,14 @@ function buildFusionPrompt(
 
   const multiImageAssignment = hasVisualRef
     ? `INPUT IMAGES ROLE ASSIGNMENT (STRICT, NON-NEGOTIABLE SEPARATION):
-- IMAGE 1${hasSecondPet ? " & IMAGE 2" : ""}: THE PROTAGONIST PET (IDENTITY LOCK). Preserve 100% of this exact animal's species, breed, facial bone structure, muzzle/snout shape, exact fur colors, exact facial markings/spots/stripes, exact eye color, nose color, and ear shape/posture. NEVER blend or replace this face with the subject from Image ${refImageIndex}.
-- IMAGE ${refImageIndex}: THE EXACT COSTUME, HEADWEAR, LIGHTING & BACKGROUND BLUEPRINT ONLY. Replicate 100% of the exact outfit design, fabric textures, embroidery, jewelry, headwear style, color palette, studio lighting, and background scenery from Image ${refImageIndex}, and fit them organically onto the pet from Image 1. COMPLETELY DISCARD AND REPLACE the face, fur color, eyes, and animal species originally wearing the costume in Image ${refImageIndex}.\n\n`
+- IMAGE 1${hasSecondPet ? " & IMAGE 2" : ""}: THE PROTAGONIST PET (WHOLE-BODY IDENTITY LOCK). Preserve 100% of this exact animal's species, breed, facial bone structure, muzzle/snout shape, exact fur colors, exact facial markings/spots/stripes, exact eye color, nose color, ear shape/posture, AND its exact coat texture and color across ALL visible body parts (head, neck, chest, shoulders, legs, and paws). NEVER blend or replace any part of this animal with the model from Image ${refImageIndex}.
+- IMAGE ${refImageIndex}: THE EXACT COSTUME, HEADWEAR, LIGHTING & BACKGROUND BLUEPRINT ONLY. Replicate 100% of the exact outfit design, fabric textures, embroidery, jewelry, headwear style, color palette, studio lighting, and background scenery from Image ${refImageIndex}, and fit them organically onto the pet from Image 1. COMPLETELY DISCARD AND REPLACE 100% of the original animal in Image ${refImageIndex} — including its face, ears, neck, chest fur, legs, and paws. ZERO fur, paws, or body parts from Image ${refImageIndex}'s original animal may remain in the output.\n\n`
     : "";
 
   const protagonistSection = `${multiImageAssignment}PRIMARY PROTAGONIST (HIGHEST PRIORITY - THE USER'S PET MUST BE INSTANTLY RECOGNIZABLE):
 Create an ultra-realistic 8K fine art portrait of ${petCountText}.${
     petIdentityFingerprint
-      ? `\nFORENSIC PET IDENTITY TO LOCK 100% (DO NOT ALTER ANY COLOR OR MARKING): ${petIdentityFingerprint}`
+      ? `\nFORENSIC PET IDENTITY TO LOCK 100% (DO NOT ALTER ANY COLOR, FUR LENGTH, OR MARKING): ${petIdentityFingerprint}`
       : ""
   }`;
 
@@ -313,19 +313,19 @@ Create an ultra-realistic 8K fine art portrait of ${petCountText}.${
 EXACT COSTUME, ACCESSORIES & BACKGROUND FIDELITY (FROM IMAGE ${refImageIndex}):
 Dress the pet from Image 1 in the EXACT outfit, jewelry, headwear, lighting mood, and background environment shown in Image ${refImageIndex} ("${character.name}"):
 ${themeGuideText}
-CRITICAL COSTUME TRANSFER RULE: Match Image ${refImageIndex}'s exact wardrobe colors, embroidery, props, and background scenery faithfully, while ensuring ZERO facial features, fur colors, or species traits from Image ${refImageIndex}'s original model leak onto the user's pet.`
+CRITICAL WHOLE-BODY TRANSFER RULE: Match Image ${refImageIndex}'s exact wardrobe colors, embroidery, props, and background scenery faithfully, while ensuring ZERO facial features, fur textures, fur lengths, paws, legs, or species traits from Image ${refImageIndex}'s original model leak onto the user's pet. Every visible paw, wrist, neck, or chest area MUST strictly match the coat length, texture, and color of Image 1's pet.`
     : `
 THEMATIC WARDROBE & SCENE GUIDE (USE "${character.name}" AS COSTUME & ENVIRONMENT GUIDE AROUND THE USER'S PET):
 Adapt the following thematic attire, accessories, lighting mood, and background setting onto the user's pet:
 ${themeGuideText}`;
 
   const identityRules = `
-MANDATORY PET IDENTITY, COLOR FIDELITY & FULL-BLEED PORTRAIT RULES:
-1. 100% FACIAL & COLOR FIDELITY: The generated portrait MUST unmistakably be the EXACT individual pet from Image 1. Lock its exact species (DOG vs CAT vs OTHER), breed, facial proportions, muzzle/snout geometry, nose color, exact eye iris color, exact fur shades, asymmetric markings, and authentic expression. Never change a dark dog into a light one, never alter eye color, and never genericize its face.
+MANDATORY PET IDENTITY, WHOLE-BODY COAT CONSISTENCY & FULL-BLEED PORTRAIT RULES:
+1. 100% FACIAL, COLOR & WHOLE-BODY FUR FIDELITY: The generated portrait MUST unmistakably be the EXACT individual pet from Image 1 across its ENTIRE visible body. Lock its exact species (DOG vs CAT vs OTHER), breed, facial proportions, muzzle/snout geometry, nose color, exact eye iris color, exact fur shades, asymmetric markings, and authentic expression. Any visible paws, legs, chest, or neck fur MUST have the exact same fur length, texture, and coat colors as the pet in Image 1 (never copy fluffy, shaggy, or mismatched paws/limbs from Image ${refImageIndex}).
 2. FULL-BLEED EDGE-TO-EDGE ARTWORK ONLY (CRITICAL): Render a flat, full-bleed 2D portrait filling 100% of the image rectangle edge-to-edge. NEVER draw a picture frame, 3D canvas edge, wooden stretcher, white border, margin, mat, wall, or product mockup around the portrait.
 3. COMPLETE UNCROPPED HEAD, EARS & 20% HEADROOM: NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet photo is tightly cropped, reconstruct the COMPLETE head, both complete ears, and upper chest/torso in a balanced medium-wide chest-up portrait shot with 20% to 25% of open background space above the highest point of the head/ears/headwear and 15% breathing room on both sides.
 4. UNOBSTRUCTED PET FACE & EARS: Any crown, hat, helmet, or headwear from Image ${refImageIndex} must sit lightly and naturally on top of the head so the pet's eyes, muzzle, forehead markings, and natural ears remain clearly visible and true to Image 1.
-5. NATURAL ANATOMICAL PROPORTIONS & COMPLETE COSTUME FIT: Reproduce the FULL torso costume, uniform, collar, badges, jewelry, and props from Image ${refImageIndex} with realistic head-to-shoulder proportions and real fur micro-textures naturally overlapping the collar and neckline. Never make the portrait look cartoon, 3D-rendered, or plastic.
+5. NATURAL ANATOMICAL PROPORTIONS & COMPLETE COSTUME FIT: Reproduce the FULL torso costume, uniform, collar, badges, jewelry, and props from Image ${refImageIndex} with realistic head-to-shoulder proportions and real fur micro-textures matching Image 1 naturally overlapping the collar, cuffs, and neckline. Never make the portrait look cartoon, 3D-rendered, or plastic.
 6. PHOTOGRAPHY SPECS: Medium-wide half-body fine-art portrait (35mm full-frame camera, 50mm portrait lens), museum-grade lighting matching Image ${refImageIndex}, crisp eye catchlights. No watermarks, no text, no borders, no frames.`;
 
   const extraUserPrompt = customPrompt?.trim()
