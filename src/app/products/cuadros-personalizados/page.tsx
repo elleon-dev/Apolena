@@ -1808,7 +1808,7 @@ export default function personalizedWallArt() {
         {/* PASO 1: ELEGIR PERSONAJE / VESTUARIO Y ESCENARIO (#73) */}
         {/* ========================================================================= */}
         {!isGenerating && step === 1 && (
-          <div className="space-y-8 animate-in fade-in duration-300">
+          <div className="space-y-8 pb-28 animate-in fade-in duration-300">
             {/* Step Indicator */}
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cream-100 border border-cream-200 text-stone-600 text-xs font-medium">
@@ -1862,7 +1862,6 @@ export default function personalizedWallArt() {
                             setUseCustomTheme(false);
                             setErrorNotification(null);
                             setFusionError(null);
-                            scrollToContinueUpload();
                           }}
                           title={char.description || char.name}
                           className={`group/card relative rounded-xl overflow-hidden border bg-white transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
@@ -1940,46 +1939,60 @@ export default function personalizedWallArt() {
               </div>
             </div>
 
-            {/* Continue to Step 2 (Upload Pet Photo) CTA */}
-            <div className="pt-2 max-w-md mx-auto text-center space-y-2.5">
-              <button
-                ref={continueToUploadBtnRef}
-                type="button"
-                onClick={() => {
-                  if (!hasSelectedCharacter && !useCustomTheme) {
-                    triggerErrorNotification(
-                      "Selecciona un personaje",
-                      "Es necesario elegir un personaje del catálogo para continuar al siguiente paso.",
-                    );
+            {/* Barra Inferior Fija Superpuesta: Personaje Elegido + Continuar a Subir Foto */}
+            <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-cream-200 px-4 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
+              <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {hasSelectedCharacter || useCustomTheme ? (
+                    <>
+                      <img
+                        src={activeThemeImageUrl}
+                        alt={activeThemeName}
+                        className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover object-top border border-[#174B3D]/30 shadow-xs shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block leading-tight">
+                          Estilo elegido
+                        </span>
+                        <span className="font-serif text-sm sm:text-base font-bold text-[#174B3D] block truncate leading-tight">
+                          {activeThemeName}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block leading-tight">
+                        Paso 1 de 3
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-stone-700 block truncate leading-tight">
+                        Elige un personaje
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  ref={continueToUploadBtnRef}
+                  type="button"
+                  onClick={() => {
+                    if (!hasSelectedCharacter && !useCustomTheme) {
+                      triggerErrorNotification(
+                        "Selecciona un personaje",
+                        "Es necesario elegir un personaje del catálogo para continuar al siguiente paso.",
+                      );
+                      return;
+                    }
+                    setErrorNotification(null);
+                    setStep(2);
                     window.scrollTo({ top: 0, behavior: "smooth" });
-                    return;
-                  }
-                  setErrorNotification(null);
-                  setStep(2);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                disabled={!useCustomTheme && catalogCharacters.length === 0}
-                className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30 cursor-pointer"
-              >
-                <span>Continuar a subir foto</span>
-                <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
-              </button>
-              <p className="text-xs text-stone-500">
-                {hasSelectedCharacter || useCustomTheme ? (
-                  <>
-                    Estilo seleccionado:{" "}
-                    <strong className="text-stone-800 font-medium">
-                      {activeThemeName}
-                    </strong>
-                    . En el siguiente paso subirás la fotografía de tu mascota.
-                  </>
-                ) : (
-                  <span>
-                    Selecciona un personaje del catálogo para continuar al
-                    siguiente paso.
-                  </span>
-                )}
-              </p>
+                  }}
+                  disabled={!useCustomTheme && catalogCharacters.length === 0}
+                  className="shrink-0 py-3 sm:py-3.5 px-5 sm:px-7 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-card transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30 cursor-pointer"
+                >
+                  <span>Continuar a subir foto</span>
+                  <ArrowRight className="w-4 h-4 text-[#c6a26c] shrink-0" />
+                </button>
+              </div>
             </div>
           </div>
         )}
