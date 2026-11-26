@@ -1,11 +1,22 @@
 /**
- * Helper centralizado de Google Analytics 4 (GA4) para Apolena.
+ * Helper centralizado de Google Tag Manager (GTM) y Google Analytics 4 (GA4) para Apolena.
  * Incluye tracking de vistas SPA, embudo de creación de retratos,
  * eventos virales de compartido y eventos estándar de e-commerce GA4 (PEN).
  */
 
+export const DEFAULT_GTM_ID = "GTM-54JPQQK2";
+
+export const GTM_CONTAINER_ID =
+  process.env.NEXT_PUBLIC_GTM_ID?.trim() || DEFAULT_GTM_ID;
+
 export const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "";
+
+export const isGtmEnabled = Boolean(
+  GTM_CONTAINER_ID &&
+    /^GTM-[A-Z0-9]+$/i.test(GTM_CONTAINER_ID) &&
+    !GTM_CONTAINER_ID.includes("XXXX"),
+);
 
 export const isGaEnabled = Boolean(
   GA_MEASUREMENT_ID &&
@@ -13,26 +24,76 @@ export const isGaEnabled = Boolean(
     !GA_MEASUREMENT_ID.includes("XXXX"),
 );
 
+export const isAnalyticsEnabled = isGtmEnabled || isGaEnabled;
+
 declare global {
   interface Window {
-    dataLayer?: unknown[];
+    dataLayer?: Record<string, unknown>[];
     gtag?: (...args: unknown[]) => void;
   }
 }
 
+function pushDataLayer(payload: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(payload);
+}
+
 export function trackPageView(url: string): void {
-  if (!isGaEnabled || typeof window === "undefined" || !window.gtag) return;
-  window.gtag("config", GA_MEASUREMENT_ID, {
-    page_path: url,
-  });
+  if (!isAnalyticsEnabled || typeof window === "undefined") return;
+
+  if (isGtmEnabled) {
+    pushDataLayer({
+      event: "page_view",
+      page_path: url,
+      page_location: window.location.href,
+      page_title: typeof document !== "undefined" ? document.title : "",
+    });
+  }
+
+  if (isGaEnabled && window.gtag) {
+    window.gtag("config", GA_MEASUREMENT_ID, {
+      page_path: url,
+    });
+  }
 }
 
 export function trackEvent(
   eventName: string,
   params?: Record<string, unknown>,
 ): void {
-  if (!isGaEnabled || typeof window === "undefined" || !window.gtag) return;
-  window.gtag("event", eventName, params || {});
+  if (!isAnalyticsEnabled || typeof window === "undefined") return;
+
+  if (isGtmEnabled) {
+    pushDataLayer({
+      event: eventName,
+      ...(params || {}),
+    });
+  }
+
+  if (isGaEnabled && window.gtag) {
+    window.gtag("event", eventName, params || {});
+  }
+}
+
+function trackEcommerceEvent(
+  eventName: "begin_checkout" | "purchase",
+  ecommerceParams: Record<string, unknown>,
+): void {
+  if (!isAnalyticsEnabled || typeof window === "undefined") return;
+
+  if (isGtmEnabled) {
+    // Limpieza recomendada por Google antes de cada evento ecommerce en dataLayer
+    pushDataLayer({ ecommerce: null });
+    pushDataLayer({
+      event: eventName,
+      ecommerce: ecommerceParams,
+    });
+  }
+
+  if (isGaEnabled && window.gtag) {
+    window.gtag("event", eventName, ecommerceParams);
+  }
 }
 
 export function trackPetPhotoUploaded(species: string): void {
@@ -75,7 +136,7 @@ export function trackBeginCheckout(params: {
   sizeLabel: string;
   frameName: string;
 }): void {
-  trackEvent("begin_checkout", {
+  trackEcommerceEvent("begin_checkout", {
     currency: "PEN",
     value: Number(params.value.toFixed(2)),
     items: [
@@ -99,7 +160,7 @@ export function trackPurchase(params: {
   itemName: string;
   itemVariant?: string;
 }): void {
-  trackEvent("purchase", {
+  trackEcommerceEvent("purchase", {
     transaction_id: params.transactionId,
     currency: "PEN",
     value: Number(params.value.toFixed(2)),

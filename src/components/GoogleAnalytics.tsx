@@ -3,14 +3,21 @@
 import React, { useEffect, Suspense } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { GA_MEASUREMENT_ID, isGaEnabled, trackPageView } from "@/lib/analytics";
+import {
+  GTM_CONTAINER_ID,
+  GA_MEASUREMENT_ID,
+  isGtmEnabled,
+  isGaEnabled,
+  isAnalyticsEnabled,
+  trackPageView,
+} from "@/lib/analytics";
 
-function GoogleAnalyticsPageTracker() {
+function AnalyticsPageTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isGaEnabled || !pathname) return;
+    if (!isAnalyticsEnabled || !pathname) return;
     const query = searchParams?.toString();
     const url = query ? `${pathname}?${query}` : pathname;
     trackPageView(url);
@@ -20,29 +27,63 @@ function GoogleAnalyticsPageTracker() {
 }
 
 export function GoogleAnalytics() {
-  if (!isGaEnabled) {
+  if (!isAnalyticsEnabled) {
     return null;
   }
 
   return (
     <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics-init" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          window.gtag = gtag;
-          gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}', {
-            send_page_view: false
-          });
-        `}
-      </Script>
+      {isGtmEnabled && (
+        <>
+          <Script id="google-tag-manager-init" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              window.gtag = window.gtag || gtag;
+              gtag('js', new Date());
+              window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+            `}
+          </Script>
+          <Script
+            id="google-tag-manager-script"
+            src={`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`}
+            strategy="afterInteractive"
+          />
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        </>
+      )}
+
+      {isGaEnabled && (
+        <>
+          <Script
+            id="google-analytics-script"
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics-init" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              window.gtag = gtag;
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}', {
+                send_page_view: false
+              });
+            `}
+          </Script>
+        </>
+      )}
+
       <Suspense fallback={null}>
-        <GoogleAnalyticsPageTracker />
+        <AnalyticsPageTracker />
       </Suspense>
     </>
   );
