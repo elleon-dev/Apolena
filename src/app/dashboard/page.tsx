@@ -165,6 +165,9 @@ export default function AdminDashboardPage() {
     "characters" | "frames" | "sizes" | "finishes"
   >("characters");
   const [isSavingCuadros, setIsSavingCuadros] = useState(false);
+  const [adminEmailsInput, setAdminEmailsInput] = useState<string>(
+    "apolenaperu@gmail.com",
+  );
 
   // Character Modal State
   const [showCharacterModal, setShowCharacterModal] = useState(false);
@@ -451,6 +454,11 @@ export default function AdminDashboardPage() {
       setIsResendConfigured(Boolean(data.is_resend_configured));
       setProducts(data.products || []);
       setSettings(data.settings || null);
+      if (data.settings?.ADMIN_NOTIFICATION_EMAILS?.emails) {
+        setAdminEmailsInput(
+          data.settings.ADMIN_NOTIFICATION_EMAILS.emails.join(", "),
+        );
+      }
     } catch {
       window.location.replace("/orders");
     } finally {
@@ -1414,10 +1422,24 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settings) return;
+    const parsedEmails = adminEmailsInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.includes("@"));
+    const nextSettings = {
+      ...settings,
+      ADMIN_NOTIFICATION_EMAILS: {
+        ...settings.ADMIN_NOTIFICATION_EMAILS,
+        emails:
+          parsedEmails.length > 0 ? parsedEmails : ["apolenaperu@gmail.com"],
+      },
+    };
+    setSettings(nextSettings);
+    setAdminEmailsInput(nextSettings.ADMIN_NOTIFICATION_EMAILS.emails.join(", "));
     const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings }),
+      body: JSON.stringify({ settings: nextSettings }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -4521,6 +4543,25 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       }
                       className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 disabled:opacity-60"
                     />
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2 pt-1">
+                    <label className="font-semibold text-stone-800 block">
+                      Correo receptor de notificaciones y órdenes
+                    </label>
+                    <input
+                      type="text"
+                      disabled={!isSuperAdmin}
+                      placeholder="Ej. apolenaperu@gmail.com"
+                      value={adminEmailsInput}
+                      onChange={(e) => setAdminEmailsInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 font-medium disabled:opacity-60"
+                    />
+                    <p className="text-[11px] text-stone-500">
+                      Recibe alertas de nuevas órdenes, consultas de contacto y
+                      libro de reclamaciones. Puedes separar varios correos con
+                      coma.
+                    </p>
                   </div>
                 </div>
 

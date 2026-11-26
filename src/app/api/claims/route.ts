@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { enqueueEmail } from "@/lib/db-service";
+import { enqueueEmail, getPlatformSettings } from "@/lib/db-service";
 import { getRequestOrigin } from "@/lib/app-url";
 
 export async function POST(req: Request) {
@@ -84,8 +84,13 @@ export async function POST(req: Request) {
     });
 
     // 2. Enviar y encolar notificación al equipo legal y administrativo de Apolena
+    const platformSettings = await getPlatformSettings().catch(() => null);
+    const adminEmails = platformSettings?.ADMIN_NOTIFICATION_EMAILS?.emails || [
+      "apolenaperu@gmail.com",
+    ];
     await enqueueEmail({
-      to_email: "apolenaperu@gmail.com",
+      to_email: adminEmails[0] || "apolenaperu@gmail.com",
+      cc: adminEmails.slice(1),
       subject: `[Alerta INDECOPI] Nueva Hoja de ${claim_type === "queja" ? "Queja" : "Reclamo"} ${claimCode} registrada`,
       template: "claim_registered_admin",
       data: claimPayload,
