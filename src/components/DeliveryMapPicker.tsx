@@ -182,62 +182,78 @@ export function DeliveryMapPicker({
 
     async function initMap() {
       if (!mapContainerRef.current || mapInstanceRef.current) return;
-      const L = (await import("leaflet")).default;
-      if (!isMounted || !mapContainerRef.current) return;
+      try {
+        const leafletMod = await import("leaflet");
+        const L = leafletMod.default || leafletMod;
+        if (!isMounted || !mapContainerRef.current) return;
 
-      leafletRef.current = L;
+        leafletRef.current = L;
 
-      const initialCenter =
-        value && typeof value.lat === "number" && typeof value.lng === "number"
-          ? { lat: value.lat, lng: value.lng, zoom: 17 }
-          : resolveCoordinatesForLocation(district, department);
+        const initialCenter =
+          value &&
+          typeof value.lat === "number" &&
+          typeof value.lng === "number"
+            ? { lat: value.lat, lng: value.lng, zoom: 17 }
+            : resolveCoordinatesForLocation(district, department);
 
-      const map = L.map(mapContainerRef.current, {
-        center: [initialCenter.lat, initialCenter.lng],
-        zoom: initialCenter.zoom,
-        zoomControl: true,
-        attributionControl: false,
-      });
-
-      const tileUrl =
-        mapMode === "hybrid"
-          ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-          : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
-
-      const layer = L.tileLayer(tileUrl, {
-        maxZoom: 20,
-      }).addTo(map);
-
-      tileLayerRef.current = layer;
-      mapInstanceRef.current = map;
-
-      // Si ya había un valor guardado, dibujar el pin
-      if (value && typeof value.lat === "number" && typeof value.lng === "number") {
-        const icon = createPinIcon(L);
-        const marker = L.marker([value.lat, value.lng], {
-          draggable: true,
-          icon,
-        }).addTo(map);
-
-        marker.on("dragend", (event: any) => {
-          const pos = event.target.getLatLng();
-          if (pos) {
-            void reverseGeocode(pos.lat, pos.lng);
-          }
+        const map = L.map(mapContainerRef.current, {
+          center: [initialCenter.lat, initialCenter.lng],
+          zoom: initialCenter.zoom,
+          zoomControl: true,
+          attributionControl: false,
         });
 
-        markerInstanceRef.current = marker;
-        if (value.label) {
-          setDetectedStreet(value.label);
+        const tileUrl =
+          mapMode === "hybrid"
+            ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+
+        const layer = L.tileLayer(tileUrl, {
+          maxZoom: 20,
+        }).addTo(map);
+
+        tileLayerRef.current = layer;
+        mapInstanceRef.current = map;
+
+        // Si ya había un valor guardado, dibujar el pin
+        if (
+          value &&
+          typeof value.lat === "number" &&
+          typeof value.lng === "number"
+        ) {
+          const icon = createPinIcon(L);
+          const marker = L.marker([value.lat, value.lng], {
+            draggable: true,
+            icon,
+          }).addTo(map);
+
+          marker.on("dragend", (event: any) => {
+            const pos = event.target.getLatLng();
+            if (pos) {
+              void reverseGeocode(pos.lat, pos.lng);
+            }
+          });
+
+          markerInstanceRef.current = marker;
+          if (value.label) {
+            setDetectedStreet(value.label);
+          }
+        }
+
+        // Al hacer clic en cualquier punto del mapa, colocar el pin
+        map.on("click", (e: any) => {
+          const { lat, lng } = e.latlng;
+          setStatusMessage(null);
+          placeOrUpdateMarker(lat, lng, true, Math.max(map.getZoom(), 17));
+        });
+      } catch (err) {
+        console.warn("No se pudo cargar el módulo de mapa Leaflet:", err);
+        if (isMounted) {
+          setStatusMessage(
+            "No pudimos cargar el mapa interactivo en este momento. Puedes ingresar tu dirección escrita normalmente o recargar la página.",
+          );
         }
       }
-
-      // Al hacer clic en cualquier punto del mapa, colocar el pin
-      map.on("click", (e: any) => {
-        const { lat, lng } = e.latlng;
-        setStatusMessage(null);
-        placeOrUpdateMarker(lat, lng, true, Math.max(map.getZoom(), 17));
-      });
     }
 
     void initMap();
