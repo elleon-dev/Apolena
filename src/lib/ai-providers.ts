@@ -229,6 +229,8 @@ Output ONLY the factual physical description, nothing else.`;
       parts.push({ text: promptText });
 
       const candidateVisionModels = [
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
         "gemini-3.5-flash-lite",
         "gemini-3.5-flash",
       ];
@@ -410,6 +412,8 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
   if (geminiKey && !geminiKey.includes("your_")) {
     try {
       const candidateVisionModels = [
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
         "gemini-3.5-flash-lite",
         "gemini-3.5-flash",
       ];
@@ -904,9 +908,35 @@ async function runGeminiFusion(
   }
 
   const parts: any[] = [
-    ...petParts,
+    {
+      text: hasSecondPet
+        ? "CUSTOMER PET PHOTO 1 (PRIMARY SUBJECT — YOU MUST PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND IDENTITY 100%):"
+        : "CUSTOMER PET PHOTO (PRIMARY SUBJECT — YOU MUST PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND IDENTITY 100%):",
+    },
+    {
+      inlineData: {
+        mimeType: pet1Data.mimeType,
+        data: pet1Data.base64,
+      },
+    },
+    ...(pet2Data
+      ? [
+          {
+            text: "CUSTOMER PET PHOTO 2 (SECOND SUBJECT — YOU MUST ALSO PRESERVE THIS EXACT PET'S FACE, FUR, AND IDENTITY 100%):",
+          },
+          {
+            inlineData: {
+              mimeType: pet2Data.mimeType,
+              data: pet2Data.base64,
+            },
+          },
+        ]
+      : []),
     ...(themeData
       ? [
+          {
+            text: "COSTUME & BACKGROUND BLUEPRINT ONLY (CRITICAL: COMPLETELY IGNORE AND REPLACE THE ANIMAL FACE/HEAD/FUR SHOWN IN THIS REFERENCE IMAGE — COPY ONLY THE WARDROBE, ACCESSORIES, POSE, LIGHTING, AND BACKGROUND SCENE):",
+          },
           {
             inlineData: {
               mimeType: themeData.mimeType,
@@ -915,7 +945,9 @@ async function runGeminiFusion(
           },
         ]
       : []),
-    { text: fusionPrompt },
+    {
+      text: `${fusionPrompt}\n\nMANDATORY OUTPUT FORMAT & IDENTITY CHECK:\n- Output MUST be a VERTICAL 2:3 portrait.\n- The animal in the final portrait MUST be the EXACT customer pet from the first image (NOT the reference animal from the costume blueprint).\n- Full-bleed edge-to-edge painting with NO picture frame, NO border, and NO wall.`,
+    },
   ];
 
   // Ordered from lowest cost ($0.039/img) to standard ($0.067/img), avoiding expensive pro tier ($0.134/img)
@@ -942,6 +974,9 @@ async function runGeminiFusion(
         contents: [{ role: "user", parts }],
         generationConfig: {
           responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: {
+            aspectRatio: "2:3",
+          },
         },
       }),
     });
