@@ -46,17 +46,16 @@ function getInitials(name?: string | null, email?: string | null): string {
 const NAV_ITEMS = [
   { label: "Estilos", href: "/#estilos" },
   { label: "Cómo funciona", href: "/#como-funciona" },
-  { label: "Preguntas frecuentes", href: "/#faq" },
   { label: "Quiénes Somos", href: "/quienes-somos" },
+  { label: "Contacto", href: "/#contacto" },
 ];
 
 const MOBILE_NAV_ITEMS = [
   { label: "Estilos", href: "/#estilos" },
   { label: "Cómo funciona", href: "/#como-funciona" },
-  { label: "Preguntas frecuentes", href: "/#faq" },
   { label: "Quiénes Somos", href: "/quienes-somos" },
-  { label: "Rastrear Pedido (Tracking)", href: "/track" },
   { label: "Contacto", href: "/#contacto" },
+  { label: "Rastrear Pedido (Tracking)", href: "/track" },
 ];
 
 export function Header(_props: HeaderProps = {}) {
