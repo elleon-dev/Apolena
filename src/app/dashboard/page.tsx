@@ -168,6 +168,8 @@ export default function AdminDashboardPage() {
   const [adminEmailsInput, setAdminEmailsInput] = useState<string>(
     "apolenaperu@gmail.com",
   );
+  const [deletingOrder, setDeletingOrder] = useState<OrderRecord | null>(null);
+  const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
   // Character Modal State
   const [showCharacterModal, setShowCharacterModal] = useState(false);
@@ -1455,6 +1457,45 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
     }
   };
 
+  const handleConfirmDeleteOrder = async () => {
+    if (!deletingOrder) return;
+    setIsDeletingOrder(true);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(deletingOrder.id)}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        showToast("error", data.error || "No se pudo eliminar la orden.");
+        return;
+      }
+      const deletedId = deletingOrder.id;
+      const deletedCode = deletingOrder.order_code;
+      const deletedTracking = deletingOrder.tracking_id;
+      setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+      setEmailQueue((prev) =>
+        prev.filter(
+          (e) =>
+            !e.subject.includes(deletedCode) &&
+            !e.subject.includes(deletedTracking),
+        ),
+      );
+      if (selectedOrderId === deletedId) {
+        setSelectedOrderId(null);
+      }
+      setDeletingOrder(null);
+      showToast(
+        "success",
+        `Orden ${deletedCode} y todo su contenido relacionado fueron eliminados.`,
+      );
+    } catch {
+      showToast("error", "Error de conexión al eliminar la orden.");
+    } finally {
+      setIsDeletingOrder(false);
+    }
+  };
+
   // KPI Counters
   const totalManufacturing = orders.filter(
     (o) => o.status === "manufacturing",
@@ -2270,6 +2311,20 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           >
                             <Truck className="w-3 h-3 text-[#c6a26c]" />
                             <span>Tracking & Courier</span>
+                          </button>
+
+                          {/* Botón Eliminar Orden (admin y super_admin) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingOrder(order);
+                            }}
+                            className="px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                            title="Eliminar orden y contenido relacionado"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Eliminar</span>
                           </button>
                         </div>
 
@@ -5476,6 +5531,84 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
             );
           }}
         />
+        {/* Modal de confirmación para eliminar orden y registros relacionados */}
+        {deletingOrder && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+            onClick={() => {
+              if (!isDeletingOrder) setDeletingOrder(null);
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="relative w-full max-w-md rounded-3xl bg-[#FFFBF2] border border-red-200 shadow-2xl p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                    Eliminar orden {deletingOrder.order_code}
+                  </h3>
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    Esta acción eliminará permanentemente la orden (
+                    <strong>{deletingOrder.tracking_id}</strong>), sus paquetes,
+                    envíos, pagos, comprobantes, reseñas, correos en cola,
+                    trabajos de generación y archivos multimedia asociados. No
+                    se puede deshacer.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-cream-200 p-3.5 text-xs space-y-1 text-stone-700">
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Cliente:</span>
+                  <span className="font-semibold">
+                    {deletingOrder.shipping?.name || "Sin nombre"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Total:</span>
+                  <span className="font-bold text-stone-900">
+                    S/ {Number(deletingOrder.total_amount).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-1">
+                <button
+                  type="button"
+                  disabled={isDeletingOrder}
+                  onClick={() => setDeletingOrder(null)}
+                  className="px-4 py-2.5 rounded-full bg-white hover:bg-cream-100 border border-cream-200 text-stone-700 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingOrder}
+                  onClick={handleConfirmDeleteOrder}
+                  className="px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  {isDeletingOrder ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Eliminando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Sí, eliminar orden</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
