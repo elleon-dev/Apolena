@@ -3212,6 +3212,7 @@ export default function personalizedWallArt() {
           petImageUrl={petImage}
           themeName={activeThemeName}
           characterId={selectedCharacter.id}
+          selectedFrame={selectedFrame}
           petName={
             includePetInscription && petInscriptionName.trim()
               ? petInscriptionName.trim()

@@ -5,6 +5,8 @@
  * marca de agua protectora estética y llamado a la acción con el dominio activo.
  */
 
+import type { FrameOption } from "@/lib/print-export";
+
 export type SocialCardFormat = "story" | "post";
 
 export interface SocialShareCardOptions {
@@ -12,6 +14,7 @@ export interface SocialShareCardOptions {
   petImageUrl?: string | null;
   themeName: string;
   petName?: string | null;
+  frame?: FrameOption | null;
   includeBeforeBadge?: boolean;
   format?: SocialCardFormat;
   siteHost?: string;
@@ -120,11 +123,17 @@ export async function generateSocialShareCard(
     petImageUrl,
     themeName,
     petName,
+    frame,
     includeBeforeBadge = true,
     format = "story",
     siteHost,
     fileSlug = "retrato",
   } = options;
+
+  // Esperar carga de tipografías (Kaushan Script / Playfair Display) antes de pintar en canvas
+  if (typeof document !== "undefined" && document.fonts?.ready) {
+    await document.fonts.ready.catch(() => {});
+  }
 
   const isStory = format === "story";
   const width = 1080;
@@ -249,117 +258,205 @@ export async function generateSocialShareCard(
   }
   ctx.fillText(headlineText, width / 2, titleY);
 
-  // 3. Cuadro Principal Enmarcado (Hero Artwork)
+  // 3. Cuadro Principal según el Marco Seleccionado por el Usuario
   const frameOuterW = isStory ? 820 : 660;
   const frameOuterH = isStory ? 1110 : 815;
   const frameX = Math.round((width - frameOuterW) / 2);
   const frameY = titleY + (isStory ? 62 : 42);
 
-  // Sombra profunda de galería
+  const frameId = (frame?.id || "").toLowerCase();
+  const frameNameLower = (frame?.name || "").toLowerCase();
+  const isFramelessCanvas =
+    !frame ||
+    frameId === "canvas-bastidor" ||
+    (frame.priceModifierPen === 0 &&
+      (frameId.includes("canvas") ||
+        frameNameLower.includes("lienzo") ||
+        frameNameLower.includes("bastidor")));
+
+  let artX = frameX;
+  let artY = frameY;
+  let artW = frameOuterW;
+  let artH = frameOuterH;
+  let artRadius = 16;
+
+  if (isFramelessCanvas) {
+    // Canvas - Estilo 3D (Sin marco exterior: lienzo tensado directo con sombra de galería)
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.58)";
+    ctx.shadowBlur = 54;
+    ctx.shadowOffsetY = 26;
+    drawRoundedRectPath(ctx, frameX, frameY, frameOuterW, frameOuterH, artRadius);
+    ctx.fillStyle = "#141414";
+    ctx.fill();
+    ctx.restore();
+  } else {
+    // Determinar paleta de moldura según el marco elegido
+    let gradStops: Array<[number, string]> = [
+      [0, frame?.colorHex || "#2d2a28"],
+      [0.5, frame?.colorHex || "#181615"],
+      [1, "#0d0c0b"],
+    ];
+    let outerBorderColor = "rgba(0, 0, 0, 0.35)";
+    let innerLipColor = "#090808";
+    let miterLineColor = "rgba(255, 255, 255, 0.14)";
+    let moldingThickness = isStory ? 30 : 26;
+
+    if (frameId.includes("black") || frameNameLower.includes("negro")) {
+      gradStops = [
+        [0, "#2d2a28"],
+        [0.48, "#181615"],
+        [1, "#0d0c0b"],
+      ];
+      outerBorderColor = "#3d3936";
+      innerLipColor = "#090808";
+      miterLineColor = "rgba(255, 255, 255, 0.14)";
+    } else if (frameId.includes("natural") || frameNameLower.includes("natural")) {
+      gradStops = [
+        [0, "#dbb88e"],
+        [0.45, "#c39764"],
+        [1, "#a57946"],
+      ];
+      outerBorderColor = "#8f6536";
+      innerLipColor = "#5e3f1f";
+      miterLineColor = "rgba(94, 63, 31, 0.42)";
+    } else if (frameId.includes("white") || frameNameLower.includes("blanco")) {
+      gradStops = [
+        [0, "#ffffff"],
+        [0.52, "#f5f2ec"],
+        [1, "#e5e0d5"],
+      ];
+      outerBorderColor = "#d5cfc3";
+      innerLipColor = "#bdb5a6";
+      miterLineColor = "rgba(155, 145, 130, 0.45)";
+    } else if (
+      frameId.includes("gold") ||
+      frameNameLower.includes("gold") ||
+      frameNameLower.includes("dorado")
+    ) {
+      gradStops = [
+        [0, "#f0d584"],
+        [0.32, "#cda235"],
+        [0.68, "#9e7314"],
+        [1, "#e2c265"],
+      ];
+      outerBorderColor = "#87600d";
+      innerLipColor = "#5c4007";
+      miterLineColor = "rgba(92, 64, 7, 0.48)";
+      moldingThickness = isStory ? 32 : 28;
+    }
+
+    // Sombra profunda de galería y moldura exterior
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.58)";
+    ctx.shadowBlur = 54;
+    ctx.shadowOffsetY = 26;
+    drawRoundedRectPath(ctx, frameX, frameY, frameOuterW, frameOuterH, 14);
+    const frameGrad = ctx.createLinearGradient(
+      frameX,
+      frameY,
+      frameX + frameOuterW,
+      frameY + frameOuterH,
+    );
+    for (const [stop, color] of gradStops) {
+      frameGrad.addColorStop(stop, color);
+    }
+    ctx.fillStyle = frameGrad;
+    ctx.fill();
+    ctx.restore();
+
+    // Borde exterior fino de la moldura
+    ctx.save();
+    drawRoundedRectPath(ctx, frameX, frameY, frameOuterW, frameOuterH, 14);
+    ctx.strokeStyle = outerBorderColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Líneas de unión de inglete a 45° en las 4 esquinas
+    ctx.strokeStyle = miterLineColor;
+    ctx.lineWidth = 2;
+    const m = moldingThickness;
+    const corners: Array<[number, number, number, number]> = [
+      [frameX + 2, frameY + 2, frameX + m, frameY + m],
+      [frameX + frameOuterW - 2, frameY + 2, frameX + frameOuterW - m, frameY + m],
+      [frameX + 2, frameY + frameOuterH - 2, frameX + m, frameY + frameOuterH - m],
+      [
+        frameX + frameOuterW - 2,
+        frameY + frameOuterH - 2,
+        frameX + frameOuterW - m,
+        frameY + frameOuterH - m,
+      ],
+    ];
+    for (const [x1, y1, x2, y2] of corners) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Rebaje interior del marco (floater rabbet)
+    const rabbet = 6;
+    ctx.save();
+    drawRoundedRectPath(
+      ctx,
+      frameX + m - rabbet,
+      frameY + m - rabbet,
+      frameOuterW - (m - rabbet) * 2,
+      frameOuterH - (m - rabbet) * 2,
+      6,
+    );
+    ctx.fillStyle = innerLipColor;
+    ctx.fill();
+    ctx.restore();
+
+    artX = frameX + m;
+    artY = frameY + m;
+    artW = frameOuterW - m * 2;
+    artH = frameOuterH - m * 2;
+    artRadius = 4;
+  }
+
   ctx.save();
-  ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
-  ctx.shadowBlur = 54;
-  ctx.shadowOffsetY = 26;
-  drawRoundedRectPath(ctx, frameX, frameY, frameOuterW, frameOuterH, 22);
-  const frameGrad = ctx.createLinearGradient(
-    frameX,
-    frameY,
-    frameX + frameOuterW,
-    frameY + frameOuterH,
-  );
-  frameGrad.addColorStop(0, "#E3C58E");
-  frameGrad.addColorStop(0.45, "#B78F52");
-  frameGrad.addColorStop(1, "#8D6832");
-  ctx.fillStyle = frameGrad;
-  ctx.fill();
-  ctx.restore();
-
-  // Passe-partout crema interior
-  const goldBorder = 16;
-  const matPad = 20;
-  const matX = frameX + goldBorder;
-  const matY = frameY + goldBorder;
-  const matW = frameOuterW - goldBorder * 2;
-  const matH = frameOuterH - goldBorder * 2;
-
-  ctx.save();
-  drawRoundedRectPath(ctx, matX, matY, matW, matH, 12);
-  ctx.fillStyle = "#FFFBF2";
-  ctx.fill();
-  ctx.restore();
-
-  // Área de la obra de arte
-  const artX = matX + matPad;
-  const artY = matY + matPad;
-  const artW = matW - matPad * 2;
-  const artH = matH - matPad * 2;
-
-  ctx.save();
-  drawRoundedRectPath(ctx, artX, artY, artW, artH, 8);
+  drawRoundedRectPath(ctx, artX, artY, artW, artH, artRadius);
   ctx.clip();
 
   drawCoverImage(ctx, artImg, artX, artY, artW, artH, 0.25);
 
-  // Inscripción brush del nombre de la mascota si existe
+  // Inscripción brush del nombre de la mascota en la MISMA posición proporcional que en el resultado
+  // (bottom ~11.5%, right ~6.8%, rotado -6.5° con origen inferior derecho)
   if (cleanPetName) {
     ctx.save();
-    let brushSize = Math.round(artH * 0.068);
+    const len = cleanPetName.length;
+    const baseRatio =
+      len > 16 ? 0.048 : len > 11 ? 0.058 : len > 6 ? 0.07 : 0.082;
+    let brushSize = Math.round(artH * baseRatio);
     ctx.font = `400 ${brushSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
-    const maxBrushW = artW * 0.65;
-    while (ctx.measureText(cleanPetName).width > maxBrushW && brushSize > 24) {
+    const maxBrushW = artW * 0.7;
+    while (ctx.measureText(cleanPetName).width > maxBrushW && brushSize > 26) {
       brushSize -= 2;
       ctx.font = `400 ${brushSize}px 'Kaushan Script', 'Caveat', 'Brush Script MT', cursive`;
     }
-    ctx.translate(artX + artW - 28, artY + artH - 42);
-    ctx.rotate((-6 * Math.PI) / 180);
+    const nameRightInset = Math.round(artW * 0.068);
+    const nameBottomInset = Math.round(artH * 0.115);
+    ctx.translate(artX + artW - nameRightInset, artY + artH - nameBottomInset);
+    ctx.rotate((-6.5 * Math.PI) / 180);
     ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.78)";
+    ctx.textBaseline = "bottom";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.72)";
     ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 3;
     ctx.fillStyle = "#FFFFFF";
     ctx.fillText(cleanPetName, 0, 0);
     ctx.restore();
   }
 
-  // Marca de agua protectora estética (evita impresión no autorizada pero luce elegante)
-  if (!artworkUrl.includes("/uploads/previews/")) {
-    ctx.save();
-    ctx.translate(artX + artW / 2, artY + artH / 2);
-    ctx.rotate((-24 * Math.PI) / 180);
-    ctx.font = "700 17px Georgia, serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const stepX = 320;
-    const stepY = 230;
-    for (let y = -artH; y <= artH; y += stepY) {
-      for (let x = -artW; x <= artW; x += stepX) {
-        ctx.fillStyle = "rgba(13, 43, 34, 0.16)";
-        ctx.fillText("APOLENA · MUESTRA", x + 1, y + 1);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-        ctx.fillText("APOLENA · MUESTRA", x, y);
-      }
-    }
-    ctx.restore();
-
-    if (logoImg) {
-      ctx.save();
-      ctx.globalAlpha = 0.16;
-      const wmW = Math.round(artW * 0.28);
-      const wmH = Math.round(
-        (logoImg.naturalHeight / Math.max(1, logoImg.naturalWidth)) * wmW,
-      );
-      ctx.translate(artX + artW / 2, artY + artH / 2);
-      ctx.rotate((-12 * Math.PI) / 180);
-      ctx.drawImage(logoImg, -wmW / 2, -wmH / 2, wmW, wmH);
-      ctx.restore();
-    }
-  }
-
   // Sombra interior sutil de profundidad del marco
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.22)";
-  ctx.lineWidth = 4;
-  drawRoundedRectPath(ctx, artX, artY, artW, artH, 8);
+  ctx.strokeStyle = isFramelessCanvas
+    ? "rgba(255, 255, 255, 0.14)"
+    : "rgba(0, 0, 0, 0.28)";
+  ctx.lineWidth = isFramelessCanvas ? 2 : 4;
+  drawRoundedRectPath(ctx, artX, artY, artW, artH, artRadius);
   ctx.stroke();
   ctx.restore();
 

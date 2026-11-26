@@ -18,6 +18,7 @@ import {
   type SocialCardFormat,
   type SocialShareCardResult,
 } from "@/lib/social-share";
+import type { FrameOption } from "@/lib/print-export";
 
 interface SocialShareModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface SocialShareModalProps {
   themeName: string;
   characterId: string;
   petName?: string | null;
+  selectedFrame?: FrameOption | null;
 }
 
 export default function SocialShareModal({
@@ -37,6 +39,7 @@ export default function SocialShareModal({
   themeName,
   characterId,
   petName,
+  selectedFrame,
 }: SocialShareModalProps) {
   const [format, setFormat] = useState<SocialCardFormat>("story");
   const [includeBefore, setIncludeBefore] = useState<boolean>(
@@ -45,19 +48,58 @@ export default function SocialShareModal({
   const [card, setCard] = useState<SocialShareCardResult | null>(null);
   const [isGeneratingCard, setIsGeneratingCard] = useState<boolean>(false);
   const [cardError, setCardError] = useState<string | null>(null);
+  const [publishedShareUrl, setPublishedShareUrl] = useState<string | null>(
+    null,
+  );
+  const [isPublishingLink, setIsPublishingLink] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const [canNativeShareFiles, setCanNativeShareFiles] =
     useState<boolean>(false);
 
-  const shareUrl =
+  const fallbackShareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`
       : `https://apolena.pe/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`;
 
-  const shareText = petName?.trim()
-    ? `Mira el retrato estilo ${themeName} que creé para ${petName.trim()} en Apolena. Prueba con tu mascota aquí: ${shareUrl}`
-    : `Mira el retrato estilo ${themeName} que creé para mi mascota en Apolena. Prueba con la tuya aquí: ${shareUrl}`;
+  const buildShareText = useCallback(
+    (targetUrl: string) =>
+      petName?.trim()
+        ? `Mira el retrato estilo ${themeName} que creé para ${petName.trim()} en Apolena: ${targetUrl}`
+        : `Mira el retrato estilo ${themeName} que creé para mi mascota en Apolena: ${targetUrl}`,
+    [petName, themeName],
+  );
+
+  const publishCardToShareUrl = useCallback(
+    async (cardDataUrl: string): Promise<string> => {
+      setIsPublishingLink(true);
+      try {
+        const res = await fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cardDataUrl,
+            themeName,
+            characterId,
+            petName: petName?.trim() || null,
+            frameName: selectedFrame?.name || null,
+            format,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data?.shareUrl) {
+          setPublishedShareUrl(data.shareUrl);
+          return data.shareUrl;
+        }
+      } catch (err) {
+        console.warn("Error publicando enlace compartible:", err);
+      } finally {
+        setIsPublishingLink(false);
+      }
+      return fallbackShareUrl;
+    },
+    [characterId, fallbackShareUrl, format, petName, selectedFrame?.name, themeName],
+  );
 
   // Cerrar con Escape
   useEffect(() => {
@@ -74,12 +116,14 @@ export default function SocialShareModal({
     if (!isOpen || !artworkUrl) return;
     setIsGeneratingCard(true);
     setCardError(null);
+    setPublishedShareUrl(null);
     try {
       const result = await generateSocialShareCard({
         artworkUrl,
         petImageUrl: includeBefore ? petImageUrl : null,
         themeName,
         petName,
+        frame: selectedFrame,
         includeBeforeBadge: includeBefore,
         format,
         fileSlug: characterId,
@@ -99,6 +143,9 @@ export default function SocialShareModal({
       } else {
         setCanNativeShareFiles(false);
       }
+
+      // Publicar en segundo plano el enlace /share/[id] para que WhatsApp y Copiar Enlace estén listos al instante
+      void publishCardToShareUrl(result.dataUrl);
     } catch (err) {
       console.error("Error generando tarjeta social:", err);
       setCardError(
@@ -114,8 +161,10 @@ export default function SocialShareModal({
     includeBefore,
     themeName,
     petName,
+    selectedFrame,
     format,
     characterId,
+    publishCardToShareUrl,
   ]);
 
   useEffect(() => {
@@ -125,6 +174,14 @@ export default function SocialShareModal({
   }, [isOpen, buildCard]);
 
   if (!isOpen) return null;
+
+  const resolveActiveShareUrl = async (): Promise<string> => {
+    if (publishedShareUrl) return publishedShareUrl;
+    if (card?.dataUrl) {
+      return await publishCardToShareUrl(card.dataUrl);
+    }
+    return fallbackShareUrl;
+  };
 
   const handleDownloadCard = () => {
     if (!card) return;
@@ -140,12 +197,13 @@ export default function SocialShareModal({
 
   const handleNativeShare = async () => {
     if (!card) return;
+    const targetUrl = await resolveActiveShareUrl();
     if (canNativeShareFiles && typeof navigator.share === "function") {
       try {
         await navigator.share({
           files: [card.file],
           title: `Retrato ${themeName} · Apolena`,
-          text: shareText,
+          text: buildShareText(targetUrl),
         });
         setShareFeedback("Gracias por compartir tu creación.");
         setTimeout(() => setShareFeedback(null), 3500);
@@ -161,7 +219,8 @@ export default function SocialShareModal({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      const targetUrl = await resolveActiveShareUrl();
+      await navigator.clipboard.writeText(targetUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     } catch {
@@ -170,8 +229,9 @@ export default function SocialShareModal({
     }
   };
 
-  const handleWhatsAppShare = () => {
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const handleWhatsAppShare = async () => {
+    const targetUrl = publishedShareUrl || (await resolveActiveShareUrl());
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(buildShareText(targetUrl))}`;
     window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -201,7 +261,7 @@ export default function SocialShareModal({
               Comparte tu creación
             </h3>
             <p className="text-xs text-stone-600">
-              Diseñada con marca de agua estética y enlace directo para que tus
+              Diseñada en formato editorial con enlace directo para que tus
               amigos prueben con sus mascotas.
             </p>
           </div>
@@ -346,21 +406,32 @@ export default function SocialShareModal({
                 <button
                   type="button"
                   onClick={handleWhatsAppShare}
-                  className="py-2.5 px-3 rounded-full bg-white hover:bg-emerald-50 border border-[#E8DEC8] text-[#174B3D] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  disabled={isGeneratingCard || !card}
+                  className="py-2.5 px-3 rounded-full bg-white hover:bg-emerald-50 disabled:opacity-50 border border-[#E8DEC8] text-[#174B3D] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  {isPublishingLink ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <MessageCircle className="w-3.5 h-3.5" />
+                  )}
                   <span>WhatsApp</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="py-2.5 px-3 rounded-full bg-white hover:bg-cream-100 border border-[#E8DEC8] text-stone-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  disabled={isGeneratingCard || !card}
+                  className="py-2.5 px-3 rounded-full bg-white hover:bg-cream-100 disabled:opacity-50 border border-[#E8DEC8] text-stone-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {copiedLink ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-700" />
                       <span className="text-emerald-700">Enlace copiado</span>
+                    </>
+                  ) : isPublishingLink ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-500" />
+                      <span>Preparando...</span>
                     </>
                   ) : (
                     <>
