@@ -57,6 +57,13 @@ export default function SocialShareModal({
   const [canNativeShareFiles, setCanNativeShareFiles] =
     useState<boolean>(false);
 
+  // Sincronizar switch "Antes" cuando petImageUrl se hidrata de forma asíncrona tras recargar
+  useEffect(() => {
+    if (petImageUrl && !isOpen) {
+      setIncludeBefore(true);
+    }
+  }, [petImageUrl, isOpen]);
+
   const fallbackShareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`
@@ -279,7 +286,7 @@ export default function SocialShareModal({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
           {/* Columna de Vista Previa */}
           <div className="md:col-span-6 flex justify-center">
-            <div className="relative w-full max-w-[270px] rounded-2xl overflow-hidden bg-[#0E2F26] border border-[#E8DEC8] shadow-lg flex items-center justify-center min-h-[340px]">
+            <div className="relative w-full max-w-[205px] sm:max-w-[260px] rounded-2xl overflow-hidden bg-[#0E2F26] border border-[#E8DEC8] shadow-lg flex items-center justify-center min-h-[250px] sm:min-h-[340px]">
               {isGeneratingCard ? (
                 <div className="flex flex-col items-center justify-center gap-2.5 p-8 text-center text-[#FFFBF2]">
                   <Loader2 className="w-7 h-7 animate-spin text-[#c6a26c]" />

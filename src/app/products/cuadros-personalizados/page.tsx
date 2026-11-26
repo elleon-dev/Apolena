@@ -405,6 +405,7 @@ export default function personalizedWallArt() {
   catalogSizesRef.current = catalogSizes;
   const catalogFramesRef = useRef(catalogFrames);
   catalogFramesRef.current = catalogFrames;
+  const pendingCharacterIdRef = useRef<string | null>(null);
 
   const applySavedCreationToStudio = useCallback(
     (creation: SavedStudioCreation, goToStep3: boolean = true) => {
@@ -428,7 +429,7 @@ export default function personalizedWallArt() {
       setIsSimulationJob(false);
       setSimulationNotice(null);
 
-      // Restaurar personaje desde catálogo activo o fallback
+      // Restaurar personaje desde catálogo activo o preservar su ID/nombre mientras carga la BD
       const allChars =
         catalogCharactersRef.current.length > 0
           ? catalogCharactersRef.current
@@ -439,8 +440,17 @@ export default function personalizedWallArt() {
           c.id.toLowerCase() === creation.characterId.toLowerCase(),
       );
       if (matchedChar) {
+        pendingCharacterIdRef.current = null;
         setSelectedCharacter(matchedChar);
         setUseCustomTheme(false);
+      } else if (creation.characterId) {
+        pendingCharacterIdRef.current = creation.characterId;
+        setSelectedCharacter((prev) => ({
+          ...prev,
+          id: creation.characterId,
+          name: creation.characterName || prev.name,
+        }));
+        setUseCustomTheme(creation.characterId === "custom-reference");
       }
 
       // Restaurar tamaño de impresión elegido
@@ -822,8 +832,17 @@ export default function personalizedWallArt() {
               }
             }
           }
-          const found = activeChars.find((c) => c.id === prev.id);
-          return found || activeChars[0];
+          const targetId = pendingCharacterIdRef.current || prev.id;
+          const found = activeChars.find(
+            (c) =>
+              c.id === targetId ||
+              c.id.toLowerCase() === targetId.toLowerCase(),
+          );
+          if (found) {
+            pendingCharacterIdRef.current = null;
+            return found;
+          }
+          return activeChars[0];
         });
       }
     };
@@ -1820,10 +1839,11 @@ export default function personalizedWallArt() {
                         type="file"
                         accept="image/*"
                         disabled={isValidatingPetPhoto}
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          readAndCompressImage(e.target.files[0], setPetImage)
-                        }
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file) readAndCompressImage(file, setPetImage);
+                        }}
                         className="hidden"
                       />
                       <div className="w-14 h-14 rounded-full bg-white border border-cream-200 flex items-center justify-center text-stone-600 group-hover:text-terracotta-600 mb-3.5 shadow-soft transition-colors">
@@ -1876,10 +1896,11 @@ export default function personalizedWallArt() {
                         type="file"
                         accept="image/*"
                         disabled={isValidatingPetPhoto}
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          readAndCompressImage(e.target.files[0], setPetImage)
-                        }
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file) readAndCompressImage(file, setPetImage);
+                        }}
                         className="hidden"
                       />
                     </div>
