@@ -2,6 +2,10 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { FreeMode } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/free-mode";
 import { Header } from "@/components/Header";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
 import { MobileStep3AppShell } from "@/components/MobileStep3AppShell";
@@ -1651,74 +1655,86 @@ export default function personalizedWallArt() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-              {savedCreations.map((item) => {
-                const isActive =
-                  step === 3 && activeGenerationJobId === item.jobId;
-                return (
-                  <div
-                    key={item.jobId}
-                    className={`group relative flex items-center gap-2 pl-1.5 pr-7 py-1 rounded-full border text-left transition-all shrink-0 cursor-pointer ${
-                      isActive
-                        ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
-                        : "bg-cream-50 hover:bg-cream-100 text-stone-800 border-cream-200"
-                    }`}
-                    onClick={() => applySavedCreationToStudio(item, true)}
-                  >
-                    <img
-                      src={item.fusedResultUrl}
-                      alt={item.characterName}
-                      className="w-7 h-7 rounded-full object-cover border border-white/40 shrink-0"
-                    />
-                    <div className="min-w-0 max-w-[120px] leading-tight">
-                      <span className="text-[11px] font-semibold block truncate">
-                        {item.petInscriptionName.trim()
-                          ? `${item.petInscriptionName.trim()} · ${item.characterName}`
-                          : item.characterName}
-                      </span>
-                      <span
-                        className={`text-[9px] block truncate ${
-                          isActive ? "text-[#DFC18D]" : "text-stone-500"
-                        }`}
-                      >
-                        {isActive ? "Viendo ahora" : "Retomar obra"}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const nextList = removeSavedCreation(item.jobId);
-                        setSavedCreations(nextList);
-                        if (activeGenerationJobId === item.jobId) {
-                          if (nextList[0]) {
-                            applySavedCreationToStudio(nextList[0], true);
-                          } else {
-                            handleReset();
-                          }
-                        }
-                      }}
-                      aria-label={`Eliminar creación ${item.characterName}`}
-                      className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
-                        isActive
-                          ? "text-white/70 hover:text-white hover:bg-white/15"
-                          : "text-stone-400 hover:text-stone-700 hover:bg-stone-200/70"
-                      }`}
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-dashed border-[#c6a26c] text-[#174B3D] text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
+            <div className="min-w-0 flex-1 w-full">
+              <Swiper
+                modules={[FreeMode]}
+                slidesPerView="auto"
+                spaceBetween={8}
+                freeMode={{ enabled: true, momentumRatio: 0.75 }}
+                grabCursor
+                className="w-full !py-0.5"
               >
-                <Plus className="w-3.5 h-3.5 text-[#94713F]" />
-                <span>Nuevo retrato</span>
-              </button>
+                {savedCreations.map((item) => {
+                  const isActive =
+                    step === 3 && activeGenerationJobId === item.jobId;
+                  return (
+                    <SwiperSlide key={item.jobId} className="!w-auto">
+                      <div
+                        className={`group relative flex items-center gap-2 pl-1.5 pr-7 py-1 rounded-full border text-left transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#174B3D] text-white border-[#174B3D] shadow-xs"
+                            : "bg-cream-50 hover:bg-cream-100 text-stone-800 border-cream-200"
+                        }`}
+                        onClick={() => applySavedCreationToStudio(item, true)}
+                      >
+                        <img
+                          src={item.fusedResultUrl}
+                          alt={item.characterName}
+                          className="w-7 h-7 rounded-full object-cover border border-white/40 shrink-0"
+                        />
+                        <div className="min-w-0 max-w-[120px] leading-tight">
+                          <span className="text-[11px] font-semibold block truncate">
+                            {item.petInscriptionName.trim()
+                              ? `${item.petInscriptionName.trim()} · ${item.characterName}`
+                              : item.characterName}
+                          </span>
+                          <span
+                            className={`text-[9px] block truncate ${
+                              isActive ? "text-[#DFC18D]" : "text-stone-500"
+                            }`}
+                          >
+                            {isActive ? "Viendo ahora" : "Retomar obra"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const nextList = removeSavedCreation(item.jobId);
+                            setSavedCreations(nextList);
+                            if (activeGenerationJobId === item.jobId) {
+                              if (nextList[0]) {
+                                applySavedCreationToStudio(nextList[0], true);
+                              } else {
+                                handleReset();
+                              }
+                            }
+                          }}
+                          aria-label={`Eliminar creación ${item.characterName}`}
+                          className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                            isActive
+                              ? "text-white/70 hover:text-white hover:bg-white/15"
+                              : "text-stone-400 hover:text-stone-700 hover:bg-stone-200/70"
+                          }`}
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </SwiperSlide>
+                  );
+                })}
+
+                <SwiperSlide className="!w-auto">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-dashed border-[#c6a26c] text-[#174B3D] text-[11px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#94713F]" />
+                    <span>Nuevo retrato</span>
+                  </button>
+                </SwiperSlide>
+              </Swiper>
             </div>
           </div>
         )}

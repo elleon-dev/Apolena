@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { FreeMode } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/free-mode";
 import {
   Check,
   ChevronDown,
@@ -466,7 +470,7 @@ export function MobileStep3AppShell({
             </div>
           </div>
 
-          {/* Selector Visual de MEDIDAS (estilo Propuestas + Modal Guía) */}
+          {/* Selector Visual de MEDIDAS (Swiper sin scrollbar + Modal Guía) */}
           <div className="space-y-1.5 pt-0.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
@@ -480,47 +484,55 @@ export function MobileStep3AppShell({
                 Ver guía de tamaños
               </button>
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <Swiper
+              modules={[FreeMode]}
+              slidesPerView="auto"
+              spaceBetween={8}
+              freeMode={{ enabled: true, momentumRatio: 0.75 }}
+              grabCursor
+              className="w-full !py-0.5"
+            >
               {catalogSizes.map((preset) => {
                 const isSelected = selectedPrintPreset.id === preset.id;
                 const chipSize = getShortSizeLabel(preset);
                 const chipPrice =
                   preset.pricePen + (selectedFrame?.priceModifierPen || 0);
                 return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => onSelectPrintPreset(preset)}
-                    className={`flex flex-col items-start px-3 py-2 rounded-xl border transition-all shrink-0 text-left ${
-                      isSelected
-                        ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
-                        : "border-cream-200 bg-cream-50/70"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[11px] font-bold leading-none ${
-                          isSelected ? "text-[#174B3D]" : "text-stone-800"
-                        }`}
-                      >
-                        {chipSize}
-                      </span>
-                      {isSelected && (
-                        <span className="w-3.5 h-3.5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shrink-0">
-                          <Check className="w-2 h-2 stroke-[3]" />
+                  <SwiperSlide key={preset.id} className="!w-auto">
+                    <button
+                      type="button"
+                      onClick={() => onSelectPrintPreset(preset)}
+                      className={`flex flex-col items-start px-3 py-2 rounded-xl border transition-all text-left ${
+                        isSelected
+                          ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
+                          : "border-cream-200 bg-cream-50/70"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-[11px] font-bold leading-none whitespace-nowrap ${
+                            isSelected ? "text-[#174B3D]" : "text-stone-800"
+                          }`}
+                        >
+                          {chipSize}
                         </span>
-                      )}
-                    </div>
-                    <span className="font-mono text-[10px] font-semibold text-stone-500 mt-1 leading-none">
-                      S/ {chipPrice.toFixed(0)}
-                    </span>
-                  </button>
+                        {isSelected && (
+                          <span className="w-3.5 h-3.5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shrink-0">
+                            <Check className="w-2 h-2 stroke-[3]" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-mono text-[10px] font-semibold text-stone-500 mt-1 leading-none whitespace-nowrap">
+                        S/ {chipPrice.toFixed(0)}
+                      </span>
+                    </button>
+                  </SwiperSlide>
                 );
               })}
-            </div>
+            </Swiper>
           </div>
 
-          {/* Selector Visual de MARCOS (estilo Propuestas con miniatura + Modal Detalles) */}
+          {/* Selector Visual de MARCOS (Swiper con miniatura sin scrollbar + Modal Detalles) */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
@@ -534,62 +546,70 @@ export function MobileStep3AppShell({
                 Ver detalles de marcos
               </button>
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <Swiper
+              modules={[FreeMode]}
+              slidesPerView="auto"
+              spaceBetween={8}
+              freeMode={{ enabled: true, momentumRatio: 0.75 }}
+              grabCursor
+              className="w-full !py-0.5"
+            >
               {catalogFrames.map((frame) => {
                 const isSelected = selectedFrame.id === frame.id;
                 const frameImg = frame.imageUrl || frame.images?.[0] || null;
                 return (
-                  <button
-                    key={frame.id}
-                    type="button"
-                    onClick={() => onSelectFrame(frame)}
-                    className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl border transition-all shrink-0 text-left ${
-                      isSelected
-                        ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
-                        : "border-cream-200 bg-cream-50/70"
-                    }`}
-                  >
-                    <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-cream-200 shrink-0 flex items-center justify-center bg-stone-200">
-                      {frameImg ? (
-                        <img
-                          src={frameImg}
-                          alt={frame.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span
-                          className="w-full h-full flex items-center justify-center"
-                          style={{
-                            backgroundColor: frame.colorHex || "#174B3D",
-                          }}
+                  <SwiperSlide key={frame.id} className="!w-auto">
+                    <button
+                      type="button"
+                      onClick={() => onSelectFrame(frame)}
+                      className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl border transition-all text-left ${
+                        isSelected
+                          ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
+                          : "border-cream-200 bg-cream-50/70"
+                      }`}
+                    >
+                      <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-cream-200 shrink-0 flex items-center justify-center bg-stone-200">
+                        {frameImg ? (
+                          <img
+                            src={frameImg}
+                            alt={frame.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span
+                            className="w-full h-full flex items-center justify-center"
+                            style={{
+                              backgroundColor: frame.colorHex || "#174B3D",
+                            }}
+                          >
+                            <Frame className="w-4 h-4 text-white/80" />
+                          </span>
+                        )}
+                        {isSelected && (
+                          <span className="absolute inset-0 bg-[#174B3D]/40 flex items-center justify-center">
+                            <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p
+                          className={`text-[11px] font-bold leading-tight whitespace-nowrap ${
+                            isSelected ? "text-[#174B3D]" : "text-stone-800"
+                          }`}
                         >
-                          <Frame className="w-4 h-4 text-white/80" />
-                        </span>
-                      )}
-                      {isSelected && (
-                        <span className="absolute inset-0 bg-[#174B3D]/40 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p
-                        className={`text-[11px] font-bold leading-tight whitespace-nowrap ${
-                          isSelected ? "text-[#174B3D]" : "text-stone-800"
-                        }`}
-                      >
-                        {getShortFrameName(frame)}
-                      </p>
-                      <p className="text-[10px] font-semibold text-stone-500 leading-tight mt-0.5 whitespace-nowrap">
-                        {frame.priceModifierPen === 0
-                          ? "Incluido"
-                          : `+ S/ ${frame.priceModifierPen.toFixed(0)}`}
-                      </p>
-                    </div>
-                  </button>
+                          {getShortFrameName(frame)}
+                        </p>
+                        <p className="text-[10px] font-semibold text-stone-500 leading-tight mt-0.5 whitespace-nowrap">
+                          {frame.priceModifierPen === 0
+                            ? "Incluido"
+                            : `+ S/ ${frame.priceModifierPen.toFixed(0)}`}
+                        </p>
+                      </div>
+                    </button>
+                  </SwiperSlide>
                 );
               })}
-            </div>
+            </Swiper>
           </div>
 
           {/* Botones de Personalización que abren Bottom Sheets */}
