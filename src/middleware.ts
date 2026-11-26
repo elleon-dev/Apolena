@@ -5,6 +5,12 @@ import {
   isAdminRole,
   UserRole,
 } from "@/lib/auth";
+import {
+  extractRequestCountry,
+  isCountryAllowed,
+  isTrustedCrawler,
+  normalizeCountryCode,
+} from "@/lib/geo-access";
 
 async function resolveLiveSessionFromMe(request: NextRequest): Promise<{
   role: UserRole | null;
@@ -39,6 +45,44 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const user = await verifySessionToken(token);
+
+  // 0. Restricción geográfica por país (por defecto solo Perú "PE", extensible vía NEXT_PUBLIC_ACTIVE_COUNTRIES)
+  const isGeoBypassPath =
+    pathname.startsWith("/no-disponible") ||
+    pathname.startsWith("/api/geo-waitlist") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/cron") ||
+    pathname.startsWith("/api/health") ||
+    pathname.startsWith("/auth/login") ||
+    pathname.startsWith("/auth/callback");
+
+  if (!isGeoBypassPath) {
+    const isAdminSession = Boolean(user && isAdminRole(user.role));
+    const userAgent = request.headers.get("user-agent");
+    if (!isAdminSession && !isTrustedCrawler(userAgent)) {
+      const devOverride =
+        process.env.NODE_ENV !== "production"
+          ? normalizeCountryCode(request.nextUrl.searchParams.get("__geo_country"))
+          : null;
+      const country = devOverride || extractRequestCountry(request.headers);
+
+      if (country && !isCountryAllowed(country)) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            {
+              error: "Apolena aún no opera en tu país.",
+              country,
+              code: "COUNTRY_NOT_SUPPORTED",
+            },
+            { status: 451 },
+          );
+        }
+        const unavailableUrl = new URL("/no-disponible", request.url);
+        unavailableUrl.searchParams.set("country", country);
+        return NextResponse.redirect(unavailableUrl, 307);
+      }
+    }
+  }
 
   // 1. Protección de rutas exclusivas del Dashboard Administrativo (/dashboard/*, /admin/* y /api/admin/*)
   // Regla Inalterable RBAC: Solo roles "super_admin" y "admin" acceden al dashboard de gestión.
@@ -146,14 +190,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard",
-    "/dashboard/:path*",
-    "/admin",
-    "/admin/:path*",
-    "/orders",
-    "/orders/:path*",
-    "/api/admin/:path*",
-    "/auth/login",
-    "/auth/register",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|otf)$).*)",
   ],
 };

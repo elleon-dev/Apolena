@@ -124,6 +124,32 @@ export async function renderEmailHtml(
         }),
       );
 
+    case "country_launch_notification": {
+      const countryName = String(data.country_name || "tu país");
+      const targetUrl = String(data.app_url || appUrl);
+      return `
+        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FFFBF2; padding: 32px; border-radius: 24px; color: #141414; border: 1px solid #E8DEC8;">
+          <p style="font-family: sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #94713F; margin: 0 0 12px;">
+            APOLENA · EXPANSIÓN INTERNACIONAL
+          </p>
+          <h1 style="color: #174B3D; font-size: 28px; margin: 0 0 16px; line-height: 1.25;">
+            ¡Ya estamos operando en ${countryName}!
+          </h1>
+          <p style="font-family: sans-serif; font-size: 15px; color: #3E3C37; line-height: 1.65; margin: 0 0 16px;">
+            Nos dejaste tu correo para avisarte apenas llegáramos a <strong>${countryName}</strong>. Hoy nos alegra contarte que ya puedes crear el retrato personalizado de tu mascota y pedir tu cuadro Fine Art en lienzo con entrega en tu país.
+          </p>
+          <div style="margin: 26px 0;">
+            <a href="${targetUrl}/products/cuadros-personalizados?step=1" style="display: inline-block; background: #174B3D; color: #FFFFFF; text-decoration: none; padding: 14px 28px; border-radius: 999px; font-family: sans-serif; font-size: 14px; font-weight: 700;">
+              Crear el retrato de mi mascota
+            </a>
+          </div>
+          <p style="font-family: sans-serif; font-size: 12px; color: #78716C; margin: 20px 0 0; border-top: 1px solid #E8DEC8; padding-top: 16px;">
+            Apolena · Retratos personalizados para mascotas en lienzo Fine Art · <a href="${targetUrl}" style="color: #174B3D;">${targetUrl}</a>
+          </p>
+        </div>
+      `;
+    }
+
     default:
       return `
         <div style="font-family: Georgia, serif; max-width: 580px; margin: 0 auto; background: #FFFBF2; padding: 28px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
