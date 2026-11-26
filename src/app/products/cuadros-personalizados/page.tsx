@@ -311,6 +311,7 @@ export default function personalizedWallArt() {
   const [selectedCharacter, setSelectedCharacter] = useState<FamousCharacter>(
     FAMOUS_CHARACTERS[0],
   );
+  const [hasSelectedCharacter, setHasSelectedCharacter] = useState(false);
   const [customThemeImage, setCustomThemeImage] = useState<string | null>(null);
   const [useCustomTheme, setUseCustomTheme] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -483,6 +484,7 @@ export default function personalizedWallArt() {
       if (matchedChar) {
         pendingCharacterIdRef.current = null;
         setSelectedCharacter(matchedChar);
+        setHasSelectedCharacter(true);
         setUseCustomTheme(false);
       } else if (creation.characterId) {
         pendingCharacterIdRef.current = creation.characterId;
@@ -491,6 +493,7 @@ export default function personalizedWallArt() {
           id: creation.characterId,
           name: creation.characterName || prev.name,
         }));
+        setHasSelectedCharacter(true);
         setUseCustomTheme(creation.characterId === "custom-reference");
       }
 
@@ -609,6 +612,7 @@ export default function personalizedWallArt() {
           if (pending.selectedCharacter) {
             pendingCharacterIdRef.current = pending.selectedCharacter.id;
             setSelectedCharacter(pending.selectedCharacter);
+            setHasSelectedCharacter(true);
           }
           if (pending.useCustomTheme !== undefined)
             setUseCustomTheme(pending.useCustomTheme);
@@ -725,13 +729,12 @@ export default function personalizedWallArt() {
       );
       if (found) {
         setSelectedCharacter(found);
+        setHasSelectedCharacter(true);
         setUseCustomTheme(false);
+        if (stepParam !== "3") {
+          setStep(2);
+        }
       }
-      if (stepParam !== "3") {
-        setStep(2);
-      }
-    } else if (stepParam === "2") {
-      setStep(2);
     }
 
     // Caso 3: Volver desde /checkout (?step=3)
@@ -744,8 +747,10 @@ export default function personalizedWallArt() {
           if (saved.secondPetImage !== undefined)
             setSecondPetImage(saved.secondPetImage);
           if (saved.petSpecies) setPetSpecies(saved.petSpecies);
-          if (saved.selectedCharacter)
+          if (saved.selectedCharacter) {
             setSelectedCharacter(saved.selectedCharacter);
+            setHasSelectedCharacter(true);
+          }
           if (saved.useCustomTheme !== undefined)
             setUseCustomTheme(saved.useCustomTheme);
           if (saved.customThemeImage !== undefined)
@@ -933,6 +938,7 @@ export default function personalizedWallArt() {
                   charParam.toLowerCase().includes(c.id.toLowerCase()),
               );
               if (match) {
+                setHasSelectedCharacter(true);
                 setUseCustomTheme(false);
                 if (stepParam !== "3") {
                   setStep(2);
@@ -1185,6 +1191,7 @@ export default function personalizedWallArt() {
     setPetImage("/samples/cat-sample.jpg");
     setSecondPetImage("/samples/cat-suit.jpg");
     setSelectedCharacter(FAMOUS_CHARACTERS[0]);
+    setHasSelectedCharacter(true);
     setUseCustomTheme(false);
     setPetSpecies("cat");
     scrollToCreatePortrait();
@@ -1207,6 +1214,10 @@ export default function personalizedWallArt() {
   // Start Portrait Generation
   const handleStartFusion = async () => {
     if (!petImage) return;
+    if (!hasSelectedCharacter && !useCustomTheme) {
+      setStep(1);
+      return;
+    }
 
     // Modelo Híbrido: 1ra creación gratis sin login; 2da+ requiere iniciar sesión conservando la foto
     if (isAuthenticated === false && savedCreations.length >= 1) {
@@ -1441,6 +1452,7 @@ export default function personalizedWallArt() {
 
   const handleReset = () => {
     setStep(1);
+    setHasSelectedCharacter(false);
     setPetImage(null);
     setSecondPetImage(null);
     setFusedResultUrl("");
@@ -1820,13 +1832,16 @@ export default function personalizedWallArt() {
                     ))
                   : catalogCharacters.map((char) => {
                       const isSelected =
-                        !useCustomTheme && selectedCharacter.id === char.id;
+                        hasSelectedCharacter &&
+                        !useCustomTheme &&
+                        selectedCharacter.id === char.id;
 
                       return (
                         <div
                           key={char.id}
                           onClick={() => {
                             setSelectedCharacter(char);
+                            setHasSelectedCharacter(true);
                             setUseCustomTheme(false);
                             scrollToContinueUpload();
                           }}
@@ -1912,21 +1927,34 @@ export default function personalizedWallArt() {
                 ref={continueToUploadBtnRef}
                 type="button"
                 onClick={() => {
+                  if (!hasSelectedCharacter && !useCustomTheme) return;
                   setStep(2);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                disabled={!useCustomTheme && catalogCharacters.length === 0}
+                disabled={
+                  (!hasSelectedCharacter && !useCustomTheme) ||
+                  (!useCustomTheme && catalogCharacters.length === 0)
+                }
                 className="w-full py-4 px-6 rounded-full bg-[#174B3D] hover:bg-[#134034] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold flex items-center justify-center gap-2.5 shadow-soft transition-all focus:outline-none focus:ring-4 focus:ring-emerald-700/30"
               >
                 <span>Continuar a subir foto</span>
                 <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
               </button>
               <p className="text-xs text-stone-500">
-                Estilo seleccionado:{" "}
-                <strong className="text-stone-800 font-medium">
-                  {activeThemeName}
-                </strong>
-                . En el siguiente paso subirás la fotografía de tu mascota.
+                {hasSelectedCharacter || useCustomTheme ? (
+                  <>
+                    Estilo seleccionado:{" "}
+                    <strong className="text-stone-800 font-medium">
+                      {activeThemeName}
+                    </strong>
+                    . En el siguiente paso subirás la fotografía de tu mascota.
+                  </>
+                ) : (
+                  <span>
+                    Selecciona un personaje del catálogo para continuar al
+                    siguiente paso.
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -2408,6 +2436,7 @@ export default function personalizedWallArt() {
                   type="button"
                   onClick={() => {
                     setSelectedCharacter(previewCharacterModal);
+                    setHasSelectedCharacter(true);
                     setUseCustomTheme(false);
                     setPreviewCharacterModal(null);
                     setStep(2);
