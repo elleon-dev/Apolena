@@ -81,6 +81,9 @@ interface MobileStep3AppShellProps {
 
 type ActiveSheet = "size" | "frame" | "customize" | "details" | null;
 
+// Activar en true en el futuro para volver a mostrar la Tarjeta de Dedicatoria en mobile
+const SHOW_MOBILE_DEDICATION = false;
+
 function getShortSizeLabel(preset: PrintPreset): string {
   const cleanCm = preset.cmDimensions.replace(/\s*\(.*?\)\s*/g, "").trim();
   return cleanCm || preset.tier;
@@ -652,7 +655,7 @@ export function MobileStep3AppShell({
               type="button"
               onClick={() => setActiveSheet("customize")}
               className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-2xl border text-left transition-colors ${
-                hasName || hasDedication
+                hasName || (SHOW_MOBILE_DEDICATION && hasDedication)
                   ? "bg-emerald-50/70 border-emerald-200 text-[#174B3D]"
                   : "bg-cream-50 border-cream-200 text-stone-700"
               }`}
@@ -663,10 +666,14 @@ export function MobileStep3AppShell({
                   <p className="text-[11px] font-bold truncate">
                     {hasName
                       ? petInscriptionName.trim()
-                      : "Nombre / Dedicatoria"}
+                      : SHOW_MOBILE_DEDICATION
+                        ? "Nombre / Dedicatoria"
+                        : "Nombre en lienzo"}
                   </p>
                   <p className="text-[9px] text-stone-500 truncate">
-                    {hasName || hasDedication ? "Personalizado" : "Gratis · Toca aquí"}
+                    {hasName || (SHOW_MOBILE_DEDICATION && hasDedication)
+                      ? "Personalizado"
+                      : "Gratis · Toca aquí"}
                   </p>
                 </div>
               </div>
@@ -932,20 +939,22 @@ export function MobileStep3AppShell({
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-2">
-                    <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                      <Gift className="w-3.5 h-3.5 text-[#94713F]" />
-                      Tarjeta de dedicatoria (Opcional · Gratis)
-                    </span>
-                    <textarea
-                      rows={3}
-                      maxLength={180}
-                      value={dedicationNote}
-                      onChange={(e) => onChangeDedicationNote(e.target.value)}
-                      placeholder="Si es un regalo, escribe aquí un mensaje especial para incluirlo en una tarjeta impresa..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm text-stone-900 focus:border-[#174B3D] focus:outline-none resize-none"
-                    />
-                  </div>
+                  {SHOW_MOBILE_DEDICATION && (
+                    <div className="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-2">
+                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                        <Gift className="w-3.5 h-3.5 text-[#94713F]" />
+                        Tarjeta de dedicatoria (Opcional · Gratis)
+                      </span>
+                      <textarea
+                        rows={3}
+                        maxLength={180}
+                        value={dedicationNote}
+                        onChange={(e) => onChangeDedicationNote(e.target.value)}
+                        placeholder="Si es un regalo, escribe aquí un mensaje especial para incluirlo en una tarjeta impresa..."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm text-stone-900 focus:border-[#174B3D] focus:outline-none resize-none"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
