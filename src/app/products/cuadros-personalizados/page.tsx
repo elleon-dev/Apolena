@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
+import { MobileStep3AppShell } from "@/components/MobileStep3AppShell";
 import SocialShareModal from "@/components/SocialShareModal";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import {
@@ -2460,10 +2461,59 @@ export default function personalizedWallArt() {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 3: VER EL RETRATO FINAL */}
+        {/* PASO 3: VER EL RETRATO FINAL (MOBILE APP SHELL + DESKTOP STICKY STUDIO)   */}
         {/* ========================================================================= */}
         {!isGenerating && step === 3 && (
-          <div className="space-y-8 animate-in fade-in duration-300">
+          <>
+            {/* EXPERIENCIA MOBILE-FIRST TIPO APP NATIVA (SIN SCROLL LARGO) */}
+            <MobileStep3AppShell
+              activeThemeName={activeThemeName}
+              isDoublePet={Boolean(secondPetImage)}
+              artworkUrl={fusedResultUrl || selectedCharacter.fusionSampleUrl}
+              petImage={petImage}
+              generatedVariants={generatedVariants}
+              selectedVariantId={selectedVariantId}
+              onSelectVariant={(variant) => {
+                setSelectedVariantId(variant.id);
+                setFusedResultUrl(variant.imageUrl);
+                if (variant.providerTitle) {
+                  setModelUsedLabel(variant.providerTitle);
+                }
+              }}
+              viewMode={viewMode}
+              onChangeViewMode={setViewMode}
+              sliderPos={sliderPos}
+              onChangeSliderPos={setSliderPos}
+              currentRoomCoords={currentRoomCoords}
+              catalogSizes={catalogSizes}
+              selectedPrintPreset={selectedPrintPreset}
+              onSelectPrintPreset={setSelectedPrintPreset}
+              catalogFrames={catalogFrames}
+              selectedFrame={selectedFrame}
+              onSelectFrame={setSelectedFrame}
+              visualFrame={getVisualFramePresentation(selectedFrame)}
+              currentUnitPrice={currentUnitPrice}
+              includePetInscription={includePetInscription}
+              onTogglePetInscription={setIncludePetInscription}
+              petInscriptionName={petInscriptionName}
+              onChangePetInscriptionName={setPetInscriptionName}
+              dedicationNote={dedicationNote}
+              onChangeDedicationNote={setDedicationNote}
+              isExportingPrint={isExportingPrint}
+              onDownloadSample={() => handleDownload()}
+              onOpenShareModal={() => setShowSocialShareModal(true)}
+              onOrderClick={handleOrderButtonClick}
+              onUploadNewPhotos={handleReset}
+              onTryAnotherStyle={() => {
+                setStep(1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              isSimulationJob={isSimulationJob}
+              simulationNotice={simulationNotice}
+            />
+
+            {/* EXPERIENCIA DESKTOP STUDIO (2 COLUMNAS CON RETRATO SIEMPRE VISIBLE) */}
+            <div className="hidden lg:block space-y-8 animate-in fade-in duration-300">
             {/* Top Bar Header */}
             <div className="pb-6 border-b border-cream-200">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sage-50 border border-sage-100 text-sage-700 text-xs font-medium mb-2">
@@ -2554,8 +2604,8 @@ export default function personalizedWallArt() {
 
             {/* Main Stage: Gallery Frame & Print Formats Sidebar */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
-              {/* Left 7 Columns: Dual Option Selector + Artwork Viewer */}
-              <div className="lg:col-span-7 xl:col-span-7 space-y-4 sm:space-y-5">
+              {/* Left 7 Columns: Dual Option Selector + Artwork Viewer (Sticky en Desktop) */}
+              <div className="lg:col-span-7 xl:col-span-7 lg:sticky lg:top-24 space-y-4 sm:space-y-5">
                 {/* DUAL PROPOSAL ARTWORK SELECTOR */}
                 {generatedVariants.length > 1 && (
                   <div className="bg-white border border-cream-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-soft space-y-3">
@@ -3593,6 +3643,7 @@ export default function personalizedWallArt() {
               </button>
             </div>
           </div>
+          </>
         )}
 
         {/* Modal de Confirmación: Cuadro sin Nombre en el Lienzo */}
