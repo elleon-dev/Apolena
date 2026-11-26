@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import type { Swiper as SwiperInstance } from "swiper";
+import "swiper/css";
 import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
 import type { FamousCharacter } from "@/data/characters";
 
@@ -15,9 +19,7 @@ const SKELETON_COUNT = 6;
 export default function StyleSelectionSection({
   initialCharacters,
 }: StyleSelectionSectionProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const swiperRef = useRef<SwiperInstance | null>(null);
 
   // Solo mostrar personajes provenientes de la base de datos (jamás fallbacks locales)
   const [characters, setCharacters] = useState<FamousCharacter[]>(
@@ -45,26 +47,12 @@ export default function StyleSelectionSection({
       });
   }, []);
 
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setCanScrollLeft(scrollLeft > 10);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [characters, checkScroll]);
-
-  const scroll = (direction: "left" | "right") => {
-    if (!scrollRef.current) return;
-    const amount = direction === "left" ? -420 : 420;
-    scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
-  };
-
   const showSkeleton = characters.length === 0;
+  // Duplicar si hubiera pocos elementos para garantizar loop infinito continuo en desktop y mobile
+  const carouselCharacters =
+    characters.length > 0 && characters.length < 8
+      ? [...characters, ...characters]
+      : characters;
 
   return (
     <section
@@ -88,85 +76,109 @@ export default function StyleSelectionSection({
           </p>
         </div>
 
-        {/* Controles de Navegación del Carrusel en Desktop */}
-        <div className="hidden sm:flex items-center justify-end gap-2 mb-3">
+        {/* Controles de Navegación del Carrusel Infinito en Desktop */}
+        <div className="hidden sm:flex items-center justify-end gap-2 mb-4">
           <button
             type="button"
-            onClick={() => scroll("left")}
-            disabled={showSkeleton || !canScrollLeft}
+            onClick={() => swiperRef.current?.slidePrev()}
+            disabled={showSkeleton}
             aria-label="Ver estilos anteriores"
-            className="w-9 h-9 rounded-full border border-[#D9C7AE] bg-white text-[#174B3D] hover:bg-[#FAF0E4] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-xs"
+            className="w-10 h-10 rounded-full border border-[#D9C7AE] bg-white text-[#174B3D] hover:bg-[#FAF0E4] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => scroll("right")}
-            disabled={showSkeleton || !canScrollRight}
+            onClick={() => swiperRef.current?.slideNext()}
+            disabled={showSkeleton}
             aria-label="Ver siguientes estilos"
-            className="w-9 h-9 rounded-full border border-[#D9C7AE] bg-white text-[#174B3D] hover:bg-[#FAF0E4] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-xs"
+            className="w-10 h-10 rounded-full border border-[#D9C7AE] bg-white text-[#174B3D] hover:bg-[#FAF0E4] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-xs cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Carrusel Compacto de Retratos Verticales Completos (aspect-[2/3]) o Skeleton */}
-        <div
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {showSkeleton
-            ? Array.from({ length: SKELETON_COUNT }).map((_, idx) => (
-                <div
-                  key={`style-skeleton-${idx}`}
-                  aria-hidden="true"
-                  className="relative flex-none w-[148px] sm:w-[168px] md:w-[180px] lg:w-[192px] snap-start rounded-2xl overflow-hidden bg-white border border-[#E8DEC8]/80 shadow-sm"
-                >
-                  <div className="relative aspect-[2/3] w-full bg-[#EFE6D5] animate-pulse">
-                    <div className="absolute bottom-2.5 inset-x-4 flex justify-center">
-                      <div className="h-7 w-24 rounded-full bg-white/80 border border-[#E8DEC8]/60" />
-                    </div>
+        {/* Carrusel Infinito de Retratos Protagonistas (aspect-[2/3]) o Skeleton */}
+        {showSkeleton ? (
+          <div className="flex gap-4 overflow-hidden pb-4 pt-1">
+            {Array.from({ length: SKELETON_COUNT }).map((_, idx) => (
+              <div
+                key={`style-skeleton-${idx}`}
+                aria-hidden="true"
+                className="relative flex-none w-[228px] sm:w-[244px] md:w-[260px] lg:w-[276px] rounded-2xl overflow-hidden bg-white border border-[#E8DEC8]/80 shadow-sm"
+              >
+                <div className="relative aspect-[2/3] w-full bg-[#EFE6D5] animate-pulse">
+                  <div className="absolute bottom-3 inset-x-4 flex justify-center">
+                    <div className="h-8 w-28 rounded-full bg-white/80 border border-[#E8DEC8]/60" />
                   </div>
                 </div>
-              ))
-            : characters.map((char) => {
-                const displayImage =
-                  char.fusionSampleUrl || char.characterImageUrl;
-                const displayName = char.name;
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Swiper
+            modules={[Autoplay]}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
+            }}
+            loop
+            grabCursor
+            speed={650}
+            slidesPerView="auto"
+            spaceBetween={14}
+            autoplay={{
+              delay: 3200,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+            }}
+            breakpoints={{
+              640: { spaceBetween: 18 },
+              1024: { spaceBetween: 20 },
+            }}
+            className="w-full !pb-4 !pt-1"
+          >
+            {carouselCharacters.map((char, idx) => {
+              const displayImage =
+                char.fusionSampleUrl || char.characterImageUrl;
+              const displayName = char.name;
 
-                return (
+              return (
+                <SwiperSlide
+                  key={`${char.id}-${idx}`}
+                  className="!w-[228px] sm:!w-[244px] md:!w-[260px] lg:!w-[276px]"
+                >
                   <Link
-                    key={char.id}
                     href={`/products/cuadros-personalizados?character=${char.id}&step=2`}
-                    className="group relative flex-none w-[148px] sm:w-[168px] md:w-[180px] lg:w-[192px] snap-start rounded-2xl overflow-hidden bg-white border border-[#E8DEC8]/80 shadow-sm hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#174B3D] focus:ring-offset-2"
+                    className="group relative block w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-white border border-[#E8DEC8]/90 shadow-md hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#174B3D] focus:ring-offset-2"
                   >
-                    {/* Contenedor Vertical Completo 2:3 */}
+                    {/* Contenedor Vertical Protagonista 2:3 */}
                     <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#FAF0E4]">
                       <Image
                         src={displayImage}
                         alt={`Retrato personalizado de mascota en estilo ${displayName}`}
                         fill
                         unoptimized
-                        sizes="(min-width: 1024px) 192px, (min-width: 640px) 168px, 148px"
+                        sizes="(min-width: 1024px) 276px, (min-width: 640px) 244px, 228px"
                         className="object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
 
                       {/* Sombra degradada inferior para legibilidad de la píldora */}
-                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/65 via-black/20 to-transparent pointer-events-none opacity-80 group-hover:opacity-60 transition-opacity" />
+                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none opacity-85 group-hover:opacity-65 transition-opacity" />
 
-                      {/* Badge / Píldora Compacta de Nombre de Estilo */}
-                      <div className="absolute bottom-2.5 inset-x-2 z-10 flex justify-center">
-                        <div className="max-w-full bg-white/95 backdrop-blur-xs text-[#174B3D] group-hover:bg-[#174B3D] group-hover:text-white font-extrabold text-[11px] sm:text-xs px-3 py-1.5 rounded-full shadow-md border border-stone-200/60 transition-all duration-300 flex items-center gap-1">
+                      {/* Badge / Píldora de Nombre de Estilo */}
+                      <div className="absolute bottom-3.5 inset-x-3 z-10 flex justify-center">
+                        <div className="max-w-full bg-white/95 backdrop-blur-xs text-[#174B3D] group-hover:bg-[#174B3D] group-hover:text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-full shadow-md border border-stone-200/60 transition-all duration-300 flex items-center gap-1.5">
                           <span className="truncate">{displayName}</span>
-                          <ArrowRight className="w-3 h-3 shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                         </div>
                       </div>
                     </div>
                   </Link>
-                );
-              })}
-        </div>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        )}
 
         {/* Footer de la Sección con Enlace al Estudio Completo */}
         <div className="text-center mt-8">
