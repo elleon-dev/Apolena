@@ -3068,25 +3068,38 @@ export default function personalizedWallArt() {
                   </div>
 
                   {/* Tarjeta Viral: Compartir creación en redes sociales */}
-                  <div className="bg-gradient-to-br from-[#174B3D] to-[#0E2F26] border border-[#c6a26c]/40 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 text-white">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-2xl bg-white/10 border border-[#c6a26c]/40 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="relative overflow-hidden bg-gradient-to-br from-[#174B3D] to-[#0E2F26] border border-[#c6a26c]/60 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 text-white">
+                    {/* Brillo dorado diagonal continuo (loop suave) */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-[#DFC18D]/18 to-transparent ap-shimmer-sweep"
+                    />
+                    <div className="relative z-10 flex items-start gap-3">
+                      <div className="relative w-9 h-9 rounded-2xl bg-white/10 border border-[#c6a26c]/50 flex items-center justify-center shrink-0 mt-0.5">
                         <Share2 className="w-4 h-4 text-[#DFC18D]" />
+                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DFC18D] opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#DFC18D]" />
+                        </span>
                       </div>
                       <div className="space-y-0.5">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#DFC18D]">
+                          <span>Invita a tus amigos a probar</span>
+                        </span>
                         <h4 className="text-xs sm:text-sm font-bold text-[#FFFBF2]">
                           Presume el retrato de tu engreído
                         </h4>
-                        <p className="text-[11px] text-[#FFFBF2]/80 leading-relaxed">
-                          Genera una tarjeta con efecto Antes y Después lista
-                          para Instagram Stories, WhatsApp o TikTok.
+                        <p className="text-[11px] text-[#FFFBF2]/85 leading-relaxed">
+                          Comparte tu tarjeta Antes y Después en Instagram
+                          Stories, WhatsApp o TikTok e invita a otros a crear el
+                          suyo.
                         </p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowSocialShareModal(true)}
-                      className="w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-full bg-[#FFFBF2] hover:bg-[#F5EBD7] text-[#174B3D] text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                      className="relative z-10 ap-share-pulse w-full sm:w-auto shrink-0 py-2.5 px-5 rounded-full bg-[#FFFBF2] hover:bg-[#F5EBD7] text-[#174B3D] text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5 text-[#94713F]" />
                       <span>Compartir en redes</span>

@@ -226,8 +226,40 @@ body {
   animation-fill-mode: both;
 }
 
+@keyframes ap-shimmer-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+  }
+  45%,
+  100% {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+
+@keyframes ap-share-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(223, 193, 141, 0.55);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 10px rgba(223, 193, 141, 0);
+  }
+}
+
+.ap-shimmer-sweep {
+  animation: ap-shimmer-sweep 3.8s ease-in-out infinite;
+}
+
+.ap-share-pulse {
+  animation: ap-share-pulse 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ap-m {
+  .ap-m,
+  .ap-shimmer-sweep,
+  .ap-share-pulse {
     animation: none !important;
   }
   .ap-particle {
