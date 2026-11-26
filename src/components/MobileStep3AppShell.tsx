@@ -78,6 +78,18 @@ function getShortSizeLabel(preset: PrintPreset): string {
   return cleanCm || preset.tier;
 }
 
+function getShortFrameName(frame: FrameOption): string {
+  const n = frame.name.toLowerCase();
+  if (n.includes("canvas") || n.includes("bastidor") || n.includes("3d")) {
+    return "Canvas 3D";
+  }
+  if (n.includes("negro")) return "Negro";
+  if (n.includes("natural") || n.includes("madera")) return "Natural";
+  if (n.includes("blanco")) return "Blanco";
+  if (n.includes("dorado") || n.includes("oro")) return "Dorado";
+  return frame.name;
+}
+
 export function MobileStep3AppShell({
   activeThemeName,
   isDoublePet,
@@ -449,47 +461,130 @@ export function MobileStep3AppShell({
             </div>
           </div>
 
-          {/* Swatches de Marco en Vivo (Estilo puntos de color Nike) */}
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          {/* Selector Visual de MEDIDAS (estilo Propuestas + Modal Guía) */}
+          <div className="space-y-1.5 pt-0.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                Medida
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveSheet("size")}
+                className="text-[11px] font-bold text-[#174B3D] underline underline-offset-2"
+              >
+                Ver guía de tamaños
+              </button>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+              {catalogSizes.map((preset) => {
+                const isSelected = selectedPrintPreset.id === preset.id;
+                const chipSize = getShortSizeLabel(preset);
+                const chipPrice =
+                  preset.pricePen + (selectedFrame?.priceModifierPen || 0);
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => onSelectPrintPreset(preset)}
+                    className={`flex flex-col items-start px-3 py-2 rounded-xl border transition-all shrink-0 text-left ${
+                      isSelected
+                        ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
+                        : "border-cream-200 bg-cream-50/70"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[11px] font-bold leading-none ${
+                          isSelected ? "text-[#174B3D]" : "text-stone-800"
+                        }`}
+                      >
+                        {chipSize}
+                      </span>
+                      {isSelected && (
+                        <span className="w-3.5 h-3.5 rounded-full bg-[#174B3D] text-white flex items-center justify-center shrink-0">
+                          <Check className="w-2 h-2 stroke-[3]" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-mono text-[10px] font-semibold text-stone-500 mt-1 leading-none">
+                      S/ {chipPrice.toFixed(0)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Selector Visual de MARCOS (estilo Propuestas con miniatura + Modal Detalles) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                Marco
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveSheet("frame")}
+                className="text-[11px] font-bold text-[#174B3D] underline underline-offset-2"
+              >
+                Ver detalles de marcos
+              </button>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
               {catalogFrames.map((frame) => {
                 const isSelected = selectedFrame.id === frame.id;
+                const frameImg = frame.imageUrl || frame.images?.[0] || null;
                 return (
                   <button
                     key={frame.id}
                     type="button"
                     onClick={() => onSelectFrame(frame)}
-                    title={frame.name}
-                    aria-label={`Seleccionar ${frame.name}`}
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-transform ${
+                    className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl border transition-all shrink-0 text-left ${
                       isSelected
-                        ? "border-[#174B3D] scale-110 ring-2 ring-[#174B3D]/25"
-                        : "border-stone-300"
+                        ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
+                        : "border-cream-200 bg-cream-50/70"
                     }`}
-                    style={{ backgroundColor: frame.colorHex || "#174B3D" }}
                   >
-                    {isSelected && (
-                      <Check
-                        className={`w-3.5 h-3.5 stroke-[3] ${
-                          frame.colorHex?.toLowerCase() === "#ffffff" ||
-                          frame.colorHex?.toLowerCase() === "#f5f5f4"
-                            ? "text-[#174B3D]"
-                            : "text-white"
+                    <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-cream-200 shrink-0 flex items-center justify-center bg-stone-200">
+                      {frameImg ? (
+                        <img
+                          src={frameImg}
+                          alt={frame.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span
+                          className="w-full h-full flex items-center justify-center"
+                          style={{
+                            backgroundColor: frame.colorHex || "#174B3D",
+                          }}
+                        >
+                          <Frame className="w-4 h-4 text-white/80" />
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="absolute inset-0 bg-[#174B3D]/40 flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className={`text-[11px] font-bold leading-tight whitespace-nowrap ${
+                          isSelected ? "text-[#174B3D]" : "text-stone-800"
                         }`}
-                      />
-                    )}
+                      >
+                        {getShortFrameName(frame)}
+                      </p>
+                      <p className="text-[10px] font-semibold text-stone-500 leading-tight mt-0.5 whitespace-nowrap">
+                        {frame.priceModifierPen === 0
+                          ? "Incluido"
+                          : `+ S/ ${frame.priceModifierPen.toFixed(0)}`}
+                      </p>
+                    </div>
                   </button>
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setActiveSheet("frame")}
-              className="text-[11px] font-bold text-[#174B3D] underline underline-offset-2 shrink-0"
-            >
-              Ver marcos
-            </button>
           </div>
 
           {/* Botones de Personalización que abren Bottom Sheets */}
