@@ -400,6 +400,9 @@ export default function personalizedWallArt() {
   );
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showAuthGateModal, setShowAuthGateModal] = useState<boolean>(false);
+  const [authGateReason, setAuthGateReason] = useState<
+    "generation" | "checkout"
+  >("generation");
   const [pendingAutoGenerate, setPendingAutoGenerate] =
     useState<boolean>(false);
 
@@ -1194,6 +1197,7 @@ export default function personalizedWallArt() {
     // Modelo Híbrido: 1ra creación gratis sin login; 2da+ requiere iniciar sesión conservando la foto
     if (isAuthenticated === false && savedCreations.length >= 1) {
       savePendingGenerationForAuth();
+      setAuthGateReason("generation");
       setShowAuthGateModal(true);
       return;
     }
@@ -1234,6 +1238,7 @@ export default function personalizedWallArt() {
       ) {
         savePendingGenerationForAuth();
         setIsGenerating(false);
+        setAuthGateReason("generation");
         setShowAuthGateModal(true);
         return;
       }
@@ -1517,6 +1522,14 @@ export default function personalizedWallArt() {
         }),
       );
     } catch {}
+
+    // Para ordenar se requiere obligatoriamente iniciar sesión
+    if (!isAuthenticated) {
+      setAuthGateReason("checkout");
+      setShowAuthGateModal(true);
+      return;
+    }
+
     router.push("/checkout");
   };
 
@@ -3779,43 +3792,80 @@ export default function personalizedWallArt() {
 
               <div className="space-y-2 text-center pt-1">
                 <div className="w-12 h-12 rounded-2xl bg-[#174B3D]/10 border border-[#c6a26c]/40 text-[#174B3D] flex items-center justify-center mx-auto">
-                  <Sparkles className="w-5 h-5 text-[#94713F]" />
+                  {authGateReason === "checkout" ? (
+                    <ShoppingBag className="w-5 h-5 text-[#94713F]" />
+                  ) : (
+                    <Sparkles className="w-5 h-5 text-[#94713F]" />
+                  )}
                 </div>
                 <h3
                   id="auth-gate-modal-title"
                   className="font-serif text-xl sm:text-2xl font-semibold text-[#174B3D]"
                 >
-                  Inicia sesión para seguir creando
+                  {authGateReason === "checkout"
+                    ? "Inicia sesión para ordenar tu cuadro"
+                    : "Inicia sesión para seguir creando"}
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                  Ya disfrutaste tu primera creación gratuita de prueba. Inicia
-                  sesión para seguir probando todos los estilos y guardar tus
-                  obras en tu cuenta.
+                  {authGateReason === "checkout"
+                    ? "Para completar tu pedido, hacer seguimiento en vivo y desbloquear tu Recuerdo Digital HD sin marca al recibirlo, inicia sesión con tu cuenta."
+                    : "Ya disfrutaste tu primera creación gratuita de prueba. Inicia sesión para seguir probando todos los estilos y guardar tus obras en tu cuenta."}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white border border-[#E8DEC8] p-3.5 space-y-2 text-xs text-stone-700">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
-                  <span>Tu foto y personaje elegidos quedan guardados</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
-                  <span>Al iniciar sesión tu retrato comenzará automáticamente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
-                  <span>Tu creación anterior se vinculará a tu cuenta</span>
-                </div>
+                {authGateReason === "checkout" ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>
+                        Tu retrato, tamaño y marco elegidos ya están guardados
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>
+                        Al iniciar sesión pasarás directo a finalizar tu orden
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>
+                        Recibirás tu Tracking ID y seguimiento paso a paso
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>Tu foto y personaje elegidos quedan guardados</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>
+                        Al iniciar sesión tu retrato comenzará automáticamente
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#174B3D] shrink-0" />
+                      <span>Tu creación anterior se vinculará a tu cuenta</span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="space-y-2.5">
                 <button
                   type="button"
                   onClick={() => {
-                    savePendingGenerationForAuth();
+                    if (authGateReason === "generation") {
+                      savePendingGenerationForAuth();
+                    }
                     const callbackUrl =
-                      "/products/cuadros-personalizados?resumeGenerate=1";
+                      authGateReason === "checkout"
+                        ? "/checkout"
+                        : "/products/cuadros-personalizados?resumeGenerate=1";
                     router.push(
                       `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`,
                     );
@@ -3829,9 +3879,13 @@ export default function personalizedWallArt() {
                 <button
                   type="button"
                   onClick={() => {
-                    savePendingGenerationForAuth();
+                    if (authGateReason === "generation") {
+                      savePendingGenerationForAuth();
+                    }
                     const callbackUrl =
-                      "/products/cuadros-personalizados?resumeGenerate=1";
+                      authGateReason === "checkout"
+                        ? "/checkout"
+                        : "/products/cuadros-personalizados?resumeGenerate=1";
                     router.push(
                       `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`,
                     );

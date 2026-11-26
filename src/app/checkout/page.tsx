@@ -178,7 +178,7 @@ function CheckoutContent() {
       })
       .catch(() => {});
 
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
@@ -189,11 +189,15 @@ function CheckoutContent() {
           if (data.user.address) setAddress((prev) => prev || data.user.address);
           if (data.user.district) setDistrict((prev) => prev || data.user.district);
           if (data.user.department) setDepartment((prev) => prev || data.user.department);
+        } else {
+          router.replace(`/auth/login?callbackUrl=${encodeURIComponent("/checkout")}`);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        router.replace(`/auth/login?callbackUrl=${encodeURIComponent("/checkout")}`);
+      })
       .finally(() => setIsLoadingUser(false));
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleSwitchAccount = async () => {
     try {
