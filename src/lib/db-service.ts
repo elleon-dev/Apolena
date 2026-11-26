@@ -2202,7 +2202,7 @@ export async function createOrderWithSplitPayment(input: {
   unit_price: number;
   shipping_cost: number;
   payment_method: PaymentMethod;
-  operation_number: string;
+  operation_number?: string | null;
   proof_image_url?: string | null;
   notes?: string | null;
   app_url?: string | null;
@@ -2433,7 +2433,7 @@ export async function createOrderWithSplitPayment(input: {
         status: "pending_verification",
         amount: advanceAmount,
         currency: "PEN",
-        operation_number: input.operation_number.trim(),
+        operation_number: input.operation_number?.trim() || null,
         proof_image_url: finalProofImageUrl,
         payer_name: input.shipping.name.trim(),
         payer_phone: input.shipping.phone.trim(),
@@ -2537,7 +2537,7 @@ export async function createOrderWithSplitPayment(input: {
               status: "pending_verification",
               amount: advanceAmount,
               currency: "PEN",
-              operation_number: input.operation_number.trim(),
+              operation_number: input.operation_number?.trim() || null,
               proof_image_url: finalProofImageUrl,
               payer_name: input.shipping.name.trim(),
               payer_phone: input.shipping.phone.trim(),

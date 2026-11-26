@@ -61,8 +61,8 @@ Cada nueva orden tiene un ciclo financiero de **pago único del 100%** respaldad
   - `payment_stage`: `"advance_50"` (se conserva el identificador interno para mantener 100% compatibilidad de esquema y consultas con órdenes históricas).
   - `payment_method`: `"yape" | "plin" | "bank_transfer"`.
   - `amount`: Monto equivalente al **100% del total** (`total_amount`).
-  - `operation_number`: Número de operación ingresado por el cliente.
-  - `proof_image_url`: Captura o voucher de pago (opcional/recomendado).
+  - `operation_number`: Número de operación ingresado por el cliente (opcional).
+  - `proof_image_url`: Captura o voucher de pago (requerido en checkout; visible con zoom y descarga para los administradores en `/dashboard`).
   - `status`: `"pending_verification"` (o `"verified"` una vez validado por el Admin).
 - Estado de pago en `orders.payment_status`:
   - Inicia en `"partial_pending"` (Pago por verificar) al enviar la orden.

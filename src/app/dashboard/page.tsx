@@ -250,6 +250,11 @@ export default function AdminDashboardPage() {
     | "completed"
   >("priority_all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [voucherPreviewModal, setVoucherPreviewModal] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
   const [copiedDedicationId, setCopiedDedicationId] = useState<string | null>(null);
   const [downloadingMasterOrderId, setDownloadingMasterOrderId] = useState<
@@ -5436,7 +5441,11 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               <span>S/ {tx.amount.toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between text-stone-500">
-                              <span>Op: {tx.operation_number}</span>
+                              <span>
+                                {tx.operation_number
+                                  ? `Op: ${tx.operation_number}`
+                                  : "Sin N° de operación"}
+                              </span>
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                   tx.status === "verified"
@@ -5449,6 +5458,62 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                   : "Por Verificar"}
                               </span>
                             </div>
+
+                            {tx.proof_image_url ? (
+                              <div className="pt-2 mt-1.5 border-t border-cream-200 flex items-center gap-2.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setVoucherPreviewModal({
+                                      url: tx.proof_image_url!,
+                                      title: `Voucher de Pago · ${selectedOrder.order_code}`,
+                                      subtitle: `${tx.payment_method.toUpperCase()} · S/ ${tx.amount.toFixed(2)}${tx.operation_number ? ` · Op: ${tx.operation_number}` : ""}`,
+                                    })
+                                  }
+                                  className="relative w-12 h-12 rounded-lg overflow-hidden border border-cream-300 bg-cream-50 shrink-0 group cursor-pointer"
+                                  title="Ampliar comprobante de pago"
+                                >
+                                  <img
+                                    src={tx.proof_image_url}
+                                    alt="Comprobante de pago"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                  <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                    <Maximize2 className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </span>
+                                </button>
+                                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setVoucherPreviewModal({
+                                        url: tx.proof_image_url!,
+                                        title: `Voucher de Pago · ${selectedOrder.order_code}`,
+                                        subtitle: `${tx.payment_method.toUpperCase()} · S/ ${tx.amount.toFixed(2)}${tx.operation_number ? ` · Op: ${tx.operation_number}` : ""}`,
+                                      })
+                                    }
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#123B30] text-white text-[10px] font-semibold transition-colors cursor-pointer"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>Ver voucher</span>
+                                  </button>
+                                  <a
+                                    href={tx.proof_image_url}
+                                    download={`voucher-${selectedOrder.order_code}.jpg`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-cream-100 hover:bg-cream-200 border border-cream-300 text-stone-700 text-[10px] font-semibold transition-colors"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    <span>Descargar</span>
+                                  </a>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-stone-400 italic pt-1">
+                                Sin voucher adjunto en esta transacción.
+                              </p>
+                            )}
                           </div>
                         ))}
 
@@ -5500,6 +5565,62 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
             </div>
           </div>
         )}
+        {/* Modal Lightbox para inspeccionar el Voucher / Comprobante de Pago */}
+        {voucherPreviewModal && (
+          <div
+            className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setVoucherPreviewModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={voucherPreviewModal.title}
+          >
+            <div
+              className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-cream-200 flex flex-col max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 border-b border-cream-200 flex items-center justify-between gap-3 bg-cream-50">
+                <div className="min-w-0">
+                  <h3 className="font-serif text-base font-bold text-stone-900 truncate">
+                    {voucherPreviewModal.title}
+                  </h3>
+                  {voucherPreviewModal.subtitle && (
+                    <p className="text-xs text-stone-500 truncate mt-0.5">
+                      {voucherPreviewModal.subtitle}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={voucherPreviewModal.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-cream-300 text-stone-700 text-xs font-semibold transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Abrir</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setVoucherPreviewModal(null)}
+                    aria-label="Cerrar vista de voucher"
+                    className="w-8 h-8 rounded-full bg-white hover:bg-cream-200 border border-cream-300 text-stone-700 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-6 bg-stone-950/95 flex items-center justify-center overflow-auto flex-1">
+                <img
+                  src={voucherPreviewModal.url}
+                  alt={voucherPreviewModal.title}
+                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal de confirmación genérico para acciones del Admin */}
         <ConfirmModal
           open={confirmModalData.open}

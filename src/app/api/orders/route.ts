@@ -93,11 +93,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!body.operation_number?.trim()) {
+    if (
+      !body.proof_image_url ||
+      typeof body.proof_image_url !== "string" ||
+      !body.proof_image_url.trim()
+    ) {
       return NextResponse.json(
         {
           error:
-            "Ingresa el número de operación o referencia de tu pago.",
+            "Adjunta la captura o voucher de tu pago para confirmar el pedido.",
         },
         { status: 400 },
       );
@@ -155,8 +159,8 @@ export async function POST(request: Request) {
           ? Math.max(0, Number(body.shipping_cost))
           : 0,
       payment_method: paymentMethod,
-      operation_number: body.operation_number,
-      proof_image_url: body.proof_image_url || null,
+      operation_number: body.operation_number?.trim() || null,
+      proof_image_url: body.proof_image_url,
       notes: body.notes || null,
       customizations: enrichedCustomizations,
       shipping: {

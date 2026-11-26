@@ -231,8 +231,8 @@ function CheckoutContent() {
       return;
     }
 
-    if (!operationNumber.trim()) {
-      setError("Por favor ingresa el número de operación o referencia de tu pago.");
+    if (!proofImageUrl) {
+      setError("Por favor adjunta la captura o voucher de tu pago para confirmar el pedido.");
       return;
     }
 
@@ -1055,28 +1055,14 @@ function CheckoutContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-stone-800 block">
-                      Número de Operación / Confirmación del Pago *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={operationNumber}
-                      onChange={(e) => setOperationNumber(e.target.value)}
-                      placeholder="Ej. 0492819"
-                      className="w-full px-3.5 py-3 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 font-mono focus:border-terracotta-500 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Campo 2: Captura del Voucher */}
+                  {/* Campo 1: Captura del Voucher (Requerido) */}
                   <div className="space-y-1.5">
                     <label className="font-extrabold text-[#174B3D] block">
-                      Captura del Voucher
+                      Captura del Voucher *
                     </label>
                     <input
                       type="file"
-                      required
+                      required={!proofImageUrl}
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -1087,6 +1073,37 @@ function CheckoutContent() {
                         reader.readAsDataURL(file);
                       }}
                       className="w-full px-3 py-2 rounded-xl bg-white border border-[#174B3D]/30 text-stone-700 text-[11px] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#174B3D] file:text-white hover:file:bg-[#0f3229] file:cursor-pointer transition-all"
+                    />
+                    {proofImageUrl && (
+                      <div className="flex items-center gap-2.5 p-2 rounded-xl bg-emerald-50/80 border border-emerald-200 mt-1.5">
+                        <img
+                          src={proofImageUrl}
+                          alt="Vista previa del voucher"
+                          className="w-10 h-10 rounded-lg object-cover border border-emerald-300 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-bold text-emerald-900 truncate">
+                            Voucher adjuntado correctamente
+                          </p>
+                          <p className="text-[10px] text-emerald-700">
+                            Visible para verificación del equipo Apolena
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Campo 2: Número de Operación (Opcional) */}
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-stone-800 block">
+                      Número de Operación (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={operationNumber}
+                      onChange={(e) => setOperationNumber(e.target.value)}
+                      placeholder="Ej. 0492819 (opcional)"
+                      className="w-full px-3.5 py-3 rounded-xl bg-cream-50 border border-cream-200 text-stone-900 font-mono focus:border-terracotta-500 focus:bg-white focus:outline-none"
                     />
                   </div>
                 </div>
