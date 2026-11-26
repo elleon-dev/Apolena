@@ -21,6 +21,7 @@ import {
   Truck,
   Upload,
   X,
+  ZoomIn,
 } from "lucide-react";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
 import type { FrameOption, PrintPreset } from "@/lib/print-export";
@@ -127,6 +128,10 @@ export function MobileStep3AppShell({
   simulationNotice,
 }: MobileStep3AppShellProps) {
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
+  const [previewFrameModal, setPreviewFrameModal] = useState<{
+    frame: FrameOption;
+    activeIndex: number;
+  } | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 
   const originalPrice = currentUnitPrice + 20;
@@ -756,26 +761,55 @@ export function MobileStep3AppShell({
               {activeSheet === "frame" &&
                 catalogFrames.map((frame) => {
                   const isSelected = selectedFrame.id === frame.id;
+                  const frameImages = Array.from(
+                    new Set(
+                      [frame.imageUrl, ...(frame.images || [])].filter(
+                        (u): u is string => Boolean(u),
+                      ),
+                    ),
+                  );
+                  const primaryThumb = frameImages[0] || null;
+
                   return (
-                    <button
+                    <div
                       key={frame.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onSelectFrame(frame)}
-                      className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center gap-3 ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectFrame(frame);
+                        }
+                      }}
+                      className={`w-full p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
                         isSelected
                           ? "border-[#174B3D] bg-[#174B3D]/5 ring-1 ring-[#174B3D]/25"
                           : "border-cream-200 bg-white"
                       }`}
                     >
-                      {frame.imageUrl || frame.images?.[0] ? (
-                        <img
-                          src={frame.imageUrl || frame.images?.[0] || ""}
-                          alt={frame.name}
-                          className="w-12 h-12 rounded-xl object-cover border border-cream-200 shrink-0"
-                        />
+                      {primaryThumb ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewFrameModal({ frame, activeIndex: 0 });
+                          }}
+                          aria-label={`Ver vista previa de ${frame.name}`}
+                          className="relative w-14 h-14 rounded-xl overflow-hidden border border-cream-200 shrink-0 group cursor-zoom-in"
+                        >
+                          <img
+                            src={primaryThumb}
+                            alt={frame.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-black/65 text-white flex items-center justify-center backdrop-blur-xs shadow-xs">
+                            <ZoomIn className="w-3 h-3" />
+                          </span>
+                        </button>
                       ) : (
                         <span
-                          className="w-12 h-12 rounded-xl border border-stone-300 shrink-0 flex items-center justify-center"
+                          className="w-14 h-14 rounded-xl border border-stone-300 shrink-0 flex items-center justify-center"
                           style={{
                             backgroundColor: frame.colorHex || "#174B3D",
                           }}
@@ -798,7 +832,7 @@ export function MobileStep3AppShell({
                           {frame.description}
                         </p>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
 
@@ -939,6 +973,109 @@ export function MobileStep3AppShell({
           </div>
         </div>
       )}
+
+      {/* =================================================================== */}
+      {/* 5. LIGHTBOX PREVIEW DE IMAGEN DEL MARCO                             */}
+      {/* =================================================================== */}
+      {previewFrameModal && (() => {
+        const { frame, activeIndex } = previewFrameModal;
+        const gallery = Array.from(
+          new Set(
+            [frame.imageUrl, ...(frame.images || [])].filter(
+              (u): u is string => Boolean(u),
+            ),
+          ),
+        );
+        const currentImg = gallery[activeIndex] || gallery[0] || "";
+
+        return (
+          <div
+            className="fixed inset-0 z-[60] lg:hidden bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setPreviewFrameModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Vista previa de ${frame.name}`}
+          >
+            <div
+              className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-cream-200 flex flex-col max-h-[88dvh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3.5 border-b border-cream-200 flex items-center justify-between gap-2 bg-cream-50">
+                <div className="min-w-0">
+                  <h4 className="font-serif text-base font-bold text-stone-900 truncate">
+                    {frame.name}
+                  </h4>
+                  <p className="text-[11px] font-bold text-[#174B3D]">
+                    {frame.priceModifierPen === 0
+                      ? "Incluido en el precio"
+                      : `+ S/ ${frame.priceModifierPen.toFixed(2)}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewFrameModal(null)}
+                  aria-label="Cerrar vista previa del marco"
+                  className="w-8 h-8 rounded-full bg-white border border-cream-300 text-stone-700 flex items-center justify-center shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 bg-stone-950 flex items-center justify-center overflow-hidden">
+                {currentImg && (
+                  <img
+                    src={currentImg}
+                    alt={frame.name}
+                    className="max-h-[46dvh] w-auto max-w-full object-contain rounded-xl"
+                  />
+                )}
+              </div>
+
+              {gallery.length > 1 && (
+                <div className="px-4 pt-3 flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
+                  {gallery.map((imgUrl, idx) => (
+                    <button
+                      key={`${frame.id}-thumb-${idx}`}
+                      type="button"
+                      onClick={() =>
+                        setPreviewFrameModal({ frame, activeIndex: idx })
+                      }
+                      className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                        idx === activeIndex
+                          ? "border-[#174B3D] ring-2 ring-[#174B3D]/25"
+                          : "border-cream-200 opacity-70"
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`${frame.name} ángulo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {frame.description}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectFrame(frame);
+                    setPreviewFrameModal(null);
+                  }}
+                  className="w-full py-3 rounded-full bg-[#174B3D] text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5 text-[#c6a26c]" />
+                  <span>Elegir este marco</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
