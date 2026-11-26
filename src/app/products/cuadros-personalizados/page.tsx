@@ -1120,7 +1120,7 @@ export default function personalizedWallArt() {
             }
             const detectDataUrl = detectCanvas.toDataURL("image/jpeg", 0.75);
 
-            // 3. Validación de mascota inteligente con IA visual precisa (servidor)
+            // 3. Validación estricta de mascota y facciones visibles con IA visual (servidor)
             let detectedSpecies: string = petSpecies;
             try {
               const res = await fetch("/api/validate-pet", {
@@ -1129,30 +1129,34 @@ export default function personalizedWallArt() {
                 body: JSON.stringify({ image: detectDataUrl }),
               });
 
-              if (res.ok) {
-                const result = await res.json();
-                if (result.isPet === false) {
-                  triggerErrorNotification(
-                    "Fotografía no válida",
-                    result.reason ||
-                      "La fotografía debe mostrar claramente una mascota real. No se aceptan personas, paisajes u objetos inanimados.",
-                  );
-                  return;
-                }
+              const result = await res.json().catch(() => null);
 
-                if (result.species === "dog") {
-                  setPetSpecies("dog");
-                  detectedSpecies = "dog";
-                } else if (result.species === "cat") {
-                  setPetSpecies("cat");
-                  detectedSpecies = "cat";
-                } else if (result.species === "other") {
-                  setPetSpecies("other");
-                  detectedSpecies = "other";
-                }
+              if (!res.ok || !result || result.isPet !== true) {
+                triggerErrorNotification(
+                  "Fotografía no válida",
+                  result?.reason ||
+                    "La fotografía debe mostrar claramente el rostro y las facciones de una mascota real. No se aceptan personas, ilustraciones, paisajes u objetos.",
+                );
+                return;
+              }
+
+              if (result.species === "dog") {
+                setPetSpecies("dog");
+                detectedSpecies = "dog";
+              } else if (result.species === "cat") {
+                setPetSpecies("cat");
+                detectedSpecies = "cat";
+              } else if (result.species === "other") {
+                setPetSpecies("other");
+                detectedSpecies = "other";
               }
             } catch (validateErr) {
               console.warn("Fallo en verificación /api/validate-pet:", validateErr);
+              triggerErrorNotification(
+                "No pudimos validar la fotografía",
+                "Verifica tu conexión e intenta subir nuevamente una foto clara del rostro de tu mascota.",
+              );
+              return;
             }
 
             setFusionError(null);
