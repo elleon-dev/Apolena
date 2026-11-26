@@ -26,7 +26,7 @@ export default function OrderStatusUpdatedEmail({
   tracking_id = "TRK-2026-94812",
   status = "in_transit",
   status_label = "En Camino a tu Domicilio (Paso 2 de 3)",
-  app_url = "https://apolena.pe",
+  app_url = "https://www.apolena.shop",
 }: OrderStatusUpdatedEmailProps) {
   const trackingUrl = `${app_url}/track/${tracking_id}`;
 
@@ -40,7 +40,7 @@ export default function OrderStatusUpdatedEmail({
       <Body style={main}>
         <Container style={container}>
           <Section style={headerSection}>
-            <Text style={brandTag}>APOLENA ATELIER · SEGUIMIENTO EN VIVO</Text>
+            <Text style={brandTag}>APOLENA · SEGUIMIENTO EN VIVO</Text>
             <Heading style={mainHeading}>¡Tu cuadro personalizado tiene novedades!</Heading>
             <Text style={subheading}>
               Orden <strong>#{order_code}</strong> · Tracking ID: <strong>{tracking_id}</strong>
@@ -67,7 +67,7 @@ export default function OrderStatusUpdatedEmail({
           </Section>
 
           <Section style={footerSection}>
-            <Text style={footerBrand}>Apolena Atelier · Cuadros Artísticos Personalizados</Text>
+            <Text style={footerBrand}>Apolena · Cuadros Artísticos Personalizados</Text>
             <Text style={footerLinks}>
               <Link href={`${app_url}/track/${tracking_id}`} style={footerLink}>Rastrear Pedido</Link>
               {" · "}

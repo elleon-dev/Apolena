@@ -1,6 +1,6 @@
-# Apolena — Atelier Digital de Retratos Artísticos para Mascotas
+# Apolena — Studio de Retratos Artísticos para Mascotas
 
-> Apolena (https://apolena.shop) es un atelier digital y taller artesanal peruano especializado en convertir fotografías de perros, gatos y otras mascotas en retratos de alta calidad artística y de museo mediante inteligencia artificial generativa y acabados de bellas artes.
+> Apolena (https://www.apolena.shop) es un estudio digital y taller artesanal peruano especializado en convertir fotografías de perros, gatos y otras mascotas en retratos de alta calidad artística y de museo mediante inteligencia artificial generativa y acabados de bellas artes.
 
 ## Catálogo de Productos y Formatos
 
@@ -36,9 +36,9 @@ Cada pedido cuenta con un código de rastreo único (`Tracking ID` formato `APO-
 
 ## Enlaces Principales
 
-- Sitio Web Oficial: https://apolena.shop
-- Personalizador de Cuadros: https://apolena.shop/products/cuadros-personalizados
-- Rastreador de Pedidos: https://apolena.shop/track
-- Libro de Reclamaciones: https://apolena.shop/libro-de-reclamaciones
-- Términos y Condiciones: https://apolena.shop/terminos
-- Política de Privacidad: https://apolena.shop/privacidad
+- Sitio Web Oficial: https://www.apolena.shop
+- Personalizador de Cuadros: https://www.apolena.shop/products/cuadros-personalizados
+- Rastreador de Pedidos: https://www.apolena.shop/track
+- Libro de Reclamaciones: https://www.apolena.shop/libro-de-reclamaciones
+- Términos y Condiciones: https://www.apolena.shop/terminos
+- Política de Privacidad: https://www.apolena.shop/privacidad

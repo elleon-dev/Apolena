@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Política de Privacidad y Protección de Datos",
   description:
-    "Conoce cómo protegemos y tratamos de forma confidencial tus datos personales y las fotografías de tus mascotas en Apolena Atelier.",
+    "Conoce cómo protegemos y tratamos de forma confidencial tus datos personales y las fotografías de tus mascotas en Apolena.",
   alternates: {
     canonical: "/privacidad",
   },

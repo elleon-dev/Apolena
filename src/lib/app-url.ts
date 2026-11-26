@@ -1,7 +1,7 @@
 /**
  * Helper para resolver dinámicamente la URL base de Apolena
  * Evita enlaces a localhost en producción y se adapta automáticamente
- * al hostname actual (ej: https://apolena.vercel.app o https://apolena.shop).
+ * al hostname actual (ej: https://www.apolena.shop).
  */
 
 export function resolveAppUrl(explicitOrigin?: string | null): string {
@@ -35,7 +35,7 @@ export function resolveAppUrl(explicitOrigin?: string | null): string {
 
   // 4. Dominio oficial de producción de Apolena
   if (isProd) {
-    return "https://apolena.shop";
+    return "https://www.apolena.shop";
   }
 
   return envUrl || "http://localhost:3000";

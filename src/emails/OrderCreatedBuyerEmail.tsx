@@ -58,7 +58,7 @@ export default function OrderCreatedBuyerEmail({
     finish_label: "Lienzo Completo (Full Screen)",
     pet_inscription: { pet_name: "Firulays" },
   },
-  app_url = "https://apolena.pe",
+  app_url = "https://www.apolena.shop",
 }: OrderCreatedBuyerEmailProps) {
   const trackingUrl = `${app_url}/track/${tracking_id}`;
   const petName = customizations.pet_inscription?.pet_name;
@@ -73,7 +73,7 @@ export default function OrderCreatedBuyerEmail({
           <Section style={headerSection}>
             <Row>
               <Column align="center">
-                <Text style={brandTag}>APOLENA ATELIER</Text>
+                <Text style={brandTag}>APOLENA</Text>
                 <Heading style={mainHeading}>¡Gracias por tu compra, {buyer_name}!</Heading>
                 <Text style={subheading}>
                   Hemos recibido tu orden <strong>#{order_code}</strong> y el registro de tu pago total (100%).
@@ -175,7 +175,7 @@ export default function OrderCreatedBuyerEmail({
 
           {/* Footer */}
           <Section style={footerSection}>
-            <Text style={footerBrand}>Apolena Atelier · Cuadros Artísticos Personalizados</Text>
+            <Text style={footerBrand}>Apolena · Cuadros Artísticos Personalizados</Text>
             <Text style={footerLinks}>
               <Link href={`${app_url}/terminos`} style={footerLink}>Términos y Condiciones</Link>
               {" · "}

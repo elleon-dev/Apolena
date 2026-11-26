@@ -127,7 +127,7 @@ export async function renderEmailHtml(
     default:
       return `
         <div style="font-family: Georgia, serif; max-width: 580px; margin: 0 auto; background: #FFFBF2; padding: 28px; border-radius: 20px; color: #141414; border: 1px solid #c6a26c;">
-          <h2 style="color: #174B3D;">Notificación de Apolena Atelier</h2>
+          <h2 style="color: #174B3D;">Notificación de Apolena</h2>
           <p style="font-family: sans-serif; font-size: 14px; color: #3E3C37;">
             ${data.message || JSON.stringify(data)}
           </p>
@@ -153,10 +153,10 @@ export async function dispatchEmailWithResend(
   const apiKey = process.env.RESEND_API_KEY!.trim();
   let fromEmail =
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Apolena Atelier <onboarding@resend.dev>";
+    "Apolena <onboarding@resend.dev>";
 
   if (fromEmail.includes("tudominio.com") || fromEmail.includes("example.com")) {
-    fromEmail = "Apolena Atelier <onboarding@resend.dev>";
+    fromEmail = "Apolena <onboarding@resend.dev>";
   }
 
   try {
@@ -188,7 +188,7 @@ export async function dispatchEmailWithResend(
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Apolena Atelier <onboarding@resend.dev>",
+            from: "Apolena <onboarding@resend.dev>",
             to: [payload.to],
             cc: payload.cc && payload.cc.length > 0 ? payload.cc : undefined,
             subject: payload.subject,

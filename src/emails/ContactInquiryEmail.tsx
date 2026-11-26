@@ -33,7 +33,7 @@ export default function ContactInquiryEmail({
       <Body style={main}>
         <Container style={container}>
           <Section style={headerSection}>
-            <Text style={badge}>CONTACTO WEB · APOLENA ATELIER</Text>
+            <Text style={badge}>CONTACTO WEB · APOLENA</Text>
             <Heading style={mainHeading}>Nueva Consulta de Cliente</Heading>
             <Text style={subheading}>Recibida a través del formulario de contacto del sitio web</Text>
           </Section>

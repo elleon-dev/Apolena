@@ -16,16 +16,17 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Apolena Atelier — Retratos Personalizados para Mascotas en Lienzo",
-    template: "%s | Apolena Atelier",
+    default: "Apolena — Retratos Personalizados para Mascotas en Lienzo",
+    template: "%s | Apolena",
   },
   description:
     "Convierte la foto de tu perro o gato en un cuadro único en canvas. Impresión fine art 300 DPI sobre lienzo tensado en bastidor de madera listo para colgar. Delivery incluido en Lima Metropolitana y envíos a todo el Perú.",
-  applicationName: "Apolena Atelier",
-  authors: [{ name: "Apolena Atelier", url: baseUrl }],
+  applicationName: "Apolena",
+  authors: [{ name: "Apolena", url: baseUrl }],
   generator: "Next.js",
   keywords: [
     "Apolena",
+    "Apolena Studio",
     "cuadros personalizados de mascotas",
     "retratos de mascotas lima",
     "cuadros para perros",
@@ -37,8 +38,8 @@ export const metadata: Metadata = {
     "fine art giclee mascotas",
     "cuadro personalizado lima peru",
   ],
-  creator: "Apolena Atelier",
-  publisher: "Apolena Atelier",
+  creator: "Apolena",
+  publisher: "Apolena",
   alternates: {
     canonical: "/",
   },
@@ -46,8 +47,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_PE",
     url: baseUrl,
-    siteName: "Apolena Atelier",
-    title: "Apolena Atelier — Retratos Personalizados para Mascotas en Lienzo de Museo",
+    siteName: "Apolena",
+    title: "Apolena — Retratos Personalizados para Mascotas en Lienzo de Museo",
     description:
       "Lienzo tensado a mano sobre bastidor de madera, listo para colgar. Impresión Fine Art a 300 DPI con delivery incluido en Lima Metropolitana y envíos a todo el Perú.",
     images: [
@@ -55,13 +56,13 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Cuadros Personalizados para Mascotas Apolena Atelier",
+        alt: "Cuadros Personalizados para Mascotas Apolena",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Apolena Atelier — Retratos de Mascotas en Lienzo de Museo",
+    title: "Apolena — Retratos de Mascotas en Lienzo de Museo",
     description:
       "Convierte la foto de tu mascota en un retrato único en canvas sobre bastidor de madera. Delivery incluido en Lima Metropolitana.",
     images: ["/og-image.jpg"],

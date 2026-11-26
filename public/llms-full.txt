@@ -1,7 +1,7 @@
-# Apolena Atelier — Documentación de Referencia para Modelos de Lenguaje (LLMs)
+# Apolena — Documentación de Referencia para Modelos de Lenguaje (LLMs)
 
 ## 1. Visión y Propósito de la Marca
-Apolena (https://apolena.shop) nació en Lima, Perú, con la convicción de que las mascotas son parte insustituible de la familia. Fusionamos tecnología de visión por computadora e inteligencia artificial generativa con el oficio tradicional de enmarcado y tensado de lienzos de bellas artes.
+Apolena (https://www.apolena.shop) nació en Lima, Perú, con la convicción de que las mascotas son parte insustituible de la familia. Fusionamos tecnología de visión por computadora e inteligencia artificial generativa con el oficio tradicional de enmarcado y tensado de lienzos de bellas artes.
 
 ## 2. Proceso de Generación y Compra
 1. **Selección del Personaje / Temática**: El usuario elige un personaje de colección (ej. Capitán Jack Sparrow, Joker, Rey Renacentista, Astronauta) o propone una temática a medida.
@@ -39,7 +39,7 @@ Sí, el sistema soporta perros, gatos, aves y conejos tanto en retratos individu
 Si el cuadro presenta algún defecto de fabricación o transporte, se reimprime y repone sin costo adicional. Todos los clientes cuentan con acceso al Libro de Reclamaciones virtual conforme a la ley peruana e INDECOPI.
 
 ## 5. Contacto Oficial
-- Sitio Web: https://apolena.shop
+- Sitio Web: https://www.apolena.shop
 - Soporte WhatsApp: +51 999 888 777
-- Correo Electrónico: contacto@apolena.shop
+- Correo Electrónico: apolenaperu@gmail.com
 - Lima, Perú.

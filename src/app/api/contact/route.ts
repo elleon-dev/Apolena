@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     try {
       const settings = await getPlatformSettings();
-      const adminEmail = settings.ADMIN_NOTIFICATION_EMAILS?.emails?.[0] || "admin@apolena.pe";
+      const adminEmail = settings.ADMIN_NOTIFICATION_EMAILS?.emails?.[0] || "apolenaperu@gmail.com";
 
       await enqueueEmail({
         to_email: adminEmail,

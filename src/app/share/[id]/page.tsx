@@ -131,7 +131,7 @@ export default async function SharedCreationPage({
           <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#174B3D]/10 text-[#174B3D] text-xs font-bold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-[#c6a26c]" />
-              <span>Creación de Atelier Apolena</span>
+              <span>Creación de Apolena Studio</span>
             </div>
 
             <div className="space-y-2">

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     canonical: "/products/cuadros-personalizados",
   },
   openGraph: {
-    title: "Personaliza tu Cuadro Artístico de Mascota | Apolena Atelier",
+    title: "Personaliza tu Cuadro Artístico de Mascota | Apolena Studio",
     description:
       "Lienzo 100% algodón tensado a mano sobre bastidor de madera de 3.5 cm. Impresión Fine Art Giclée a 300 DPI con preservación total de mirada.",
     url: "/products/cuadros-personalizados",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Personalizador de Cuadros Apolena Atelier",
+        alt: "Personalizador de Cuadros Apolena Studio",
       },
     ],
   },

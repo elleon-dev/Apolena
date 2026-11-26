@@ -59,7 +59,7 @@ export default function OrderCreatedAdminEmail({
     frame_name: "Lienzo en Bastidor de Madera",
     pet_inscription: { pet_name: "Firulays" },
   },
-  app_url = "https://apolena.pe",
+  app_url = "https://www.apolena.shop",
 }: OrderCreatedAdminEmailProps) {
   const adminUrl = `${app_url}/admin`;
   const petName = customizations.pet_inscription?.pet_name;

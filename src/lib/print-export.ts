@@ -821,7 +821,7 @@ export async function exportWatermarkedPreviewImage(
   ctx.fillStyle = "rgba(255, 251, 242, 0.90)";
   ctx.font = "500 10px sans-serif";
   ctx.fillText(
-    `${themeName} · Impresión exclusiva 300 DPI en apolena.pe`,
+    `${themeName} · Impresión exclusiva 300 DPI en www.apolena.shop`,
     targetW - 18,
     targetH - 15,
   );

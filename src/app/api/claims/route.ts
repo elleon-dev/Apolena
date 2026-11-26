@@ -78,14 +78,14 @@ export async function POST(req: Request) {
     // 1. Enviar y encolar correo de confirmación al reclamante
     await enqueueEmail({
       to_email: email,
-      subject: `Constancia de Registro: Hoja de Reclamación ${claimCode} — Apolena Atelier`,
+      subject: `Constancia de Registro: Hoja de Reclamación ${claimCode} — Apolena`,
       template: "claim_registered_consumer",
       data: claimPayload,
     });
 
     // 2. Enviar y encolar notificación al equipo legal y administrativo de Apolena
     await enqueueEmail({
-      to_email: "legal@apolena.pe",
+      to_email: "apolenaperu@gmail.com",
       subject: `[Alerta INDECOPI] Nueva Hoja de ${claim_type === "queja" ? "Queja" : "Reclamo"} ${claimCode} registrada`,
       template: "claim_registered_admin",
       data: claimPayload,

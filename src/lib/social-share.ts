@@ -235,7 +235,7 @@ export async function generateSocialShareCard(
   ctx.font = `700 ${isStory ? 21 : 18}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("ATELIER DE RETRATOS PARA MASCOTAS", width / 2, eyebrowY);
+  ctx.fillText("APOLENA STUDIO · RETRATOS DE MASCOTAS", width / 2, eyebrowY);
 
   // Título principal (Nombre de mascota + Estilo o solo Estilo)
   const cleanPetName = petName?.trim() || "";
@@ -530,7 +530,7 @@ export async function generateSocialShareCard(
   // 5. Pie Viral con Llamado a la Acción + Dominio
   const displayHost = (
     siteHost ||
-    (typeof window !== "undefined" ? window.location.host : "apolena.pe")
+    (typeof window !== "undefined" ? window.location.host : "www.apolena.shop")
   ).replace(/^www\./, "");
 
   const footerCenterY = isStory

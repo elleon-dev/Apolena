@@ -312,7 +312,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
     delivery_provincias_days: "5 a 7 días hábiles luego de realizada la compra",
   },
   ADMIN_NOTIFICATION_EMAILS: {
-    emails: ["nmoriano26@gmail.com", "admin@apolena.pe"],
+    emails: ["apolenaperu@gmail.com", "nmoriano26@gmail.com"],
     whatsapp_support: "+51 993 920 853",
   },
 };
@@ -2584,7 +2584,7 @@ export async function createOrderWithSplitPayment(input: {
         },
       }),
       enqueueEmail({
-        to_email: adminEmails[0] || "admin@apolena.pe",
+        to_email: adminEmails[0] || "apolenaperu@gmail.com",
         cc: adminEmails.slice(1),
         subject: `[NUEVA ORDEN APOLENA] ${orderCode} · Pago 100%: S/ ${totalAmount.toFixed(2)}`,
         template: "order_created_admin",

@@ -49,12 +49,12 @@ export default function ClaimRegisteredConsumerEmail({
     description: "Detalle de los hechos...",
     consumer_request: "Pedido del consumidor...",
   },
-  app_url = "https://apolena.pe",
+  app_url = "https://www.apolena.shop",
 }: ClaimRegisteredConsumerEmailProps) {
   return (
     <Html lang="es">
       <Head />
-      <Preview>Constancia de Hoja de Reclamación: {claim_code} · Apolena Atelier</Preview>
+      <Preview>Constancia de Hoja de Reclamación: {claim_code} · Apolena</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={headerSection}>

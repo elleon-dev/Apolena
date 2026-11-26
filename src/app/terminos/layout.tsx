@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Términos y Condiciones",
   description:
-    "Términos y condiciones del servicio de creación, fabricación artesanal y entrega de retratos de mascotas en Apolena Atelier.",
+    "Términos y condiciones del servicio de creación, fabricación artesanal y entrega de retratos de mascotas en Apolena.",
   alternates: {
     canonical: "/terminos",
   },

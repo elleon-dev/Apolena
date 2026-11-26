@@ -79,7 +79,7 @@ export default function ContactSection() {
                 Correo Electrónico
               </h4>
               <p className="text-sm font-semibold text-[#141414]">
-                contacto@apolena.pe
+                apolenaperu@gmail.com
               </p>
               <p className="text-[11px] text-[#141414]/65">
                 Respuesta en menos de 2 horas hábiles

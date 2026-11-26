@@ -8,12 +8,12 @@ export function JsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${baseUrl}/#organization`,
-    name: "Apolena Atelier",
+    name: "Apolena",
     url: baseUrl,
     logo: `${baseUrl}/logo.png`,
     image: `${baseUrl}/og-image.jpg`,
     description:
-      "Atelier digital de retratos artísticos personalizados para perros, gatos y mascotas sobre lienzo de museo tensado a mano.",
+      "Estudio de retratos artísticos personalizados para perros, gatos y mascotas sobre lienzo de museo tensado a mano.",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Lima",
@@ -56,7 +56,7 @@ export function JsonLd() {
       "Lienzo 100% algodón de 380 g/m² tensado a mano sobre bastidor de madera de pino de 3.5 cm. Impresión Fine Art Giclée a 300 DPI con preservación total de color y autógrafo personalizado.",
     brand: {
       "@type": "Brand",
-      name: "Apolena Atelier",
+      name: "Apolena",
     },
     offers: {
       "@type": "AggregateOffer",

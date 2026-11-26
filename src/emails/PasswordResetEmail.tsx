@@ -20,17 +20,17 @@ export interface PasswordResetEmailProps {
 
 export default function PasswordResetEmail({
   name = "Valeria",
-  reset_url = "https://apolena.pe/auth/reset-password?token=sample",
-  app_url = "https://apolena.pe",
+  reset_url = "https://www.apolena.shop/auth/reset-password?token=sample",
+  app_url = "https://www.apolena.shop",
 }: PasswordResetEmailProps) {
   return (
     <Html lang="es">
       <Head />
-      <Preview>Recuperación de contraseña en Apolena Atelier</Preview>
+      <Preview>Recuperación de contraseña en Apolena</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={headerSection}>
-            <Text style={brandTag}>APOLENA ATELIER · SEGURIDAD</Text>
+            <Text style={brandTag}>APOLENA · SEGURIDAD</Text>
             <Heading style={mainHeading}>Restablece tu Contraseña</Heading>
             <Text style={subheading}>
               Hola {name || "estimado cliente"}, recibimos una solicitud para restablecer la contraseña de tu cuenta en Apolena.
@@ -53,7 +53,7 @@ export default function PasswordResetEmail({
           </Section>
 
           <Section style={footerSection}>
-            <Text style={footerBrand}>Apolena Atelier · Cuadros Artísticos Personalizados</Text>
+            <Text style={footerBrand}>Apolena · Cuadros Artísticos Personalizados</Text>
             <Text style={footerCopyright}>
               © {new Date().getFullYear()} Apolena Studio S.A.C. Todos los derechos reservados.
             </Text>

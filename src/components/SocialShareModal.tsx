@@ -67,7 +67,7 @@ export default function SocialShareModal({
   const fallbackShareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`
-      : `https://apolena.pe/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`;
+      : `https://www.apolena.shop/products/cuadros-personalizados?character=${encodeURIComponent(characterId)}&step=2`;
 
   const buildShareText = useCallback(
     (targetUrl: string) =>

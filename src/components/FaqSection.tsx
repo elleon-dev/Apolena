@@ -425,7 +425,7 @@ export default function FaqSection() {
             <div className="px-5 py-4 bg-[#FAF0E4] border-b border-[#DECFBE] flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#94713F] block">
-                  Apolena Atelier
+                  Apolena Studio
                 </span>
                 <h3 className="font-serif text-sm sm:text-base font-bold text-[#174B3D]">
                   {activeModalImage.title}
