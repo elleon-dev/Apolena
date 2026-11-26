@@ -110,6 +110,12 @@ async function validateWithOpenAI(
   return normalizeValidationResult(extractJsonObject(content));
 }
 
+const GEMINI_VISION_MODELS = [
+  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+];
+
 async function validateWithGemini(
   dataUrl: string,
   apiKey: string,
@@ -118,40 +124,50 @@ async function validateWithGemini(
   const mimeType = match ? match[1] : "image/jpeg";
   const base64Data = match ? match[2] : dataUrl;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: VALIDATION_PROMPT },
+  for (const model of GEMINI_VISION_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
             {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data,
-              },
+              parts: [
+                { text: VALIDATION_PROMPT },
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: base64Data,
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json",
-      },
-    }),
-  });
+          generationConfig: {
+            temperature: 0,
+            responseMimeType: "application/json",
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      });
 
-  if (!res.ok) {
-    console.warn("[validate-pet] Gemini vision error status:", res.status);
-    return null;
+      if (!res.ok) {
+        console.warn(`[validate-pet] Gemini (${model}) error status:`, res.status);
+        continue;
+      }
+
+      const data = await res.json();
+      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (typeof content !== "string") continue;
+      const normalized = normalizeValidationResult(extractJsonObject(content));
+      if (normalized) return normalized;
+    } catch (err) {
+      console.warn(`[validate-pet] Gemini (${model}) exception:`, err);
+    }
   }
 
-  const data = await res.json();
-  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof content !== "string") return null;
-  return normalizeValidationResult(extractJsonObject(content));
+  return null;
 }
 
 export async function POST(req: Request) {
