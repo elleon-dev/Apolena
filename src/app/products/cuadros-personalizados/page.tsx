@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
+import SocialShareModal from "@/components/SocialShareModal";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
 import {
   AIProviderId,
@@ -48,6 +49,7 @@ import {
   Truck,
   Home,
   Palette,
+  Share2,
 } from "lucide-react";
 
 /**
@@ -381,6 +383,8 @@ export default function personalizedWallArt() {
   const [showNoCustomizationModal, setShowNoCustomizationModal] =
     useState<boolean>(false);
   const [showPhotoGuideModal, setShowPhotoGuideModal] =
+    useState<boolean>(false);
+  const [showSocialShareModal, setShowSocialShareModal] =
     useState<boolean>(false);
 
   const triggerErrorNotification = useCallback(
@@ -2541,6 +2545,32 @@ export default function personalizedWallArt() {
                     </div>
                   </div>
 
+                  {/* Tarjeta Viral: Compartir creación en redes sociales */}
+                  <div className="bg-gradient-to-br from-[#174B3D] to-[#0E2F26] border border-[#c6a26c]/40 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 text-white">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-2xl bg-white/10 border border-[#c6a26c]/40 flex items-center justify-center shrink-0 mt-0.5">
+                        <Share2 className="w-4 h-4 text-[#DFC18D]" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className="text-xs sm:text-sm font-bold text-[#FFFBF2]">
+                          Presume el retrato de tu engreído
+                        </h4>
+                        <p className="text-[11px] text-[#FFFBF2]/80 leading-relaxed">
+                          Genera una tarjeta con efecto Antes y Después lista
+                          para Instagram Stories, WhatsApp o TikTok.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSocialShareModal(true)}
+                      className="w-full sm:w-auto shrink-0 py-2.5 px-4 rounded-full bg-[#FFFBF2] hover:bg-[#F5EBD7] text-[#174B3D] text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-[#94713F]" />
+                      <span>Compartir en redes</span>
+                    </button>
+                  </div>
+
                   {/* Dedicatoria para Regalo (Opcional) 
                   <div className="bg-white border border-cream-200 rounded-3xl p-4 sm:p-5 shadow-soft flex flex-col justify-between space-y-3">
                     <div className="flex items-start justify-between gap-3">
@@ -2892,6 +2922,16 @@ export default function personalizedWallArt() {
                     </span>
                   </button>
 
+                  {/* Viral Share Card CTA */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSocialShareModal(true)}
+                    className="w-full py-3 px-5 rounded-full bg-[#FFFBF2] hover:bg-[#F5EBD7] border border-[#c6a26c] text-[#174B3D] text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Share2 className="w-4 h-4 text-[#94713F]" />
+                    <span>Compartir mi creación en redes sociales</span>
+                  </button>
+
                   {/* Secondary Export Watermarked Preview File CTA */}
                   <button
                     onClick={() => handleDownload(selectedPrintPreset)}
@@ -3163,6 +3203,21 @@ export default function personalizedWallArt() {
             </div>
           );
         })()}
+
+        {/* Modal de Tarjeta Editorial Compartible para Redes Sociales */}
+        <SocialShareModal
+          isOpen={showSocialShareModal}
+          onClose={() => setShowSocialShareModal(false)}
+          artworkUrl={fusedResultUrl || selectedCharacter.fusionSampleUrl}
+          petImageUrl={petImage}
+          themeName={activeThemeName}
+          characterId={selectedCharacter.id}
+          petName={
+            includePetInscription && petInscriptionName.trim()
+              ? petInscriptionName.trim()
+              : null
+          }
+        />
       </main>
     </div>
   );
