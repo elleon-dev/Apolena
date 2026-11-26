@@ -67,26 +67,47 @@ export async function GET(request: NextRequest) {
           where: { status: "completed" },
           select: {
             provider: true,
+            model_used: true,
+            variants: true,
             created_at: true,
           },
           orderBy: { created_at: "desc" },
-          take: 2000,
+          take: 5000,
         })
         .catch(() => []);
 
-      for (const job of jobs) {
-        const key = (job.provider || "openai").toLowerCase();
+      const recordUsage = (rawProvider: string, createdAt: Date) => {
+        const key = rawProvider.toLowerCase();
         const bucket = key.includes("gemini")
           ? "gemini"
           : key.includes("fal")
             ? "fal"
             : "openai";
         providerStats[bucket].total += 1;
-        if (job.created_at >= startOfMonth) {
+        if (createdAt >= startOfMonth) {
           providerStats[bucket].thisMonth += 1;
         }
         if (!providerStats[bucket].lastUsedAt) {
-          providerStats[bucket].lastUsedAt = job.created_at.toISOString();
+          providerStats[bucket].lastUsedAt = createdAt.toISOString();
+        }
+      };
+
+      for (const job of jobs) {
+        const variants = Array.isArray(job.variants)
+          ? (job.variants as Array<{ provider?: string; modelUsed?: string }>)
+          : [];
+        if (variants.length > 0) {
+          for (const v of variants) {
+            recordUsage(
+              v.provider || v.modelUsed || job.provider || "openai",
+              job.created_at,
+            );
+          }
+        } else {
+          recordUsage(
+            job.model_used || job.provider || "openai",
+            job.created_at,
+          );
         }
       }
     }

@@ -4429,6 +4429,9 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                   <h2 className="font-serif text-2xl font-semibold text-stone-900 mt-0.5">
                     Consumo y Estado por Modelo
                   </h2>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Contabiliza imágenes generadas registradas en base de datos (<code>generation_jobs</code>, 1 propuesta por modelo). El saldo real en USD/PEN se consulta en el panel de facturación de cada proveedor.
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -4503,7 +4506,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="p-2.5 rounded-xl bg-white border border-cream-200">
                           <span className="text-[10px] text-stone-500 block">
-                            Retratos este mes
+                            Imágenes este mes (BD)
                           </span>
                           <span className="font-mono text-lg font-bold text-[#174B3D]">
                             {stats.thisMonth}
@@ -4511,7 +4514,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         </div>
                         <div className="p-2.5 rounded-xl bg-white border border-cream-200">
                           <span className="text-[10px] text-stone-500 block">
-                            Total histórico
+                            Total histórico (BD)
                           </span>
                           <span className="font-mono text-lg font-bold text-stone-900">
                             {stats.total}
