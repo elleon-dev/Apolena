@@ -68,6 +68,20 @@ export interface GeneratedVariant {
   modelUsed: string;
   imageUrl: string;
   executionSeconds: number;
+  qualityScore?: number;
+  qualityBreakdown?: {
+    petFidelity: number;
+    proportions: number;
+    characterMatch: number;
+    framing: number;
+  };
+  wasAutoRetried?: boolean;
+}
+
+export interface GenerationJobFeedback {
+  reason: "no_match_pet" | "bad_proportions" | "too_dark" | "cropped_ears";
+  variantId?: string | null;
+  submittedAt: string;
 }
 
 export interface GenerationJobSettings {
@@ -78,6 +92,8 @@ export interface GenerationJobSettings {
   includePetInscription?: boolean;
   petInscriptionName?: string;
   dedicationNote?: string;
+  feedback?: GenerationJobFeedback | null;
+  dismissed_from_studio?: boolean;
   updatedAt?: string;
 }
 

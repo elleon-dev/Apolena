@@ -7,6 +7,11 @@ import {
   FAMOUS_CHARACTERS,
 } from "@/data/characters";
 import { AIProviderId, ApiKeysOverride, GeneratedVariant } from "./types";
+import {
+  evaluatePortraitQuality,
+  getLearnedCharacterPromptHints,
+  QualityBreakdown,
+} from "./ai-quality-judge";
 
 export interface PipelineProgressCallback {
   (progress: number, stepLabel: string, stage: string): void;
@@ -1310,6 +1315,7 @@ export async function runMultiModelFusionPipeline(
 
     let sharedPetFingerprint: string | null = null;
     let sharedWardrobeDesc: string | null = null;
+    let learnedCharacterHints: string | null = null;
     let sharedAssets: PrecomputedFusionAssets | undefined = undefined;
     const themeSource =
     customThemeImageUrl ||
@@ -1339,7 +1345,7 @@ export async function runMultiModelFusionPipeline(
         themeData && (isCustomRef || !hasDetailedCatalogDesc),
       );
 
-      const [fpResult, wardrobeResult] = await Promise.all([
+      const [fpResult, wardrobeResult, learnedHintsResult] = await Promise.all([
         extractPetIdentityFingerprint(
           pet1Data,
           pet2Data,
@@ -1356,10 +1362,12 @@ export async function runMultiModelFusionPipeline(
               isCustomRef,
             )
           : Promise.resolve(null),
+        getLearnedCharacterPromptHints(character.id).catch(() => null),
       ]);
 
       sharedPetFingerprint = fpResult;
       sharedWardrobeDesc = wardrobeResult;
+      learnedCharacterHints = learnedHintsResult;
     } catch (fpErr) {
       console.warn("[Pet & wardrobe pre-analysis warning]:", fpErr);
     }
@@ -1379,6 +1387,7 @@ export async function runMultiModelFusionPipeline(
       ...input,
       customPrompt: [
         input.customPrompt?.trim(),
+        learnedCharacterHints,
         "ARTISTIC DIRECTION (PROPOSAL 1 - OIL FINE ART): Preserve the EXACT brightness, vibrant color palette, lighting, costume, and background scene of the character reference image — strictly do NOT darken the image or add heavy shadows. Render with rich classic museum oil-painting brushwork and natural lifelike fur depth.",
       ]
         .filter(Boolean)
@@ -1389,35 +1398,142 @@ export async function runMultiModelFusionPipeline(
       ...input,
       customPrompt: [
         input.customPrompt?.trim(),
+        learnedCharacterHints,
         "ARTISTIC DIRECTION (PROPOSAL 2 - CRISP STUDIO DETAIL): Preserve the EXACT brightness, luminous ambient lighting, vibrant color palette, costume, and background scene of the character reference image — strictly NO dark/chiaroscuro mood and NO darkening of the background. Emphasize ultra-crisp fine detail in the eyes, whiskers, and fur texture with a clean, vibrant gallery finish and full-bleed edge-to-edge composition (strictly NO frames, NO canvas borders, NO walls).",
       ]
         .filter(Boolean)
         .join("\n"),
     };
 
+    const runWithQualityGuard = async (
+      baseInput: MultiModelFusionInput,
+      generator: (
+        attemptInput: MultiModelFusionInput,
+      ) => Promise<{ imageUrl: string; modelUsed: string }>,
+      label: string,
+    ): Promise<{
+      imageUrl: string;
+      modelUsed: string;
+      qualityScore?: number;
+      qualityBreakdown?: QualityBreakdown;
+      wasAutoRetried?: boolean;
+    }> => {
+      const first = await generator(baseInput);
+      if (!hasValidGemini || !sharedAssets?.pet1Data) {
+        return first;
+      }
+
+      const eval1 = await evaluatePortraitQuality({
+        pet1Data: sharedAssets.pet1Data,
+        themeData: sharedAssets.themeData,
+        generatedDataUrl: first.imageUrl,
+        geminiKey,
+        characterName: character.name,
+      });
+
+      if (!eval1) {
+        return first;
+      }
+
+      if (eval1.passed || !eval1.correctionNote) {
+        return {
+          ...first,
+          qualityScore: eval1.score,
+          qualityBreakdown: eval1.breakdown,
+          wasAutoRetried: false,
+        };
+      }
+
+      // Auto-reintento inteligente (máx. 1 vez) inyectando la corrección exacta del Juez de Calidad
+      console.info(
+        `[AI Quality Judge] ${label} scored ${eval1.score}/10 — auto-retrying with correction: ${eval1.correctionNote}`,
+      );
+      onProgress?.(
+        78,
+        "Perfeccionando fidelidad y detalles finales de tu retrato...",
+        "upscaling",
+      );
+
+      try {
+        const retryInput: MultiModelFusionInput = {
+          ...baseInput,
+          customPrompt: [
+            baseInput.customPrompt?.trim(),
+            `CRITICAL QUALITY CORRECTION FROM ART INSPECTOR (FIX THIS IMMEDIATELY): ${eval1.correctionNote}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        };
+
+        const second = await generator(retryInput);
+        const eval2 = await evaluatePortraitQuality({
+          pet1Data: sharedAssets.pet1Data,
+          themeData: sharedAssets.themeData,
+          generatedDataUrl: second.imageUrl,
+          geminiKey,
+          characterName: character.name,
+        });
+
+        if (!eval2 || eval2.score >= eval1.score) {
+          return {
+            ...second,
+            qualityScore: eval2?.score ?? eval1.score,
+            qualityBreakdown: eval2?.breakdown ?? eval1.breakdown,
+            wasAutoRetried: true,
+          };
+        }
+
+        // Si el primer intento tuvo mejor nota que el reintento, conservar el mejor
+        return {
+          ...first,
+          qualityScore: eval1.score,
+          qualityBreakdown: eval1.breakdown,
+          wasAutoRetried: true,
+        };
+      } catch (retryErr) {
+        console.warn(`[AI Quality Judge] ${label} retry failed, keeping first attempt:`, retryErr);
+        return {
+          ...first,
+          qualityScore: eval1.score,
+          qualityBreakdown: eval1.breakdown,
+          wasAutoRetried: false,
+        };
+      }
+    };
+
     // Arquitectura 1 propuesta = 1 proveedor en paralelo:
     // Propuesta 1: OpenAI (gpt-image-1.5) | Propuesta 2: Google Gemini (gemini-3.1-flash-image-preview)
     const [openaiResult, geminiResult] = await Promise.allSettled([
       hasValidOpenAI
-        ? runOpenAIFusion(
+        ? runWithQualityGuard(
             proposal1Input,
-            character,
-            openaiKey,
-            undefined,
-            sharedPetFingerprint,
-            sharedWardrobeDesc,
-            sharedAssets,
+            (attemptInput) =>
+              runOpenAIFusion(
+                attemptInput,
+                character,
+                openaiKey,
+                undefined,
+                sharedPetFingerprint,
+                sharedWardrobeDesc,
+                sharedAssets,
+              ),
+            "Propuesta 1 (OpenAI)",
           )
         : Promise.reject(new Error("OpenAI no configurado")),
       hasValidGemini
-        ? runGeminiFusion(
+        ? runWithQualityGuard(
             proposal2Input,
-            character,
-            geminiKey,
-            openaiKey,
-            sharedPetFingerprint,
-            sharedWardrobeDesc,
-            sharedAssets,
+            (attemptInput) =>
+              runGeminiFusion(
+                attemptInput,
+                character,
+                geminiKey,
+                openaiKey,
+                sharedPetFingerprint,
+                sharedWardrobeDesc,
+                sharedAssets,
+              ),
+            "Propuesta 2 (Gemini)",
           )
         : Promise.reject(new Error("Gemini no configurado")),
     ]);
@@ -1432,6 +1548,9 @@ export async function runMultiModelFusionPipeline(
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
+        qualityScore: openaiResult.value.qualityScore,
+        qualityBreakdown: openaiResult.value.qualityBreakdown,
+        wasAutoRetried: openaiResult.value.wasAutoRetried,
       });
     } else {
       console.warn(
@@ -1450,6 +1569,9 @@ export async function runMultiModelFusionPipeline(
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
+        qualityScore: geminiResult.value.qualityScore,
+        qualityBreakdown: geminiResult.value.qualityBreakdown,
+        wasAutoRetried: geminiResult.value.wasAutoRetried,
       });
     } else {
       console.warn(

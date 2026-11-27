@@ -271,6 +271,33 @@ export default function AdminDashboardPage() {
       string,
       { total: number; thisMonth: number; lastUsedAt: string | null }
     >;
+    qualityAnalytics?: {
+      winRate: {
+        openai: {
+          selectedCount: number;
+          purchasedCount: number;
+          avgQualityScore: number | null;
+          evaluatedCount: number;
+          autoRetriedCount: number;
+        };
+        gemini: {
+          selectedCount: number;
+          purchasedCount: number;
+          avgQualityScore: number | null;
+          evaluatedCount: number;
+          autoRetriedCount: number;
+        };
+      };
+      feedbackSummary: Record<string, number>;
+      topCharacters: Array<{
+        templateId: string;
+        totalJobs: number;
+        openaiWins: number;
+        geminiWins: number;
+        avgScore: number | null;
+        feedbackCount: number;
+      }>;
+    };
   } | null>(null);
   const [isResolvingAiAlert, setIsResolvingAiAlert] = useState(false);
   const [voucherPreviewModal, setVoucherPreviewModal] = useState<{
@@ -4648,6 +4675,127 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                   );
                 })}
               </div>
+
+              {/* Analítica de Calidad IA (Juez Automático + Win-Rate de Clientes + Feedback) */}
+              {aiHealthData?.qualityAnalytics && (() => {
+                const qa = aiHealthData.qualityAnalytics;
+                const totalSelected =
+                  qa.winRate.openai.selectedCount +
+                  qa.winRate.gemini.selectedCount;
+                const openaiPct =
+                  totalSelected > 0
+                    ? Math.round(
+                        (qa.winRate.openai.selectedCount / totalSelected) * 100,
+                      )
+                    : 0;
+                const geminiPct =
+                  totalSelected > 0 ? 100 - openaiPct : 0;
+                const feedbackLabels: Record<string, string> = {
+                  no_match_pet: "No se parece a mascota",
+                  bad_proportions: "Proporciones cabeza/cuerpo",
+                  too_dark: "Muy oscuro / fondo",
+                  cropped_ears: "Orejas/cabeza recortadas",
+                };
+                const totalFeedback = Object.values(qa.feedbackSummary).reduce(
+                  (a, b) => a + b,
+                  0,
+                );
+
+                return (
+                  <div className="pt-4 border-t border-cream-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#174B3D]">
+                          Calidad IA y Aprendizaje Continuo (Juez Automático + Elección de Clientes)
+                        </p>
+                        <p className="text-[11px] text-stone-500">
+                          Cada retrato se evalúa automáticamente antes de mostrarse (auto-reintento si baja de 7/10) y el feedback real alimenta las reglas de cada personaje.
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-cream-100 text-stone-700 border border-cream-200 shrink-0 self-start">
+                        {totalSelected} elecciones registradas
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {[
+                        {
+                          key: "openai" as const,
+                          title: "Propuesta 1 · OpenAI",
+                          pct: openaiPct,
+                          data: qa.winRate.openai,
+                        },
+                        {
+                          key: "gemini" as const,
+                          title: "Propuesta 2 · Google Gemini",
+                          pct: geminiPct,
+                          data: qa.winRate.gemini,
+                        },
+                      ].map((row) => (
+                        <div
+                          key={row.key}
+                          className="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-2.5"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-stone-900">
+                              {row.title}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-[#174B3D]/10 text-[#174B3D] text-[11px] font-bold">
+                              Win-Rate: {row.pct}%
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="p-2 rounded-xl bg-white border border-cream-200">
+                              <span className="text-[10px] text-stone-500 block">
+                                Elegida / Comprada
+                              </span>
+                              <span className="font-mono font-bold text-stone-900">
+                                {row.data.selectedCount} / {row.data.purchasedCount}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-white border border-cream-200">
+                              <span className="text-[10px] text-stone-500 block">
+                                Nota Juez IA
+                              </span>
+                              <span className="font-mono font-bold text-[#174B3D]">
+                                {row.data.avgQualityScore !== null
+                                  ? `${row.data.avgQualityScore}/10`
+                                  : "—"}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-white border border-cream-200">
+                              <span className="text-[10px] text-stone-500 block">
+                                Autocorregidas
+                              </span>
+                              <span className="font-mono font-bold text-amber-700">
+                                {row.data.autoRetriedCount}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {totalFeedback > 0 && (
+                      <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="font-bold text-amber-950">
+                          Feedback de clientes ({totalFeedback}):
+                        </span>
+                        {Object.entries(qa.feedbackSummary)
+                          .filter(([, count]) => count > 0)
+                          .map(([reason, count]) => (
+                            <span
+                              key={reason}
+                              className="px-2.5 py-0.5 rounded-full bg-white border border-amber-200 text-amber-900 font-semibold"
+                            >
+                              {feedbackLabels[reason] || reason}: {count}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

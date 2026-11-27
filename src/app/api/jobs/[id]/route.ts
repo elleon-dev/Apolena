@@ -60,6 +60,29 @@ export async function PATCH(
     if (typeof body.dedicationNote === "string") {
       allowedSettings.dedicationNote = body.dedicationNote.slice(0, 300);
     }
+    if (body.feedback && typeof body.feedback === "object") {
+      const validReasons = new Set([
+        "no_match_pet",
+        "bad_proportions",
+        "too_dark",
+        "cropped_ears",
+      ]);
+      const rawReason = String(body.feedback.reason || "");
+      if (validReasons.has(rawReason)) {
+        allowedSettings.feedback = {
+          reason: rawReason as
+            | "no_match_pet"
+            | "bad_proportions"
+            | "too_dark"
+            | "cropped_ears",
+          variantId:
+            typeof body.feedback.variantId === "string"
+              ? body.feedback.variantId.slice(0, 40)
+              : null,
+          submittedAt: new Date().toISOString(),
+        };
+      }
+    }
 
     const sessionUser = await getSessionUser().catch(() => null);
     const updated = await updateJobSettings(

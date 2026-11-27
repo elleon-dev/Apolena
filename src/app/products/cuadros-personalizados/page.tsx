@@ -442,6 +442,33 @@ export default function personalizedWallArt() {
   >("generation");
   const [pendingAutoGenerate, setPendingAutoGenerate] =
     useState<boolean>(false);
+  const [showFeedbackOptions, setShowFeedbackOptions] =
+    useState<boolean>(false);
+  const [feedbackSentJobId, setFeedbackSentJobId] = useState<string | null>(
+    null,
+  );
+
+  const handleSubmitPortraitFeedback = async (
+    reason: "no_match_pet" | "bad_proportions" | "too_dark" | "cropped_ears",
+  ) => {
+    if (!activeGenerationJobId) return;
+    setFeedbackSentJobId(activeGenerationJobId);
+    setShowFeedbackOptions(false);
+    try {
+      await fetch(`/api/jobs/${encodeURIComponent(activeGenerationJobId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          feedback: {
+            reason,
+            variantId: selectedVariantId || null,
+          },
+        }),
+      });
+    } catch {
+      // Silencioso: no interrumpir la experiencia del cliente
+    }
+  };
 
   const savePendingGenerationForAuth = useCallback(() => {
     try {
@@ -2832,6 +2859,68 @@ export default function personalizedWallArt() {
                         );
                       })}
                     </div>
+
+                    {/* Feedback discreto para mejora continua del atelier */}
+                    {activeGenerationJobId && !isSimulationJob && (
+                      <div className="pt-2 border-t border-cream-200/80 flex flex-col gap-2">
+                        {feedbackSentJobId === activeGenerationJobId ? (
+                          <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                            <span>
+                              Gracias por tu aporte. Lo usaremos para perfeccionar futuros retratos.
+                            </span>
+                          </p>
+                        ) : !showFeedbackOptions ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowFeedbackOptions(true)}
+                            className="self-start text-[11px] text-stone-500 hover:text-[#174B3D] underline underline-offset-2 transition-colors cursor-pointer"
+                          >
+                            ¿Algo no salió como esperabas? Ayúdanos a mejorar
+                          </button>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-semibold text-stone-700">
+                                ¿Qué deberíamos mejorar en la propuesta que estás viendo?
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowFeedbackOptions(false)}
+                                className="text-[10px] text-stone-400 hover:text-stone-700 cursor-pointer"
+                              >
+                                Cerrar
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                { id: "no_match_pet", label: "No se parece a mi mascota" },
+                                { id: "bad_proportions", label: "Proporción cabeza/cuerpo rara" },
+                                { id: "too_dark", label: "Muy oscuro / cambió el fondo" },
+                                { id: "cropped_ears", label: "Recortó orejas o cabeza" },
+                              ].map((opt) => (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleSubmitPortraitFeedback(
+                                      opt.id as
+                                        | "no_match_pet"
+                                        | "bad_proportions"
+                                        | "too_dark"
+                                        | "cropped_ears",
+                                    )
+                                  }
+                                  className="px-2.5 py-1 rounded-full bg-cream-50 hover:bg-[#174B3D] hover:text-white border border-cream-300 text-[11px] font-medium text-stone-700 transition-colors cursor-pointer"
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
