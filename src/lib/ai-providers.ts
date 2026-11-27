@@ -231,8 +231,8 @@ Output ONLY the factual physical description, nothing else.`;
       const candidateVisionModels = [
         "gemini-flash-lite-latest",
         "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
-        "gemini-3.5-flash",
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
       ];
       for (const modelId of candidateVisionModels) {
         try {
@@ -414,8 +414,8 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
       const candidateVisionModels = [
         "gemini-flash-lite-latest",
         "gemini-flash-latest",
-        "gemini-3.5-flash-lite",
-        "gemini-3.5-flash",
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
       ];
       for (const modelId of candidateVisionModels) {
         try {
@@ -860,11 +860,12 @@ async function runGeminiFusion(
       geminiKey,
     ));
 
-  const hasDetailedCatalogDesc =
-    !isCustomRef && (character.description?.trim().length ?? 0) >= 40;
-
+  // Para Gemini, SIEMPRE extraemos la descripción rica y neutral del vestuario/escena
+  // a partir de `themeData` (cuando existe) y NO enviamos `themeData` como imagen al
+  // generador de imagen, porque `gemini-2.5-flash-image` tiende a copiar el rostro/cuerpo
+  // del animal de muestra de la imagen de referencia (contaminando o deformando proporciones).
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
-  if (!wardrobeDesc && themeData && !hasDetailedCatalogDesc) {
+  if (!wardrobeDesc && themeData) {
     try {
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
@@ -886,7 +887,7 @@ async function runGeminiFusion(
     wardrobeDesc,
     petIdentityFingerprint,
     isCustomRef,
-    Boolean(themeData),
+    false,
   );
 
   const petParts: any[] = [
@@ -910,8 +911,8 @@ async function runGeminiFusion(
   const parts: any[] = [
     {
       text: hasSecondPet
-        ? "CUSTOMER PET PHOTO 1 (PRIMARY SUBJECT — YOU MUST PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND IDENTITY 100%):"
-        : "CUSTOMER PET PHOTO (PRIMARY SUBJECT — YOU MUST PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND IDENTITY 100%):",
+        ? "CUSTOMER PET PHOTO 1 (PRIMARY SUBJECT — PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND NATURAL PROPORTIONS 100%):"
+        : "CUSTOMER PET PHOTO (PRIMARY SUBJECT — PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND NATURAL PROPORTIONS 100%):",
     },
     {
       inlineData: {
@@ -922,7 +923,7 @@ async function runGeminiFusion(
     ...(pet2Data
       ? [
           {
-            text: "CUSTOMER PET PHOTO 2 (SECOND SUBJECT — YOU MUST ALSO PRESERVE THIS EXACT PET'S FACE, FUR, AND IDENTITY 100%):",
+            text: "CUSTOMER PET PHOTO 2 (SECOND SUBJECT — PRESERVE THIS EXACT PET'S FACE, FUR, AND NATURAL PROPORTIONS 100%):",
           },
           {
             inlineData: {
@@ -932,21 +933,8 @@ async function runGeminiFusion(
           },
         ]
       : []),
-    ...(themeData
-      ? [
-          {
-            text: "COSTUME & BACKGROUND BLUEPRINT ONLY (CRITICAL: COMPLETELY IGNORE AND REPLACE THE ANIMAL FACE/HEAD/FUR SHOWN IN THIS REFERENCE IMAGE — COPY ONLY THE WARDROBE, ACCESSORIES, POSE, LIGHTING, AND BACKGROUND SCENE):",
-          },
-          {
-            inlineData: {
-              mimeType: themeData.mimeType,
-              data: themeData.base64,
-            },
-          },
-        ]
-      : []),
     {
-      text: `${fusionPrompt}\n\nMANDATORY OUTPUT FORMAT & IDENTITY CHECK:\n- Output MUST be a VERTICAL 2:3 portrait.\n- The animal in the final portrait MUST be the EXACT customer pet from the first image (NOT the reference animal from the costume blueprint).\n- Full-bleed edge-to-edge painting with NO picture frame, NO border, and NO wall.`,
+      text: `${fusionPrompt}\n\nMANDATORY OUTPUT FORMAT, ANATOMY & IDENTITY CHECK:\n- Output MUST be a ${hasSecondPet ? "HORIZONTAL 3:2" : "VERTICAL 2:3"} full-bleed fine-art chiaroscuro portrait with NO picture frame, NO border, and NO wall.\n- Paint ONLY the exact customer pet${hasSecondPet ? "s" : ""} shown in the attached photo${hasSecondPet ? "s" : ""}, keeping 100% of their real species, fur color/pattern, eye color, nose, and ears.\n- Maintain 100% realistic, natural head-to-shoulders anatomical proportions (NEVER an oversized head, bobblehead, or pasted-head look). Leave 20-25% open painted background headroom above the head/ears/hat.`,
     },
   ];
 
@@ -975,7 +963,7 @@ async function runGeminiFusion(
         generationConfig: {
           responseModalities: ["TEXT", "IMAGE"],
           imageConfig: {
-            aspectRatio: "2:3",
+            aspectRatio: hasSecondPet ? "3:2" : "2:3",
           },
         },
       }),
@@ -1028,8 +1016,8 @@ Output ONLY the direction note, nothing else.`;
   let geminiDirectionNote = customPrompt || "";
   try {
     const candidateVisionModels = [
-      "gemini-3.5-flash-lite",
-      "gemini-3.5-flash",
+      "gemini-flash-lite-latest",
+      "gemini-flash-latest",
     ];
     for (const modelId of candidateVisionModels) {
       try {
