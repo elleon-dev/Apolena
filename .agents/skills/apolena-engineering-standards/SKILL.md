@@ -15,9 +15,9 @@ Este skill define el **protocolo de desarrollo obligatorio** que todo cambio —
 
 ## 📋 Flujo de Trabajo Obligatorio (9 Fases)
 
-### Fase 1 — Investigación
+### Fase 1 — Investigación y Consulta Obligatoria de Skills (Antes de Tocar Código)
 
-- Leer y comprender los **Skills de Negocio** aplicables (`apolena-business-rules`).
+- **Regla Inalterable de Inicio:** Antes de diseñar, crear o modificar cualquier archivo, leer obligatoriamente los **Skills de Negocio** aplicables en `.agents/skills/` (`apolena-business-rules` y los dominios relacionados).
 - Localizar los archivos, componentes, funciones y tipos existentes relacionados con el cambio.
 - Revisar el modelo de datos en `prisma/schema.prisma` para entender la estructura real de la BD.
 
@@ -25,7 +25,7 @@ Este skill define el **protocolo de desarrollo obligatorio** que todo cambio —
 
 - Identificar qué archivos, flujos y endpoints serán afectados.
 - Verificar si el cambio requiere modificar alguna **regla de negocio establecida** → si es así, emitir alerta y solicitar aprobación explícita del usuario.
-- Evaluar efectos colaterales en otros módulos (Estudio IA, Checkout 50/50, Tracking Público, Dashboard Usuario, Panel Admin, Cola de Emails).
+- Evaluar efectos colaterales en otros módulos (Estudio IA, Checkout Pago Total 100%, Tracking Público, Perfil `/profile`, Dashboard Usuario `/orders`, Panel Admin `/dashboard`, Despacho a Proveedor, Cola de Emails).
 
 ### Fase 3 — Reutilización Primero
 
@@ -42,8 +42,8 @@ Este skill define el **protocolo de desarrollo obligatorio** que todo cambio —
 
 ### Fase 5 — Integridad de Flujos
 
-- Verificar que el cambio no rompa ningún flujo existente (generación IA, checkout 50%, tracking de 3 pasos, cobro del 50% restante contraentrega, panel de usuario, panel admin).
-- Probar caminos críticos: ¿qué pasa si un dato opcional es `null`? ¿qué pasa si un usuario no autenticado intenta entrar a `/dashboard` o un rol `user` intenta entrar a `/admin`?
+- Verificar que el cambio no rompa ningún flujo existente (generación IA, checkout con pago 100%, tracking de 3 pasos, despacho a proveedor, perfil de usuario `/profile`, panel `/orders`, panel admin `/dashboard`).
+- Probar caminos críticos: ¿qué pasa si un dato opcional es `null`? ¿qué pasa si un usuario no autenticado intenta entrar a `/dashboard` o `/profile`, o un rol `user` intenta entrar a `/admin`?
 
 ### Fase 6 — Limpieza y Erradicación de Diálogos Nativos
 
@@ -71,12 +71,13 @@ npx tsc --noEmit
 npm run lint
 ```
 
-### Fase 9 — Sincronización y Actualización Obligatoria de Skills
+### Fase 9 — Sincronización y Actualización Obligatoria de Skills (Puerta de Cierre Pre-Commit)
 
-Antes de dar por concluida la sesión:
+**Ninguna implementación, actualización o commit se considera terminado sin completar esta fase:**
 
-1. **Evaluar cambios de lógica o modelo:** Si el cambio extendió o modificó un dominio existente, actualizar su respectivo `.agents/skills/apolena-business-[dominio]/SKILL.md`.
+1. **Evaluar cambios de lógica, contratos, endpoints o modelo:** Si el cambio agregó, extendió o modificó un dominio existente, actualizar obligatoriamente su respectivo `.agents/skills/apolena-business-[dominio]/SKILL.md` **en el mismo commit** (nunca diferirlo para después).
 2. **Crear nuevos skills de dominio:** Si se implementó un nuevo módulo funcional, crear su carpeta y `SKILL.md` y registrarlo en `apolena-business-rules` y `AGENTS.md`.
+3. **Reportar en el cierre:** Indicar explícitamente al usuario qué skills fueron consultados y cuáles fueron actualizados (o confirmar si el cambio fue puramente cosmético y no requirió actualización).
 
 ---
 

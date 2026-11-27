@@ -27,13 +27,14 @@ Si una solicitud requiere alterar o romper alguna regla de negocio plasmada en l
 
 ---
 
-## 🔄 Protocolo de Sincronización Obligatoria de Skills (Post-Cambio / Commit)
+## 🔄 Protocolo de Sincronización Obligatoria de Skills (Post-Cambio / Pre-Commit)
 
-Ninguna tarea o ciclo de desarrollo se considera terminado sin ejecutar la **sincronización de skills**:
+Ninguna tarea, implementación, actualización o commit se considera terminado sin ejecutar la **sincronización de skills en el mismo ciclo**:
 
-1. **Si se modificó o amplió un dominio existente:**
-   - La IA **DEBE** actualizar inmediatamente el archivo `SKILL.md` del dominio correspondiente en `.agents/skills/` reflejando fórmulas, estados, columnas o contratos nuevos.
-2. **Si se creó un nuevo dominio de negocio o módulo (ej. nuevo tipo de producto o pasarela):**
+1. **Antes de implementar (Lectura Obligatoria):** Consultar los `SKILL.md` de los dominios involucrados para respetar arquitectura, contratos y reglas vigentes.
+2. **Al finalizar — Si se modificó o amplió un dominio existente:**
+   - La IA **DEBE** actualizar inmediatamente el archivo `SKILL.md` del dominio correspondiente en `.agents/skills/` reflejando fórmulas, estados, endpoints, columnas, límites o contratos nuevos **antes de hacer commit/push**.
+3. **Al finalizar — Si se creó un nuevo dominio de negocio o módulo (ej. nuevo tipo de producto, rol o pasarela):**
    - La IA **DEBE** crear la carpeta `.agents/skills/apolena-business-[nuevo-dominio]/SKILL.md` con su frontmatter YAML, descripción, reglas inalterables y registrarlo en este `AGENTS.md` y en `apolena-business-rules/SKILL.md`.
-3. **Si el cambio fue meramente visual / cosmético:**
-   - No se requiere modificar skills.
+4. **Si el cambio fue meramente visual / cosmético:**
+   - No se requiere modificar skills, pero debe indicarse explícitamente en el resumen final.
