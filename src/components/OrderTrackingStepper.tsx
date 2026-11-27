@@ -15,6 +15,8 @@ import type { OrderStatus, PaymentStatus } from "@/lib/db-service";
 interface OrderTrackingStepperProps {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  createdAt?: string | null;
+  paymentVerifiedAt?: string | null;
   manufacturingStartedAt?: string | null;
   shippedAt?: string | null;
   deliveredAt?: string | null;
@@ -36,6 +38,8 @@ function formatStepTimestamp(ts?: string | null): string | null {
 export function OrderTrackingStepper({
   status,
   paymentStatus,
+  createdAt,
+  paymentVerifiedAt,
   manufacturingStartedAt,
   shippedAt,
   deliveredAt,
@@ -69,15 +73,21 @@ export function OrderTrackingStepper({
     (status === "delivered" || status === "completed") &&
     paymentStatus === "paid_full";
 
+  const isPaymentVerified = paymentStatus === "paid_full";
+  const resolvedPendingTimestamp =
+    paymentVerifiedAt ||
+    (isPaymentVerified ? createdAt || manufacturingStartedAt : null);
+
   const steps = [
     {
       num: 1,
       key: "pending",
       title: "1. Pendiente",
-      subtitle:
-        "Pedido recibido · Validando tu pago para enviarlo al taller",
+      subtitle: isPaymentVerified
+        ? "Pago 100% verificado y pedido validado para taller"
+        : "Pedido recibido · Validando tu pago para enviarlo al taller",
       icon: Clock,
-      timestamp: null,
+      timestamp: resolvedPendingTimestamp,
     },
     {
       num: 2,

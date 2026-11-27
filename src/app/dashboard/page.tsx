@@ -5478,6 +5478,12 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 <OrderTrackingStepper
                   status={selectedOrder.status}
                   paymentStatus={selectedOrder.payment_status}
+                  createdAt={selectedOrder.created_at}
+                  paymentVerifiedAt={
+                    selectedOrder.paymentTransactions?.find(
+                      (t) => t.verified_at,
+                    )?.verified_at || null
+                  }
                   manufacturingStartedAt={
                     selectedOrder.manufacturing_started_at
                   }

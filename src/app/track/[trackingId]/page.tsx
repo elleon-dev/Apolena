@@ -314,6 +314,11 @@ export default function TrackingDetailPage({
               <OrderTrackingStepper
                 status={order.status}
                 paymentStatus={order.payment_status}
+                createdAt={order.created_at}
+                paymentVerifiedAt={
+                  order.paymentTransactions?.find((t) => t.verified_at)
+                    ?.verified_at || null
+                }
                 manufacturingStartedAt={order.manufacturing_started_at}
                 shippedAt={order.shipped_at}
                 deliveredAt={order.delivered_at}
