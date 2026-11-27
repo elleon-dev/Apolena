@@ -2727,13 +2727,13 @@ export default function personalizedWallArt() {
                           variant.providerTitle ||
                           (idx === 0
                             ? "Propuesta 1 · Óleo Fine Art"
-                            : "Propuesta 2 · Claroscuro y Detalle");
+                            : "Propuesta 2 · Detalle y Luminosidad");
                         const shortTitle =
                           idx === 0 ? "Propuesta 1 · Óleo" : "Propuesta 2 · Estudio";
                         const proposalDesc =
                           idx === 0
                             ? "Pinceladas ricas en textura y calidez clásica"
-                            : "Contrastes profundos, realce de brillo y mirada";
+                            : "Máximo detalle en mirada, pelaje y luz fiel al personaje";
 
                         return (
                           <div

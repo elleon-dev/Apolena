@@ -1359,14 +1359,14 @@ export async function runMultiModelFusionPipeline(
 
     const variants: GeneratedVariant[] = [];
 
-    // Run both artistic proposals concurrently using the highest-fidelity image editor with
-    // distinct museum lighting directions (Óleo Fine Art vs Claroscuro y Detalle),
-    // reusing pre-resolved images, locked pet identity fingerprint, and character blueprint.
+    // Run both artistic proposals concurrently using OpenAI (`gpt-image-1.5` with `input_fidelity: "high"`)
+    // so both proposals use the exact character blueprint + real customer pet face and preserve the
+    // original brightness/colors of the character image (with automatic Gemini fallback if OpenAI fails).
     const proposal1Input: MultiModelFusionInput = {
       ...input,
       customPrompt: [
         input.customPrompt?.trim(),
-        "ARTISTIC DIRECTION (PROPOSAL 1 - OIL FINE ART): Rich classic museum oil-painting finish with warm golden gallery key lighting, velvety brush texture on the costume and background, and soft lifelike fur depth.",
+        "ARTISTIC DIRECTION (PROPOSAL 1 - OIL FINE ART): Preserve the EXACT brightness, vibrant color palette, lighting, costume, and background scene of the character reference image — strictly do NOT darken the image or add heavy shadows. Render with rich classic museum oil-painting brushwork and natural lifelike fur depth.",
       ]
         .filter(Boolean)
         .join("\n"),
@@ -1376,72 +1376,104 @@ export async function runMultiModelFusionPipeline(
       ...input,
       customPrompt: [
         input.customPrompt?.trim(),
-        "ARTISTIC DIRECTION (PROPOSAL 2 - CHIAROSCURO & CRISP DETAIL): Dramatic sculptural studio chiaroscuro lighting with warm golden rim light separating the fur and costume from deeper rich shadows, ultra-crisp micro-detail in the eyes and coat, and full-bleed edge-to-edge composition (strictly NO frames, NO canvas borders, NO walls).",
+        "ARTISTIC DIRECTION (PROPOSAL 2 - CRISP STUDIO DETAIL): Preserve the EXACT brightness, luminous ambient lighting, vibrant color palette, costume, and background scene of the character reference image — strictly NO dark/chiaroscuro mood and NO darkening of the background. Emphasize ultra-crisp fine detail in the eyes, whiskers, and fur texture with a clean, vibrant gallery finish and full-bleed edge-to-edge composition (strictly NO frames, NO canvas borders, NO walls).",
       ]
         .filter(Boolean)
         .join("\n"),
     };
 
-    // Arquitectura extensible: 1 propuesta = 1 modelo específico en paralelo.
-    // Propuesta 1: OpenAI | Propuesta 2: Google Gemini | (Futuro: 3er modelo como Propuesta 3)
-    const [openaiResult, geminiResult] = await Promise.allSettled([
-      hasValidOpenAI
-        ? runOpenAIFusion(
-            proposal1Input,
+    const runProposalWithFallback = async (
+      proposalInput: MultiModelFusionInput,
+    ): Promise<{
+      imageUrl: string;
+      modelUsed: string;
+      provider: "openai" | "gemini";
+    }> => {
+      if (hasValidOpenAI) {
+        try {
+          const res = await runOpenAIFusion(
+            proposalInput,
             character,
             openaiKey,
             undefined,
             sharedPetFingerprint,
             sharedWardrobeDesc,
             sharedAssets,
-          )
-        : Promise.reject(new Error("OpenAI no configurado")),
-      hasValidGemini
-        ? runGeminiFusion(
-            proposal2Input,
-            character,
-            geminiKey,
-            openaiKey,
-            sharedPetFingerprint,
-            sharedWardrobeDesc,
-            sharedAssets,
-          )
-        : Promise.reject(new Error("Gemini no configurado")),
+          );
+          return { ...res, provider: "openai" };
+        } catch (openaiErr) {
+          if (hasValidGemini) {
+            console.warn(
+              "[Proposal OpenAI -> Gemini fallback]:",
+              openaiErr,
+            );
+            const fallbackRes = await runGeminiFusion(
+              proposalInput,
+              character,
+              geminiKey,
+              openaiKey,
+              sharedPetFingerprint,
+              sharedWardrobeDesc,
+              sharedAssets,
+            );
+            return { ...fallbackRes, provider: "gemini" };
+          }
+          throw openaiErr;
+        }
+      }
+      if (hasValidGemini) {
+        const res = await runGeminiFusion(
+          proposalInput,
+          character,
+          geminiKey,
+          openaiKey,
+          sharedPetFingerprint,
+          sharedWardrobeDesc,
+          sharedAssets,
+        );
+        return { ...res, provider: "gemini" };
+      }
+      throw new Error("Ningún proveedor de IA configurado");
+    };
+
+    const [proposal1Result, proposal2Result] = await Promise.allSettled([
+      runProposalWithFallback(proposal1Input),
+      runProposalWithFallback(proposal2Input),
     ]);
 
-    if (openaiResult.status === "fulfilled") {
+    if (proposal1Result.status === "fulfilled") {
       variants.push({
         id: "variant-1",
-        provider: "openai",
+        provider: proposal1Result.value.provider,
         providerTitle: "Propuesta 1 · Óleo Fine Art",
         modelUsed: "Técnica Óleo Bellas Artes",
-        imageUrl: openaiResult.value.imageUrl,
+        imageUrl: proposal1Result.value.imageUrl,
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
       });
     } else {
       console.warn(
-        "[OpenAI Proposal Error]:",
-        (openaiResult as PromiseRejectedResult).reason,
+        "[Proposal 1 Error]:",
+        (proposal1Result as PromiseRejectedResult).reason,
       );
     }
 
-    if (geminiResult.status === "fulfilled") {
+    if (proposal2Result.status === "fulfilled") {
       variants.push({
         id: "variant-2",
-        provider: "gemini",
-        providerTitle: "Propuesta 2 · Claroscuro y Detalle",
-        modelUsed: "Técnica Claroscuro de Estudio",
-        imageUrl: geminiResult.value.imageUrl,
+        provider: proposal2Result.value.provider,
+        providerTitle: "Propuesta 2 · Detalle y Luminosidad",
+        modelUsed: "Técnica Detalle de Estudio",
+        imageUrl: proposal2Result.value.imageUrl,
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
       });
     } else {
       console.warn(
-        "[Gemini Proposal Error]:",
-        (geminiResult as PromiseRejectedResult).reason,
+        "[Proposal 2 Error]:",
+        (proposal2Result as PromiseRejectedResult).reason,
       );
     }
 
@@ -1510,8 +1542,8 @@ export async function runMultiModelFusionPipeline(
     {
       id: "variant-2",
       provider: "gemini",
-      providerTitle: "Propuesta 2 · Claroscuro y Detalle",
-      modelUsed: "Técnica Claroscuro de Estudio",
+      providerTitle: "Propuesta 2 · Detalle y Luminosidad",
+      modelUsed: "Técnica Detalle de Estudio",
       imageUrl: sample2,
       executionSeconds,
     },
