@@ -711,6 +711,9 @@ export default function personalizedWallArt() {
                 new Date(a.updatedAt).getTime(),
             )
             .slice(0, 8);
+          for (const c of [...merged].reverse()) {
+            upsertSavedCreation(c);
+          }
           return merged;
         });
 
@@ -740,8 +743,11 @@ export default function personalizedWallArt() {
           if (!data?.job) return;
           const mapped = mapJobToSavedCreation(data.job, resolveCharName);
           if (mapped) {
-            const updatedList = upsertSavedCreation(mapped);
-            setSavedCreations(updatedList);
+            upsertSavedCreation(mapped);
+            setSavedCreations((prev) => {
+              const filtered = prev.filter((c) => c.jobId !== mapped.jobId);
+              return [mapped, ...filtered].slice(0, 8);
+            });
             applySavedCreationToStudio(mapped, true);
           }
         })
@@ -854,8 +860,14 @@ export default function personalizedWallArt() {
       updatedAt: new Date().toISOString(),
     };
 
-    const nextList = upsertSavedCreation(currentSnapshot);
-    setSavedCreations(nextList);
+    upsertSavedCreation(currentSnapshot);
+    setSavedCreations((prev) => {
+      const exists = prev.some((c) => c.jobId === currentSnapshot.jobId);
+      if (!exists) return [currentSnapshot, ...prev].slice(0, 8);
+      return prev.map((c) =>
+        c.jobId === currentSnapshot.jobId ? currentSnapshot : c,
+      );
+    });
     setActiveCreationId(activeGenerationJobId);
 
     const timer = setTimeout(() => {
@@ -1355,8 +1367,11 @@ export default function personalizedWallArt() {
             productSlug: "cuadros-personalizados",
             updatedAt: new Date().toISOString(),
           };
-          const updatedList = upsertSavedCreation(snapshot);
-          setSavedCreations(updatedList);
+          upsertSavedCreation(snapshot);
+          setSavedCreations((prev) => {
+            const filtered = prev.filter((c) => c.jobId !== snapshot.jobId);
+            return [snapshot, ...filtered].slice(0, 8);
+          });
           setActiveCreationId(jobId);
           trackPortraitGenerated({
             characterId: selectedCharacter.id,
@@ -1730,8 +1745,14 @@ export default function personalizedWallArt() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const nextList = removeSavedCreation(item.jobId);
+                            removeSavedCreation(item.jobId);
+                            const nextList = savedCreations.filter(
+                              (c) => c.jobId !== item.jobId,
+                            );
                             setSavedCreations(nextList);
+                            fetch(`/api/jobs/${encodeURIComponent(item.jobId)}`, {
+                              method: "DELETE",
+                            }).catch(() => {});
                             if (activeGenerationJobId === item.jobId) {
                               if (nextList[0]) {
                                 applySavedCreationToStudio(nextList[0], true);

@@ -115,6 +115,7 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
      - **Recuerdo Digital HD del Cliente (post-entrega en `/orders` y `/track/[trackingId]`):** se descarga en alta resolución **sin el margen de remangado de +4 cm** (`bleedCm = 0`) e incluye el nombre de la mascota únicamente si el usuario lo activó (`pet_inscription.enabled === true`).
    - **Detalles del Producto y Material:** Los cuadros son elaborados en **lienzo de tela canvas**, tensados artesanalmente sobre bastidor de madera maciza (listos para colgar).
    - Al continuar a checkout, la obra elegida viaja en el borrador de orden (`apolena_checkout_draft`) como `generated_art_url`.
+   - **Historial de Creaciones Guardadas (`GET /api/jobs` y `DELETE /api/jobs/[id]`):** Las creaciones recientes del usuario se sincronizan entre PostgreSQL y `localStorage` sin sobrescribir la lista al hidratar una creación individual. Al eliminar una creación desde la barra *"Mis creaciones guardadas"*, `DELETE /api/jobs/[id]` verifica propiedad y protege órdenes compradas: si no está vinculada a ningún `order_item`, la elimina definitivamente de `generation_jobs`; si ya fue comprada, marca `settings.dismissed_from_studio = true` para ocultarla del estudio sin afectar la orden ni su archivo maestro.
 
 ---
 
