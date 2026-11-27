@@ -47,7 +47,7 @@ El seguimiento visual (`OrderTrackingStepper`) y los cards KPI superiores del Da
 
 ### Estado 3 — En Camino (`status = "in_transit"`)
 
-- **Disparador único:** Se activa **al completar los datos de Empresa Courier y Despacho** en `EditTrackingModal` (`courier`, `tracking_number`, `carrier_phone`, `estimated_delivery`).
+- **Disparador único y bloqueo secuencial:** El card **Empresa Courier y Despacho** (`EditTrackingModal`) y el endpoint `edit_tracking_courier` permanecen **bloqueados mientras la orden está en `pending`**. Se habilitan únicamente a partir de **`manufacturing` (En Fabricación)** para que, al terminar la fabricación, el administrador llene los datos del courier (`courier`, `tracking_number`, `carrier_phone`, `estimated_delivery`) y pase la orden a `in_transit`.
 - **Descripción para el usuario:** _"En camino — Tu pedido ya salió de nuestro taller hacia tu dirección de entrega."_
 - Timestamps asociados: `shipped_at`.
 

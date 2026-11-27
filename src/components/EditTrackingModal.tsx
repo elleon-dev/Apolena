@@ -201,9 +201,7 @@ export function EditTrackingModal({
           estimated_delivery: estimatedDelivery ? estimatedDelivery : null,
           notes: notes.trim() || null,
           changeStatusToInTransit:
-            (order.status === "manufacturing" ||
-              (order.status as string) === "pending") &&
-            changeStatusToInTransit,
+            order.status === "manufacturing" && changeStatusToInTransit,
         }),
       });
 
@@ -225,8 +223,7 @@ export function EditTrackingModal({
     }
   };
 
-  const isStepAdvanceable =
-    order.status === "manufacturing" || (order.status as string) === "pending";
+  const isStepAdvanceable = order.status === "manufacturing";
 
   return (
     <div

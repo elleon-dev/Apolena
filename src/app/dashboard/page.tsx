@@ -2463,19 +2463,22 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             <span>Editar Orden</span>
                           </button>
 
-                          {/* Botón Editar Tracking & Courier */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingTrackingOrder(order);
-                            }}
-                            className="px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all cursor-pointer"
-                            title="Editar Tracking ID y datos del Courier (Shalom, DiDi, inDrive, etc.)"
-                          >
-                            <Truck className="w-3 h-3 text-[#c6a26c]" />
-                            <span>Tracking & Courier</span>
-                          </button>
+                          {/* Botón Editar Tracking & Courier (habilitado desde En Fabricación en adelante) */}
+                          {order.status !== "pending" &&
+                            order.status !== "cancelled" && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTrackingOrder(order);
+                                }}
+                                className="px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all cursor-pointer"
+                                title="Editar Tracking ID y datos del Courier (Shalom, DiDi, inDrive, etc.)"
+                              >
+                                <Truck className="w-3 h-3 text-[#c6a26c]" />
+                                <span>Tracking & Courier</span>
+                              </button>
+                            )}
 
                           {/* Botón Eliminar Orden (admin y super_admin) */}
                           <button
@@ -6149,84 +6152,120 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       );
                     })()}
 
-                    {/* 5. Empresa Courier y Despacho */}
-                    <div className="p-5 rounded-2xl bg-[#FFFBF2] border border-[#E8DEC8] space-y-3 flex flex-col justify-between">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#174B3D] flex items-center gap-1.5">
-                            <Truck className="w-3.5 h-3.5 text-[#c6a26c]" />
-                            <span>Empresa Courier y Despacho</span>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEditingTrackingOrder(selectedOrder)
-                            }
-                            className="px-3 py-1 rounded-full bg-[#174B3D] text-white hover:bg-[#134034] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                          >
-                            <Pencil className="w-3 h-3 text-[#c6a26c]" />
-                            <span>Editar</span>
-                          </button>
-                        </div>
-
-                        <div className="space-y-1.5 text-stone-700 text-xs">
-                          <p className="flex items-center gap-2">
-                            <strong>Operador:</strong>{" "}
-                            <span className="font-bold text-[#174B3D]">
-                              {selectedOrder.packages?.[0]?.courier ||
-                                "Apolena (Transporte Propio)"}
-                            </span>
-                          </p>
-                          <p>
-                            <strong>Tracking ID Oficial:</strong>{" "}
-                            <span className="font-mono font-bold text-stone-900">
-                              {selectedOrder.tracking_id}
-                            </span>
-                          </p>
-                          {selectedOrder.packages?.[0]?.tracking_number && (
-                            <p>
-                              <strong>Nro. de Guía / Código Courier:</strong>{" "}
-                              <span className="font-mono font-semibold text-stone-800">
-                                {selectedOrder.packages[0].tracking_number}
+                    {/* 5. Empresa Courier y Despacho (habilitado solo desde En Fabricación en adelante) */}
+                    {(() => {
+                      const canEditCourier =
+                        selectedOrder.status === "manufacturing" ||
+                        selectedOrder.status === "in_transit" ||
+                        selectedOrder.status === "delivered" ||
+                        selectedOrder.status === "completed";
+                      return (
+                        <div
+                          className={`p-5 rounded-2xl border space-y-3 flex flex-col justify-between ${
+                            canEditCourier
+                              ? "bg-[#FFFBF2] border-[#E8DEC8]"
+                              : "bg-cream-50/70 border-cream-200 opacity-75"
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-[#174B3D] flex items-center gap-1.5">
+                                <Truck className="w-3.5 h-3.5 text-[#c6a26c]" />
+                                <span>Empresa Courier y Despacho</span>
                               </span>
-                            </p>
-                          )}
-                          {selectedOrder.packages?.[0]?.carrier_phone && (
-                            <p>
-                              <strong>Teléfono del Chofer / Courier:</strong>{" "}
-                              <span>
-                                {selectedOrder.packages[0].carrier_phone}
-                              </span>
-                            </p>
-                          )}
-                          {selectedOrder.packages?.[0]?.estimated_delivery && (
-                            <p>
-                              <strong>Entrega Estimada:</strong>{" "}
-                              <span>
-                                {new Date(
-                                  selectedOrder.packages[0].estimated_delivery,
-                                ).toLocaleDateString("es-PE", {
-                                  dateStyle: "long",
-                                })}
-                              </span>
-                            </p>
-                          )}
-                          {selectedOrder.packages?.[0]?.tracking_url && (
-                            <p className="pt-1">
-                              <a
-                                href={selectedOrder.packages[0].tracking_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#174B3D] hover:underline"
+                              <button
+                                type="button"
+                                disabled={!canEditCourier}
+                                onClick={() =>
+                                  canEditCourier &&
+                                  setEditingTrackingOrder(selectedOrder)
+                                }
+                                title={
+                                  canEditCourier
+                                    ? "Completar datos de Courier y pasar a En Camino"
+                                    : "Se habilita cuando la orden pase a En Fabricación"
+                                }
+                                className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all shadow-2xs ${
+                                  canEditCourier
+                                    ? "bg-[#174B3D] text-white hover:bg-[#134034] cursor-pointer"
+                                    : "bg-stone-200 text-stone-500 cursor-not-allowed"
+                                }`}
                               >
-                                <span>Rastrear en página web del Courier</span>
-                                <ExternalLink className="w-3 h-3 text-[#c6a26c]" />
-                              </a>
-                            </p>
-                          )}
+                                <Pencil className="w-3 h-3 text-[#c6a26c]" />
+                                <span>Editar</span>
+                              </button>
+                            </div>
+
+                            {!canEditCourier ? (
+                              <div className="p-3 rounded-xl bg-white border border-cream-200 text-stone-600 text-xs leading-relaxed">
+                                Envía primero la orden al proveedor para pasarla
+                                a <strong>En Fabricación</strong>. Una vez en
+                                fabricación, podrás completar los datos del
+                                courier y cambiar el estado a{" "}
+                                <strong>En Camino</strong>.
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5 text-stone-700 text-xs">
+                                <p className="flex items-center gap-2">
+                                  <strong>Operador:</strong>{" "}
+                                  <span className="font-bold text-[#174B3D]">
+                                    {selectedOrder.packages?.[0]?.courier ||
+                                      "Apolena (Transporte Propio)"}
+                                  </span>
+                                </p>
+                                <p>
+                                  <strong>Tracking ID Oficial:</strong>{" "}
+                                  <span className="font-mono font-bold text-stone-900">
+                                    {selectedOrder.tracking_id}
+                                  </span>
+                                </p>
+                                {selectedOrder.packages?.[0]?.tracking_number && (
+                                  <p>
+                                    <strong>Nro. de Guía / Código Courier:</strong>{" "}
+                                    <span className="font-mono font-semibold text-stone-800">
+                                      {selectedOrder.packages[0].tracking_number}
+                                    </span>
+                                  </p>
+                                )}
+                                {selectedOrder.packages?.[0]?.carrier_phone && (
+                                  <p>
+                                    <strong>Teléfono del Chofer / Courier:</strong>{" "}
+                                    <span>
+                                      {selectedOrder.packages[0].carrier_phone}
+                                    </span>
+                                  </p>
+                                )}
+                                {selectedOrder.packages?.[0]?.estimated_delivery && (
+                                  <p>
+                                    <strong>Entrega Estimada:</strong>{" "}
+                                    <span>
+                                      {new Date(
+                                        selectedOrder.packages[0].estimated_delivery,
+                                      ).toLocaleDateString("es-PE", {
+                                        dateStyle: "long",
+                                      })}
+                                    </span>
+                                  </p>
+                                )}
+                                {selectedOrder.packages?.[0]?.tracking_url && (
+                                  <p className="pt-1">
+                                    <a
+                                      href={selectedOrder.packages[0].tracking_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#174B3D] hover:underline"
+                                    >
+                                      <span>Rastrear en página web del Courier</span>
+                                      <ExternalLink className="w-3 h-3 text-[#c6a26c]" />
+                                    </a>
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
                     </div>
                   </div>
                 );

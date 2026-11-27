@@ -3003,6 +3003,13 @@ export async function updateOrderAdminLifecycle(input: {
       });
     }
   } else if (input.action === "edit_tracking_courier") {
+    // Regla de flujo guiado: solo se puede configurar courier/despacho desde En Fabricación en adelante
+    if (order.status === "pending" || order.status === "cancelled") {
+      throw new Error(
+        "Envía primero la orden al proveedor para pasarla a En Fabricación antes de configurar la Empresa Courier y Despacho.",
+      );
+    }
+
     // 1. Validar y actualizar Tracking ID si cambió
     if (input.tracking_id && input.tracking_id.trim() !== order.tracking_id) {
       const cleanTracking = input.tracking_id.trim().toUpperCase();
