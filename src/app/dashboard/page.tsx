@@ -5521,113 +5521,122 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
 
                       {modalItem ? (
                         <>
-                          <div className="flex items-end gap-3">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const artUrl =
-                                  modalItem.customizations?.master_art_url ||
-                                  modalItem.generated_art_url ||
-                                  "/samples/cat-suit.jpg";
-                                const inscriptionName = modalItem.customizations
-                                  ?.pet_inscription?.enabled
-                                  ? modalItem.customizations?.pet_inscription?.pet_name?.trim() ||
-                                    null
-                                  : null;
-                                setVoucherPreviewModal({
-                                  url: artUrl,
-                                  title: `Retrato Generado · ${selectedOrder.order_code}`,
-                                  subtitle: `${modalItem.customizations?.theme_name || "Personalizado"} · ${bleedSpec?.faceCmLabel || modalItem.customizations?.size_label || ""}${inscriptionName ? ` · Nombre: "${inscriptionName}"` : ""}`,
-                                  petInscriptionName: inscriptionName,
-                                });
-                              }}
-                              title="Clic para ver el retrato en pantalla completa"
-                              className="group relative w-24 h-24 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 shadow-soft cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
-                            >
-                              <img
-                                src={
-                                  modalItem.customizations?.master_art_url ||
-                                  modalItem.generated_art_url ||
-                                  "/samples/cat-suit.jpg"
-                                }
-                                alt="Arte Generado HD"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              />
-                              <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/95 text-[#174B3D] text-[10px] font-bold shadow-xs">
-                                  <Eye className="w-3 h-3" />
-                                  <span>Ver</span>
-                                </span>
-                              </span>
-                            </button>
-                            {modalItem.pet_photo_url && (
+                          <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
+                            {/* Columna izquierda: previews clicables (Retrato HD + Mascota Original) */}
+                            <div className="flex sm:flex-col items-end sm:items-center gap-2.5 shrink-0">
                               <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
+                                  const artUrl =
+                                    modalItem.customizations?.master_art_url ||
+                                    modalItem.generated_art_url ||
+                                    "/samples/cat-suit.jpg";
+                                  const inscriptionName = modalItem.customizations
+                                    ?.pet_inscription?.enabled
+                                    ? modalItem.customizations?.pet_inscription?.pet_name?.trim() ||
+                                      null
+                                    : null;
                                   setVoucherPreviewModal({
-                                    url: modalItem.pet_photo_url!,
-                                    title: `Foto Original de Mascota · ${selectedOrder.order_code}`,
-                                    subtitle:
-                                      selectedOrder.shipping?.name ||
-                                      "Subida por el cliente",
-                                  })
-                                }
-                                title="Clic para ver la foto original de la mascota en pantalla completa"
-                                className="group relative w-16 h-16 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
+                                    url: artUrl,
+                                    title: `Retrato Generado · ${selectedOrder.order_code}`,
+                                    subtitle: `${modalItem.customizations?.theme_name || "Personalizado"} · ${bleedSpec?.faceCmLabel || modalItem.customizations?.size_label || ""}${inscriptionName ? ` · Nombre: "${inscriptionName}"` : ""}`,
+                                    petInscriptionName: inscriptionName,
+                                  });
+                                }}
+                                title="Clic para ver el retrato en pantalla completa"
+                                className="group relative w-24 h-24 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 shadow-soft cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
                               >
                                 <img
-                                  src={modalItem.pet_photo_url}
-                                  alt="Mascota Original"
+                                  src={
+                                    modalItem.customizations?.master_art_url ||
+                                    modalItem.generated_art_url ||
+                                    "/samples/cat-suit.jpg"
+                                  }
+                                  alt="Arte Generado HD"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                 />
                                 <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Eye className="w-4 h-4 text-white drop-shadow" />
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/95 text-[#174B3D] text-[10px] font-bold shadow-xs">
+                                    <Eye className="w-3 h-3" />
+                                    <span>Ver</span>
+                                  </span>
                                 </span>
                               </button>
-                            )}
+                              {modalItem.pet_photo_url && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setVoucherPreviewModal({
+                                      url: modalItem.pet_photo_url!,
+                                      title: `Foto Original de Mascota · ${selectedOrder.order_code}`,
+                                      subtitle:
+                                        selectedOrder.shipping?.name ||
+                                        "Subida por el cliente",
+                                    })
+                                  }
+                                  title="Clic para ver la foto original de la mascota en pantalla completa"
+                                  className="group relative w-16 h-16 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
+                                >
+                                  <img
+                                    src={modalItem.pet_photo_url}
+                                    alt="Mascota Original"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                  <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Eye className="w-4 h-4 text-white drop-shadow" />
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Columna derecha: datos técnicos de impresión */}
+                            <div className="space-y-1.5 text-stone-700 min-w-0">
+                              <p>
+                                <strong>Temática:</strong>{" "}
+                                {modalItem.customizations?.theme_name ||
+                                  "Personalizado"}
+                              </p>
+                              <p>
+                                <strong>Medida del cuadro:</strong>{" "}
+                                {modalItem.customizations?.size_label} (
+                                {bleedSpec?.faceCmLabel ||
+                                  modalItem.customizations?.cm_dimensions}
+                                )
+                              </p>
+                              {bleedSpec && (
+                                <p className="text-[#174B3D] bg-[#174B3D]/8 px-2.5 py-1.5 rounded-xl border border-[#174B3D]/20 font-medium">
+                                  <strong>
+                                    Medida de impresión (+{CANVAS_WRAP_BLEED_CM}{" "}
+                                    cm en 4 lados):
+                                  </strong>{" "}
+                                  <span className="font-bold">
+                                    {bleedSpec.totalCmLabel}
+                                  </span>{" "}
+                                  <span className="text-[10px] text-stone-600 block">
+                                    Incluye +{CANVAS_WRAP_BLEED_CM} cm arriba,
+                                    abajo, izquierda y derecha para remangar en el
+                                    bastidor de madera.
+                                  </span>
+                                </p>
+                              )}
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-0.5">
+                                <p>
+                                  <strong>Acabado:</strong>{" "}
+                                  {modalItem.customizations?.finish_label}
+                                </p>
+                                <p>
+                                  <strong>Marco:</strong>{" "}
+                                  {modalItem.customizations?.frame_name}
+                                </p>
+                                <p className="col-span-2">
+                                  <strong>Mascotas en retrato:</strong>{" "}
+                                  {modalItem.customizations?.pet_count || 1}
+                                </p>
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="space-y-1 text-stone-700 pt-1">
-                            <p>
-                              <strong>Temática:</strong>{" "}
-                              {modalItem.customizations?.theme_name ||
-                                "Personalizado"}
-                            </p>
-                            <p>
-                              <strong>Medida del cuadro:</strong>{" "}
-                              {modalItem.customizations?.size_label} (
-                              {bleedSpec?.faceCmLabel ||
-                                modalItem.customizations?.cm_dimensions}
-                              )
-                            </p>
-                            {bleedSpec && (
-                              <p className="text-[#174B3D] bg-[#174B3D]/8 px-2.5 py-1.5 rounded-xl border border-[#174B3D]/20 font-medium">
-                                <strong>
-                                  Medida de impresión (+{CANVAS_WRAP_BLEED_CM}{" "}
-                                  cm en 4 lados):
-                                </strong>{" "}
-                                <span className="font-bold">
-                                  {bleedSpec.totalCmLabel}
-                                </span>{" "}
-                                <span className="text-[10px] text-stone-600 block">
-                                  Incluye +{CANVAS_WRAP_BLEED_CM} cm arriba,
-                                  abajo, izquierda y derecha para remangar en el
-                                  bastidor de madera.
-                                </span>
-                              </p>
-                            )}
-                            <p>
-                              <strong>Acabado:</strong>{" "}
-                              {modalItem.customizations?.finish_label}
-                            </p>
-                            <p>
-                              <strong>Marco:</strong>{" "}
-                              {modalItem.customizations?.frame_name}
-                            </p>
-                            <p>
-                              <strong>Mascotas en retrato:</strong>{" "}
-                              {modalItem.customizations?.pet_count || 1}
-                            </p>
+                          <div className="space-y-1.5 text-stone-700">
                             {modalItem.customizations?.pet_inscription?.enabled &&
                               modalItem.customizations.pet_inscription.pet_name && (
                                 <p className="text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mt-1 flex items-center gap-2">
