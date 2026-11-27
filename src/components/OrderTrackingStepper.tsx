@@ -151,10 +151,15 @@ export function OrderTrackingStepper({
           <div className="relative z-10 grid grid-cols-4 gap-4">
             {steps.map((step) => {
               const Icon = step.icon;
+              const isStep1Verified = step.num === 1 && isPaymentVerified;
               const isCompleted =
-                currentStep > step.num || (step.num === 4 && isAllCompleted);
+                currentStep > step.num ||
+                isStep1Verified ||
+                (step.num === 4 && isAllCompleted);
               const isCurrent =
-                currentStep === step.num && !(step.num === 4 && isAllCompleted);
+                currentStep === step.num &&
+                !isStep1Verified &&
+                !(step.num === 4 && isAllCompleted);
 
               return (
                 <div
@@ -181,10 +186,15 @@ export function OrderTrackingStepper({
         {/* Tarjetas de detalle alineadas debajo de cada nodo */}
         <div className="grid grid-cols-4 gap-3.5">
           {steps.map((step) => {
+            const isStep1Verified = step.num === 1 && isPaymentVerified;
             const isCompleted =
-              currentStep > step.num || (step.num === 4 && isAllCompleted);
+              currentStep > step.num ||
+              isStep1Verified ||
+              (step.num === 4 && isAllCompleted);
             const isCurrent =
-              currentStep === step.num && !(step.num === 4 && isAllCompleted);
+              currentStep === step.num &&
+              !isStep1Verified &&
+              !(step.num === 4 && isAllCompleted);
             const formattedDate = formatStepTimestamp(step.timestamp);
 
             return (
@@ -250,10 +260,15 @@ export function OrderTrackingStepper({
       <div className="md:hidden space-y-0">
         {steps.map((step, idx) => {
           const Icon = step.icon;
+          const isStep1Verified = step.num === 1 && isPaymentVerified;
           const isCompleted =
-            currentStep > step.num || (step.num === 4 && isAllCompleted);
+            currentStep > step.num ||
+            isStep1Verified ||
+            (step.num === 4 && isAllCompleted);
           const isCurrent =
-            currentStep === step.num && !(step.num === 4 && isAllCompleted);
+            currentStep === step.num &&
+            !isStep1Verified &&
+            !(step.num === 4 && isAllCompleted);
           const isLast = idx === steps.length - 1;
           const formattedDate = formatStepTimestamp(step.timestamp);
 

@@ -30,30 +30,30 @@ Toda orden generada en `orders` posee:
 
 ---
 
-## 2. Máquina de Estados Oficial (`Pendiente` → `En Fabricación` → `En Camino` → `Entregado`)
+## 2. Máquina de Estados Oficial y Flujo Guiado Obligatorio (`Pendiente` → `En Fabricación` → `En Camino` → `Entregado`)
 
-El seguimiento visual (`OrderTrackingStepper`) y los cards KPI superiores del Dashboard (`/dashboard`: `Pendientes` | `En Fabricación` | `En Camino` | `Entregados` | `Volumen Total Órdenes`) operan sobre **4 estados lineales** (sin card redundante de "Exitosos", ya que toda orden entra con pago 100%):
+El seguimiento visual (`OrderTrackingStepper`) y los cards KPI superiores del Dashboard (`/dashboard`: `Pendientes` | `En Fabricación` | `En Camino` | `Entregados` | `Volumen Total Órdenes`) operan sobre **4 estados lineales con transiciones estrictamente guiadas** (en el encabezado del expediente de orden, los tags `Pendiente`, `En Fabricación` y `En Camino` son solo informativos/no clicables; únicamente el tag `Entregado` es clicable cuando la orden está `En Camino`, abriendo un modal de confirmación):
 
 ### Estado 1 — Pendiente (`status = "pending"`) — Estado Inicial Obligatorio
 
 - **Regla Inalterable:** Toda orden recién creada (`createOrderWithSplitPayment` en `src/lib/db-service.ts`, `@default("pending")` en `orders`, `order_packages` y `order_items`) nace en **`status = "pending"`** con `manufacturing_started_at = null`.
-- **Descripción para el usuario:** _"Pedido recibido — Validando tu pago para enviarlo al taller."_
-- Permanece en `pending` hasta que el administrador verifica el pago del 100% (`payment_status === "paid_full"`) y **envía el correo de orden de fabricación con especificaciones e imagen HD (+4 cm) al proveedor/fabricador** (`POST /api/admin/orders/[id]/send-to-supplier`), momento en el cual la orden pasa **automáticamente** a `manufacturing`.
+- **Verificación de pago:** Al verificar el pago del 100% (`payment_status = "paid_full"`), el Paso 01 (`Pendiente`) pasa inmediatamente a **Completado** mostrando la fecha/hora exacta de verificación (`verified_at`) y habilita el despacho al proveedor.
 
 ### Estado 2 — En Fabricación (`status = "manufacturing"`)
 
+- **Disparador único:** Se activa automáticamente **al enviar el correo de orden de fabricación con ficha técnica e imagen HD (+4 cm) al proveedor/fabricador** (`POST /api/admin/orders/[id]/send-to-supplier`).
 - **Descripción para el usuario:** _"En fabricación — Estamos imprimiendo y preparando el cuadro personalizado de tu mascota con acabado de galería."_
-- Se activa automáticamente al despachar el correo al proveedor/fabricador desde el Dashboard (`send-to-supplier`), o manualmente por administración.
 - Timestamps asociados: `manufacturing_started_at`.
 
 ### Estado 3 — En Camino (`status = "in_transit"`)
 
+- **Disparador único:** Se activa **al completar los datos de Empresa Courier y Despacho** en `EditTrackingModal` (`courier`, `tracking_number`, `carrier_phone`, `estimated_delivery`).
 - **Descripción para el usuario:** _"En camino — Tu pedido ya salió de nuestro taller hacia tu dirección de entrega."_
-- El administrador actualiza el paquete (`order_packages`) y la orden a `in_transit`, pudiendo adjuntar `courier`, `carrier_phone` y `estimated_delivery`.
 - Timestamps asociados: `shipped_at`.
 
 ### Estado 4 — Entregado (`status = "delivered"`) — Cierre Final
 
+- **Disparador único:** El administrador hace clic en el tag **`Entregado`** (habilitado solo cuando la orden está `in_transit`) y confirma en el modal de confirmación (`ConfirmModal`).
 - **Descripción para el usuario:** _"Entregado — Pedido entregado en tu dirección o agencia asignada."_
 - **Cierre automático:** Cuando `status === "delivered"` (o el estado histórico `"completed"`) **Y** `payment_status === "paid_full"`, la orden se considera culminada: registra `delivered_at` y `completed_at`, habilita al usuario para dejar su reseña en `reviews` y desbloquea automáticamente la descarga del **Recuerdo Digital HD (sin marca de agua, sin el margen de +4 cm de imprenta y con el nombre de la mascota únicamente si el cliente lo activó)**.
 - Las órdenes históricas en estado `completed` se agrupan y cuentan junto con `delivered` en los KPIs y filtros de `/dashboard` y `/orders`.
