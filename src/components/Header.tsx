@@ -267,6 +267,15 @@ export function Header(_props: HeaderProps = {}) {
 
                       <div className="py-1.5 px-2 flex flex-col gap-1">
                         <Link
+                          href="/profile"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#141414] hover:bg-[#c6a26c]/15 hover:text-[#174B3D] transition-colors"
+                        >
+                          <User className="w-4 h-4 text-[#174B3D]" />
+                          Mi Perfil
+                        </Link>
+
+                        <Link
                           href="/orders"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#141414] hover:bg-[#c6a26c]/15 hover:text-[#174B3D] transition-colors"
@@ -468,6 +477,15 @@ export function Header(_props: HeaderProps = {}) {
 
               {sessionUser ? (
                 <>
+                  <Link
+                    href="/profile"
+                    onClick={toggleDrawer}
+                    className="w-full flex items-center justify-center gap-2 bg-white hover:bg-stone-50 text-[#174B3D] py-3 rounded-xl font-bold text-sm border border-[#D9C7AE] transition-all"
+                  >
+                    <User className="w-4 h-4 text-[#c6a26c]" />
+                    MI PERFIL
+                  </Link>
+
                   <Link
                     href="/orders"
                     onClick={toggleDrawer}

@@ -157,8 +157,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 2. Protección de la vista común de órdenes (/orders/*) para todo tipo de usuarios autenticados
-  if (pathname.startsWith("/orders")) {
+  // 2. Protección de rutas de usuario autenticado (/orders/* y /profile/*)
+  if (pathname.startsWith("/orders") || pathname.startsWith("/profile")) {
     if (!user) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);

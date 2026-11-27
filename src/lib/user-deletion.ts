@@ -68,7 +68,7 @@ export async function deleteUserAccountAndData(
 
   const targetProfile = await prisma.profile.findUnique({
     where: { id: targetUserId },
-    select: { id: true, email: true, role: true },
+    select: { id: true, email: true, role: true, avatar_url: true },
   });
 
   if (!targetProfile) {
@@ -118,6 +118,8 @@ export async function deleteUserAccountAndData(
       candidateUrls.add(val);
     }
   };
+
+  addUrl(targetProfile.avatar_url);
 
   for (const job of userJobs) {
     addUrl(job.pet_image_url);
