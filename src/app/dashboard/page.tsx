@@ -1980,8 +1980,8 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
           /* TAB 1: CARDS RESUMIDAS CON PRIORIDAD + MODAL DE DETALLE COMPLETO  */
           /* ================================================================= */
           <div className="space-y-5">
-            {/* Operational Alert Banner when there are active or unverified orders */}
-            {totalActivePending > 0 ? (
+            {/* Operational Alert Banner when there are orders in "pending" status */}
+            {totalPending > 0 ? (
               <div className="bg-terracotta-50 border border-terracotta-200 rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-terracotta-500 text-white flex items-center justify-center flex-shrink-0 shadow-soft">
@@ -1989,28 +1989,27 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                   </div>
                   <div className="text-xs">
                     <p className="font-bold text-stone-900">
-                      Atención Prioritaria: Tienes {totalActivePending}{" "}
-                      {totalActivePending === 1
-                        ? "orden activa pendiente"
-                        : "órdenes activas pendientes"}{" "}
-                      de gestión hasta su entrega
+                      Atención Prioritaria: Tienes {totalPending}{" "}
+                      {totalPending === 1
+                        ? "orden pendiente"
+                        : "órdenes pendientes"}{" "}
+                      por validar pago y enviar a fabricación
                       {totalUnverifiedAdvance > 0 &&
                         ` (${totalUnverifiedAdvance} por verificar pago)`}
                       .
                     </p>
                     <p className="text-stone-600 mt-0.5">
-                      Las órdenes más recientes y con pasos pendientes se
-                      muestran primero. Haz clic en cualquier tarjeta para abrir
-                      su expediente completo.
+                      Verifica el comprobante y despacha la orden al proveedor
+                      para pasarla automáticamente a En Fabricación.
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setOrderStatusFilter("active_pending")}
-                  className="px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto flex-shrink-0 transition-all"
+                  onClick={() => setOrderStatusFilter("pending")}
+                  className="px-4 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto flex-shrink-0 transition-all cursor-pointer"
                 >
-                  <span>Ver Solo Pendientes ({totalActivePending})</span>
+                  <span>Ver Solo Pendientes ({totalPending})</span>
                 </button>
               </div>
             ) : (
@@ -2018,9 +2017,8 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 <div className="flex items-center gap-2.5 text-sage-800">
                   <CheckCircle2 className="w-4 h-4 text-sage-600 flex-shrink-0" />
                   <span>
-                    <strong>Todo al día.</strong> No hay órdenes con entregas
-                    pendientes en este momento. Las nuevas órdenes aparecerán en
-                    primer lugar automáticamente.
+                    <strong>Todo al día.</strong> No hay órdenes pendientes de
+                    validación o despacho al proveedor en este momento.
                   </span>
                 </div>
               </div>
