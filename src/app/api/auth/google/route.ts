@@ -4,7 +4,7 @@ import { getRequestOrigin } from "@/lib/app-url";
 
 export const dynamic = "force-dynamic";
 
-export const GOOGLE_OAUTH_STATE_COOKIE = "apolena_google_oauth_state";
+const GOOGLE_OAUTH_STATE_COOKIE = "apolena_google_oauth_state";
 
 function sanitizeCallbackUrl(raw?: string | null): string {
   if (!raw) return "";

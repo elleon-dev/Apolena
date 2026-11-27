@@ -8,7 +8,7 @@ import {
   signSessionToken,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
-import { GOOGLE_OAUTH_STATE_COOKIE } from "../route";
+const GOOGLE_OAUTH_STATE_COOKIE = "apolena_google_oauth_state";
 
 export const dynamic = "force-dynamic";
 
