@@ -19,6 +19,7 @@ export interface PipelineProgressCallback {
 
 export interface MultiModelFusionInput {
   petImageUrl: string;
+  extraPetImageUrls?: string[];
   secondPetImageUrl?: string | null;
   characterInput: FamousCharacter | string;
   customThemeImageUrl?: string | null;
@@ -472,6 +473,7 @@ CRITICAL RULE: Completely ignore whatever animal or person is wearing the costum
  */
 interface PrecomputedFusionAssets {
   pet1Data: ResolvedImageData;
+  extraPetImages?: ResolvedImageData[];
   pet2Data: ResolvedImageData | null;
   themeData: ResolvedImageData | null;
 }
@@ -548,15 +550,33 @@ async function runOpenAIFusion(
     }
   }
 
-  const fusionPrompt = buildFusionPrompt(
-    character,
-    hasSecondPet,
-    customPrompt,
-    wardrobeDesc,
-    petIdentityFingerprint,
-    isCustomRef,
-    Boolean(themeData),
-  );
+  const extraPetImages =
+    precomputedAssets?.extraPetImages !== undefined
+      ? precomputedAssets.extraPetImages
+      : !hasSecondPet && Array.isArray(input.extraPetImageUrls)
+        ? (
+            await Promise.all(
+              input.extraPetImageUrls
+                .slice(0, 2)
+                .map((u) => resolveImageData(u).catch(() => null)),
+            )
+          ).filter((img): img is ResolvedImageData => Boolean(img))
+        : [];
+  const multiAnglePromptNote =
+    !hasSecondPet && extraPetImages.length > 0
+      ? `\n\nMULTI-ANGLE REFERENCE NOTE (CRITICAL): The first ${1 + extraPetImages.length} attached pet images all show DIFFERENT ANGLES of the EXACT SAME SINGLE PET (NOT multiple animals). Synthesize all ${1 + extraPetImages.length} angles for 100% accurate facial geometry, snout, eye color, ear shape, and fur markings, and paint STRICTLY ONE single animal in the portrait.`
+      : "";
+
+  const fusionPrompt =
+    buildFusionPrompt(
+      character,
+      hasSecondPet,
+      customPrompt,
+      wardrobeDesc,
+      petIdentityFingerprint,
+      isCustomRef,
+      Boolean(themeData),
+    ) + multiAnglePromptNote;
 
   // Attempt 1: Native Multi-Image Fusion (/v1/images/edits) with High Input Fidelity
   const editModels = preferredModels;
@@ -573,7 +593,7 @@ async function runOpenAIFusion(
       formData.append("input_fidelity", "high");
     }
 
-    // Append Pet 1 (and optional Pet 2) first for #1 identity lock,
+    // Append Pet 1 (and optional extra angles of Pet 1, or Pet 2) first for #1 identity lock,
     // followed by the character/theme reference image so the model faithfully reproduces the exact outfit & scene.
     formData.append(
       "image[]",
@@ -582,6 +602,17 @@ async function runOpenAIFusion(
       }),
       `pet1.${pet1Data.ext}`,
     );
+    if (!pet2Data && extraPetImages.length > 0) {
+      extraPetImages.forEach((extraImg, idx) => {
+        formData.append(
+          "image[]",
+          new Blob([new Uint8Array(extraImg.buffer)], {
+            type: extraImg.mimeType,
+          }),
+          `pet1_angle${idx + 2}.${extraImg.ext}`,
+        );
+      });
+    }
     if (pet2Data) {
       formData.append(
         "image[]",
@@ -913,6 +944,19 @@ async function runGeminiFusion(
     });
   }
 
+  const extraPetImages =
+    precomputedAssets?.extraPetImages !== undefined
+      ? precomputedAssets.extraPetImages
+      : !hasSecondPet && Array.isArray(input.extraPetImageUrls)
+        ? (
+            await Promise.all(
+              input.extraPetImageUrls
+                .slice(0, 2)
+                .map((u) => resolveImageData(u).catch(() => null)),
+            )
+          ).filter((img): img is ResolvedImageData => Boolean(img))
+        : [];
+
   const parts: any[] = [
     ...(themeData
       ? [
@@ -930,7 +974,7 @@ async function runGeminiFusion(
     {
       text: hasSecondPet
         ? "IMAGE 2 — CUSTOMER PET 1 (REPLACE THE ANIMAL IN IMAGE 1 WITH THIS EXACT PET AND PET 2 BELOW — COPY 100% OF THIS PET'S REAL FACE, EYES, FUR COLOR/PATTERN, NOSE, AND EARS):"
-        : "IMAGE 2 — CUSTOMER PET PHOTO (COMPLETELY REPLACE THE ANIMAL IN IMAGE 1 WITH THIS EXACT PET — COPY 100% OF THIS PET'S REAL SPECIES, FACE, EYES, FUR COLOR/PATTERN, NOSE, EARS, AND PAWS):",
+        : "IMAGE 2 — CUSTOMER PET PHOTO (PRIMARY ANGLE — COMPLETELY REPLACE THE ANIMAL IN IMAGE 1 WITH THIS EXACT PET — COPY 100% OF THIS PET'S REAL SPECIES, FACE, EYES, FUR COLOR/PATTERN, NOSE, EARS, AND PAWS):",
     },
     {
       inlineData: {
@@ -938,6 +982,19 @@ async function runGeminiFusion(
         data: pet1Data.base64,
       },
     },
+    ...(!hasSecondPet && extraPetImages.length > 0
+      ? extraPetImages.flatMap((extraImg, idx) => [
+          {
+            text: `ADDITIONAL REFERENCE ANGLE #${idx + 2} OF THE EXACT SAME SINGLE PET FROM IMAGE 2 (CRITICAL: THIS IS THE SAME PET — DO NOT DRAW A SECOND ANIMAL; USE ONLY TO MAKE THE FACE, EYES, EARS, AND FUR MARKINGS EVEN MORE ACCURATE):`,
+          },
+          {
+            inlineData: {
+              mimeType: extraImg.mimeType,
+              data: extraImg.base64,
+            },
+          },
+        ])
+      : []),
     ...(pet2Data
       ? [
           {
@@ -952,7 +1009,7 @@ async function runGeminiFusion(
         ]
       : []),
     {
-      text: `${fusionPrompt}\n\nSTRICT EDITING & FIDELITY RULES:\n1. Edit IMAGE 1 by COMPLETELY REPLACING its animal with the EXACT customer pet${hasSecondPet ? "s" : ""} from IMAGE 2${hasSecondPet ? " and IMAGE 3" : ""}. Zero trace of the original sample animal's face or fur may remain.\n2. Keep IMAGE 1's exact costume, jewelry/accessories, background, camera framing, brightness, and vibrant natural lighting — DO NOT darken the scene or add gloomy shadows.\n3. Keep 100% realistic, natural head-to-shoulders anatomical proportions (NEVER an oversized bobblehead or pasted-head look) with 20-25% headroom above the ears/hat.\n4. Output a ${hasSecondPet ? "HORIZONTAL 3:2" : "VERTICAL 2:3"} full-bleed painting with NO picture frame, NO border, and NO watermark.`,
+      text: `${fusionPrompt}\n\nSTRICT EDITING & FIDELITY RULES:\n1. Edit IMAGE 1 by COMPLETELY REPLACING its animal with the EXACT customer pet${hasSecondPet ? "s" : ""} from IMAGE 2${hasSecondPet ? " and IMAGE 3" : extraPetImages.length > 0 ? " (using the additional reference angle photos of that SAME single pet — paint STRICTLY ONE animal)" : ""}. Zero trace of the original sample animal's face or fur may remain.\n2. Keep IMAGE 1's exact costume, jewelry/accessories, background, camera framing, brightness, and vibrant natural lighting — DO NOT darken the scene or add gloomy shadows.\n3. Keep 100% realistic, natural head-to-shoulders anatomical proportions (NEVER an oversized bobblehead or pasted-head look) with 20-25% headroom above the ears/hat.\n4. Output a ${hasSecondPet ? "HORIZONTAL 3:2" : "VERTICAL 2:3"} full-bleed painting with NO picture frame, NO border, and NO watermark.`,
     },
   ];
 
@@ -1327,7 +1384,7 @@ export async function runMultiModelFusionPipeline(
       !isCustomRef && (character.description?.trim().length ?? 0) >= 40;
 
     try {
-      const [pet1Data, pet2Data, themeData] = await Promise.all([
+      const [pet1Data, pet2Data, themeData, extraPetRaw] = await Promise.all([
         resolveImageData(petImageUrl),
         secondPetImageUrl
           ? resolveImageData(secondPetImageUrl)
@@ -1335,9 +1392,19 @@ export async function runMultiModelFusionPipeline(
         themeSource
           ? resolveImageData(themeSource).catch(() => null)
           : Promise.resolve(null),
+        !secondPetImageUrl && Array.isArray(input.extraPetImageUrls)
+          ? Promise.all(
+              input.extraPetImageUrls
+                .slice(0, 2)
+                .map((u) => resolveImageData(u).catch(() => null)),
+            )
+          : Promise.resolve([]),
       ]);
 
-      sharedAssets = { pet1Data, pet2Data, themeData };
+      const extraPetImages = extraPetRaw.filter(
+        (img): img is ResolvedImageData => Boolean(img),
+      );
+      sharedAssets = { pet1Data, extraPetImages, pet2Data, themeData };
 
       // Skip extra Vision API wardrobe extraction for catalog characters that already have a
       // detailed description AND visual themeData attached directly to the image editors.

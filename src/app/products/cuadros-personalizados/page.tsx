@@ -268,9 +268,11 @@ export default function personalizedWallArt() {
   // 3-step state: 1 = Choose Character/Theme, 2 = Upload Pet Photo, 3 = Result Portrait
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Pet Images (1 mandatory, 2nd optional for duo portrait)
+  // Pet Images (1 mandatory, up to 2 optional extra angles of the SAME pet, or 2nd pet for duo portrait)
   const [petImage, setPetImage] = useState<string | null>(null);
+  const [extraPetImages, setExtraPetImages] = useState<string[]>([]);
   const [secondPetImage, setSecondPetImage] = useState<string | null>(null);
+  const extraPetInputRef = useRef<HTMLInputElement>(null);
   const [isValidatingPetPhoto, setIsValidatingPetPhoto] = useState(false);
   const [petSpecies, setPetSpecies] = useState<"dog" | "cat" | "other">("dog");
   const [includePetInscription, setIncludePetInscription] =
@@ -1319,6 +1321,7 @@ export default function personalizedWallArt() {
               ? "custom-reference"
               : selectedCharacter.id,
           petImageUrl: petImage,
+          extraPetImageUrls: secondPetImage ? [] : extraPetImages,
           secondPetImageUrl: secondPetImage,
           customThemeImageUrl: useCustomTheme ? customThemeImage : null,
           customPrompt: customPrompt.trim() || null,
@@ -1531,6 +1534,7 @@ export default function personalizedWallArt() {
     setStep(1);
     setHasSelectedCharacter(false);
     setPetImage(null);
+    setExtraPetImages([]);
     setSecondPetImage(null);
     setFusedResultUrl("");
     setActiveGenerationJobId(null);
@@ -2219,6 +2223,96 @@ export default function personalizedWallArt() {
                         }}
                         className="hidden"
                       />
+                    </div>
+                  )}
+
+                  {/* Fotos adicionales opcionales de la MISMA mascota (hasta 2 más = máx. 3 en total) */}
+                  {petImage && !secondPetImage && (
+                    <div className="pt-2 space-y-2">
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="font-bold text-[#174B3D]">
+                          Fotos extra de la misma mascota (opcional · {1 + extraPetImages.length}/3)
+                        </span>
+                        <span className="text-stone-500">
+                          Mejora el parecido facial
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {[0, 1].map((slotIdx) => {
+                          const imgUrl = extraPetImages[slotIdx];
+                          if (imgUrl) {
+                            return (
+                              <div
+                                key={`extra-pet-${slotIdx}`}
+                                className="relative h-24 rounded-xl overflow-hidden border border-emerald-200 bg-cream-50 group"
+                              >
+                                <img
+                                  src={imgUrl}
+                                  alt={`Ángulo adicional ${slotIdx + 2} de tu mascota`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-stone-900/75 text-white text-[10px] font-semibold">
+                                  Foto {slotIdx + 2}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExtraPetImages((prev) =>
+                                      prev.filter((_, i) => i !== slotIdx),
+                                    )
+                                  }
+                                  aria-label={`Quitar foto adicional ${slotIdx + 2}`}
+                                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-stone-900/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={`extra-pet-empty-${slotIdx}`}
+                              type="button"
+                              disabled={isValidatingPetPhoto}
+                              onClick={() => extraPetInputRef.current?.click()}
+                              className="h-24 rounded-xl border-2 border-dashed border-cream-300 hover:border-[#174B3D] bg-cream-50/70 hover:bg-[#174B3D]/5 disabled:opacity-50 flex flex-col items-center justify-center gap-1 text-center px-2 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-4 h-4 text-[#174B3D]" />
+                              <span className="text-[11px] font-semibold text-stone-700">
+                                + Foto {slotIdx + 2} (opcional)
+                              </span>
+                              <span className="text-[10px] text-stone-400">
+                                Otro ángulo o luz
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <input
+                        ref={extraPetInputRef}
+                        type="file"
+                        accept="image/*"
+                        disabled={isValidatingPetPhoto}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file && extraPetImages.length < 2) {
+                            readAndCompressImage(file, (compressedUrl) => {
+                              setExtraPetImages((prev) =>
+                                [...prev, compressedUrl].slice(0, 2),
+                              );
+                            });
+                          }
+                        }}
+                        className="hidden"
+                      />
+
+                      <p className="text-[10px] text-stone-500 leading-snug">
+                        Sube otros ángulos de la <strong>misma mascota</strong> para lograr un parecido aún más fiel. En el cuadro aparecerá 1 sola mascota.
+                      </p>
                     </div>
                   )}
                 </div>

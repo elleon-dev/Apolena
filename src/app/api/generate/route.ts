@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     let petName = "Mi Mascota";
     let species: "dog" | "cat" | "both" | "other" = "dog";
     let petImageUrl = "";
+    let extraPetImageUrls: string[] = [];
     let secondPetImageUrl: string | null = null;
     let customThemeImageUrl: string | null = null;
     let customPrompt: string | null = null;
@@ -67,6 +68,15 @@ export async function POST(req: NextRequest) {
       species = body.species || "dog";
       petImageUrl = body.petImageUrl;
       secondPetImageUrl = body.secondPetImageUrl || null;
+      if (Array.isArray(body.extraPetImageUrls) && !secondPetImageUrl) {
+        extraPetImageUrls = body.extraPetImageUrls
+          .filter(
+            (u: unknown): u is string =>
+              typeof u === "string" &&
+              (u.startsWith("data:image/") || u.startsWith("http")),
+          )
+          .slice(0, 2);
+      }
       customThemeImageUrl = body.customThemeImageUrl || null;
       customPrompt = body.customPrompt || null;
       provider = body.provider || "openai";
@@ -115,6 +125,7 @@ export async function POST(req: NextRequest) {
       userId: sessionUser?.id || null,
       characterId,
       petImageUrl,
+      extraPetImageUrls,
       secondPetImageUrl,
       customThemeImageUrl,
       customPrompt,

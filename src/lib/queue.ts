@@ -10,6 +10,7 @@ export interface EnqueueJobParams {
   userId?: string | null;
   characterId: string;
   petImageUrl: string;
+  extraPetImageUrls?: string[];
   secondPetImageUrl?: string | null;
   customThemeImageUrl?: string | null;
   customPrompt?: string | null;
@@ -19,8 +20,9 @@ export interface EnqueueJobParams {
   species?: "dog" | "cat" | "both" | "other";
 }
 
-// Store transient API keys in memory per job (never persisted to database)
+// Store transient API keys & extra reference angles in memory per job (never persisted to database)
 const jobApiKeysMap = new Map<string, ApiKeysOverride>();
+const jobExtraPetImagesMap = new Map<string, string[]>();
 
 export async function processGenerationJob(jobId: string): Promise<void> {
   const job = localJobs.get(jobId);
@@ -62,8 +64,10 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     });
 
     // 2. Execute multi-model pipeline with callbacks
+    const extraPetImageUrls = jobExtraPetImagesMap.get(jobId) || [];
     const result = await runMultiModelFusionPipeline({
       petImageUrl: job.petImageUrl,
+      extraPetImageUrls,
       secondPetImageUrl: job.secondPetImageUrl,
       characterInput: character,
       customThemeImageUrl: job.customThemeImageUrl,
@@ -121,11 +125,13 @@ export async function processGenerationJob(jobId: string): Promise<void> {
     });
 
     jobApiKeysMap.delete(jobId);
+    jobExtraPetImagesMap.delete(jobId);
     console.log(
       `[QueueWorker] Job ${jobId} (${result.modelUsed}) finished in ${result.executionSeconds}s`,
     );
   } catch (error: any) {
     jobApiKeysMap.delete(jobId);
+    jobExtraPetImagesMap.delete(jobId);
     console.error(`[QueueWorker] Job ${jobId} failed:`, error);
     const currentJob = localJobs.get(jobId) || job;
     await saveJob({
@@ -162,6 +168,9 @@ export async function enqueueJob(
 
   if (params.apiKeys) {
     jobApiKeysMap.set(params.jobId, params.apiKeys);
+  }
+  if (params.extraPetImageUrls && params.extraPetImageUrls.length > 0) {
+    jobExtraPetImagesMap.set(params.jobId, params.extraPetImageUrls.slice(0, 2));
   }
 
   await saveJob(newJob);
