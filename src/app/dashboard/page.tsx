@@ -2684,6 +2684,70 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             >
                               {u.is_active ? "Suspender" : "Reactivar"}
                             </button>
+
+                            {isSuperAdmin &&
+                              u.id !== currentUser?.id &&
+                              u.role !== "super_admin" && (
+                                <button
+                                  type="button"
+                                  disabled={updatingUserId === u.id}
+                                  onClick={() =>
+                                    setConfirmModalData({
+                                      open: true,
+                                      title: `Eliminar usuario ${u.name || u.email}`,
+                                      description: `Esta acción eliminará definitivamente la cuenta (${u.email}), todos sus retratos generados, órdenes y archivos en Storage. Después podrá volver a registrarse como una cuenta nueva.`,
+                                      variant: "destructive",
+                                      action: async () => {
+                                        setUpdatingUserId(u.id);
+                                        try {
+                                          const res = await fetch(
+                                            "/api/admin/users",
+                                            {
+                                              method: "DELETE",
+                                              headers: {
+                                                "Content-Type":
+                                                  "application/json",
+                                              },
+                                              body: JSON.stringify({
+                                                userId: u.id,
+                                              }),
+                                            },
+                                          );
+                                          const data = await res.json();
+                                          if (!res.ok) {
+                                            showToast(
+                                              "error",
+                                              data?.error ||
+                                                "No se pudo eliminar el usuario.",
+                                            );
+                                            return;
+                                          }
+                                          showToast(
+                                            "success",
+                                            `Usuario ${u.email} eliminado (${data.deletedJobs || 0} retratos y ${data.deletedOrders || 0} órdenes limpiadas).`,
+                                          );
+                                          await Promise.all([
+                                            loadAdminData(),
+                                            loadAiHealth(),
+                                          ]);
+                                        } catch {
+                                          showToast(
+                                            "error",
+                                            "Error de conexión al eliminar el usuario.",
+                                          );
+                                        } finally {
+                                          setUpdatingUserId(null);
+                                        }
+                                      },
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-semibold border bg-white text-red-700 border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all cursor-pointer"
+                                  title="Eliminar usuario y todo su historial"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Eliminar</span>
+                                </button>
+                              )}
                           </>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-cream-100 text-stone-500 text-[11px] font-medium">
