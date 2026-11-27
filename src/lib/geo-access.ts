@@ -42,7 +42,7 @@ export const COUNTRY_NAMES_ES: Record<string, string> = {
 };
 
 const TRUSTED_CRAWLER_PATTERN =
-  /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot|applebot|pinterest/i;
+  /googlebot|apis-google|google-safety|adsbot-google|googleother|google-inspectiontool|mediapartners-google|chrome-lighthouse|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot|applebot|pinterest/i;
 
 export function normalizeCountryCode(code?: string | null): string | null {
   if (!code) return null;

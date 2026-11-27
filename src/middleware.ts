@@ -49,6 +49,10 @@ export async function middleware(request: NextRequest) {
   // 0. Restricción geográfica por país (por defecto solo Perú "PE", extensible vía NEXT_PUBLIC_ACTIVE_COUNTRIES)
   const isGeoBypassPath =
     pathname.startsWith("/no-disponible") ||
+    pathname.startsWith("/privacidad") ||
+    pathname.startsWith("/terminos") ||
+    pathname.startsWith("/libro-de-reclamaciones") ||
+    pathname.startsWith("/quienes-somos") ||
     pathname.startsWith("/api/geo-waitlist") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/cron") ||

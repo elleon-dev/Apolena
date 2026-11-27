@@ -1,6 +1,5 @@
-"use client";
-
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -13,7 +12,16 @@ import {
   Scale,
   Palette,
   ArrowRight,
+  Lock,
+  UserCheck,
+  Cookie,
 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Política de Privacidad",
+  description:
+    "Política de Privacidad y Protección de Datos Personales de Apolena (www.apolena.shop): recopilación, uso, inicio de sesión con Google, seguridad, retención y derechos de los usuarios.",
+};
 
 export default function PrivacidadPage() {
   return (
@@ -28,81 +36,159 @@ export default function PrivacidadPage() {
             <span>Protección de Datos y Privacidad</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#174B3D]">
-            Política de Privacidad de APOLENA
+            Política de Privacidad de Apolena
           </h1>
           <p className="text-xs sm:text-sm text-[#141414]/75 max-w-2xl mx-auto leading-relaxed">
-            Cuando subes una foto a APOLENA, la usamos para crear el retrato de tu mascota. Aquí te contamos qué información necesitamos, con quién la compartimos y cómo puedes consultarnos sobre tus datos.
+            En Apolena (<strong>https://www.apolena.shop</strong>) respetamos tu privacidad y protegemos tus datos personales conforme a la Ley N.º 29733 (Ley de Protección de Datos Personales del Perú) y las políticas de uso de datos de plataformas de autenticación como Google.
           </p>
           <span className="text-xs text-stone-600 block font-medium">
-            Última actualización · 18/11/2026 · Lima, Perú
+            Última actualización · 26/11/2026 · Lima, Perú
           </span>
         </div>
 
         {/* Bloque Principal de Contenido */}
         <div className="space-y-8 text-xs sm:text-sm text-[#141414]/85 leading-relaxed bg-white border border-[#c6a26c]/30 rounded-3xl p-6 sm:p-10 shadow-soft">
-          {/* Sección 1: ¿Qué información usamos? */}
+          {/* Sección 1: Datos que recopilamos */}
           <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
               <FileText className="w-4 h-4 text-[#c6a26c] shrink-0" />
-              <span>¿Qué información usamos?</span>
+              <span>1. Información que recopilamos</span>
             </h2>
             <p>
-              Para crear tu retrato, usamos la foto de tu mascota y las opciones que elijas, como el estilo, el tamaño y el acabado. Si haces un pedido, usamos tu nombre, correo, teléfono y dirección para confirmarlo, coordinar la entrega y ayudarte si surge algún problema. Según el medio de pago, también podemos usar la referencia de la operación para verificarlo.
+              Recopilamos únicamente los datos necesarios para brindarte el servicio de diseño, personalización, producción y entrega de cuadros personalizados de mascotas:
             </p>
-            <p>
-              Te indicaremos qué datos son necesarios en cada paso. Por ejemplo, necesitamos una foto para generar el retrato y una dirección para entregarte el cuadro.
-            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-stone-700">
+              <li>
+                <strong>Datos de cuenta y autenticación:</strong> nombre completo, dirección de correo electrónico y fotografía de perfil cuando te registras o inicias sesión con correo o mediante Google.
+              </li>
+              <li>
+                <strong>Fotografías y preferencias de personalización:</strong> la foto de tu mascota que subes voluntariamente, especie, estilo/personaje elegido, medida del cuadro, marco y nombre opcional en el lienzo.
+              </li>
+              <li>
+                <strong>Datos de pedido y envío:</strong> nombre del destinatario, teléfono/WhatsApp, dirección exacta, distrito/provincia/departamento, referencia o ubicación GPS aproximada, documento para comprobante (DNI/CE/RUC) y captura del voucher de pago para su verificación.
+              </li>
+              <li>
+                <strong>Datos técnicos y analítica:</strong> información básica de navegación (páginas visitadas, dispositivo, país de conexión) para garantizar la seguridad, disponibilidad regional y mejora continua de la tienda.
+              </li>
+            </ul>
           </section>
 
-          {/* Sección 2: ¿Quién recibe la foto y los datos del pedido? */}
+          {/* Sección 2: Inicio de sesión con Google (Google OAuth) */}
+          <section className="space-y-3">
+            <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>2. Uso de datos obtenidos mediante Google (Google Sign-In)</span>
+            </h2>
+            <p>
+              Si eliges acceder a Apolena utilizando tu cuenta de Google, solicitamos únicamente los permisos básicos de identidad (<code>openid</code>, <code>email</code> y <code>profile</code>), que nos proporcionan tu <strong>nombre</strong>, <strong>correo electrónico</strong> y <strong>foto de perfil</strong>.
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-stone-700">
+              <li>
+                Usamos esta información exclusivamente para crear y autenticar tu cuenta en Apolena, guardar tus retratos generados, vincular tus pedidos y enviarte notificaciones transaccionales sobre el estado de tu compra.
+              </li>
+              <li>
+                <strong>No vendemos, alquilamos ni compartimos</strong> tus datos de Google con terceros para fines publicitarios, de perfilado comercial o ajenos a la operación de Apolena.
+              </li>
+              <li>
+                El uso de la información recibida de las APIs de Google por parte de Apolena cumple con la{" "}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2"
+                >
+                  Política de Datos de Usuario de los Servicios de API de Google
+                </a>
+                , incluidos los requisitos de Uso Limitado.
+              </li>
+            </ul>
+          </section>
+
+          {/* Sección 3: Cómo usamos y compartimos tu información */}
           <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
               <Share2 className="w-4 h-4 text-[#c6a26c] shrink-0" />
-              <span>¿Quién recibe la foto y los datos del pedido?</span>
+              <span>3. Finalidad del tratamiento y proveedores autorizados</span>
             </h2>
             <p>
-              Usamos herramientas de diseño gráfico automatizado para transformar la foto en un retrato. Cuando el cuadro pasa a producción, enviamos a impresión el archivo final y las indicaciones para imprimirlo. El servicio de reparto recibe los datos de contacto y la dirección que necesita para hacer la entrega.
+              Compartimos datos únicamente con proveedores tecnológicos y logísticos estrictamente indispensables para completar tu servicio:
             </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-stone-700">
+              <li>
+                <strong>Procesamiento artístico de imágenes:</strong> las fotos de mascotas se procesan mediante motores de generación visual para crear las propuestas de retrato solicitadas por el usuario.
+              </li>
+              <li>
+                <strong>Infraestructura y almacenamiento seguro:</strong> alojamiento web, base de datos y almacenamiento en la nube con cifrado en tránsito (HTTPS/TLS).
+              </li>
+              <li>
+                <strong>Notificaciones y entrega física:</strong> envío de correos transaccionales sobre tu pedido y coordinación de despacho con nuestro servicio de reparto o agencia de envíos (reciben únicamente nombre, teléfono y dirección de entrega).
+              </li>
+            </ul>
             <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-stone-800 text-xs">
-              Si queremos mostrar el retrato de tu mascota en nuestra web, redes sociales o publicidad, primero te pediremos permiso. Si ofrecemos novedades o promociones, tú decides si quieres recibirlas.
+              Nunca publicamos la fotografía de tu mascota ni tu retrato en redes sociales o publicidad sin tu autorización previa.
             </div>
           </section>
 
-          {/* Sección 3: ¿Cuánto tiempo guardamos la foto? */}
+          {/* Sección 4: Seguridad y cookies */}
           <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#c6a26c] shrink-0" />
-              <span>¿Cuánto tiempo guardamos la foto?</span>
+              <Lock className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>4. Seguridad, almacenamiento y cookies</span>
             </h2>
             <p>
-              Guardamos la foto original y el retrato generado durante <strong>24 horas</strong>. Luego esto se cancela. Conservamos los datos del pedido durante <strong>12 meses</strong> para atender consultas, resolver incidencias y cumplir las obligaciones aplicables.
+              Implementamos medidas técnicas y organizativas para resguardar tu información: comunicaciones cifradas mediante HTTPS, cookies de sesión seguras (<code>httpOnly</code> y <code>SameSite</code>), control de acceso por roles para administración y acceso restringido a archivos maestros en alta resolución (solo disponibles para el titular autenticado de la orden).
+            </p>
+            <p className="flex items-start gap-2 text-stone-700">
+              <Cookie className="w-4 h-4 text-[#c6a26c] shrink-0 mt-0.5" />
+              <span>
+                Utilizamos cookies esenciales para mantener tu sesión activa y herramientas de analítica web (Google Analytics 4) para medir el funcionamiento general del sitio y mejorar la experiencia de compra.
+              </span>
             </p>
           </section>
 
-          {/* Sección 4: ¿Cómo puedes consultar o pedir cambios en tus datos? */}
+          {/* Sección 5: Retención y eliminación automática */}
+          <section className="space-y-3">
+            <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[#c6a26c] shrink-0" />
+              <span>5. Conservación y eliminación de datos</span>
+            </h2>
+            <ul className="list-disc pl-5 space-y-1.5 text-stone-700">
+              <li>
+                <strong>Retratos no comprados:</strong> las fotografías subidas y los retratos generados que no estén asociados a una orden se eliminan automáticamente de nuestros servidores y almacenamiento pasado un plazo de <strong>30 días</strong>.
+              </li>
+              <li>
+                <strong>Órdenes y comprobantes:</strong> conservamos los datos del pedido durante <strong>12 meses</strong> (o el plazo requerido por normativa tributaria y de defensa del consumidor) para garantizar el seguimiento, la descarga de tu recuerdo digital HD y la atención postventa.
+              </li>
+              <li>
+                <strong>Eliminación a solicitud del usuario:</strong> puedes solicitar en cualquier momento la eliminación de tu cuenta y de tus datos personales escribiéndonos a nuestro correo oficial.
+              </li>
+            </ul>
+          </section>
+
+          {/* Sección 6: Derechos del usuario y contacto */}
           <section className="space-y-3">
             <h2 className="font-serif text-base sm:text-lg font-bold text-[#174B3D] flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-[#c6a26c] shrink-0" />
-              <span>¿Cómo puedes consultar o pedir cambios en tus datos?</span>
+              <span>6. Tus derechos y canales de contacto</span>
             </h2>
             <p>
-              Escríbenos a{" "}
+              Puedes ejercer tus derechos de acceso, rectificación, cancelación, oposición (derechos ARCO) o solicitar la revocación de permisos y eliminación de tu cuenta escribiéndonos a{" "}
               <a
                 href="mailto:apolenaperu@gmail.com"
                 className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2 hover:text-[#c6a26c] transition-colors"
               >
                 apolenaperu@gmail.com
               </a>{" "}
-              o al WhatsApp:{" "}
+              o vía WhatsApp al{" "}
               <a
                 href="https://wa.me/51993920853"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#174B3D] font-semibold underline decoration-[#c6a26c] underline-offset-2 hover:text-[#c6a26c] transition-colors"
               >
-                993 920 853
-              </a>{" "}
-              si quieres saber qué datos tenemos sobre ti, corregirlos, pedir su eliminación, oponerte a su uso o retirar un permiso que nos hayas dado. Si consideras que tu solicitud no fue atendida, puedes acudir a la Autoridad Nacional de Protección de Datos Personales del Perú.
+                +51 993 920 853
+              </a>
+              . Atenderemos tu solicitud en un plazo máximo de 5 días hábiles. Si consideras que tu solicitud no fue atendida conforme a ley, puedes acudir a la Autoridad Nacional de Protección de Datos Personales del Perú.
             </p>
           </section>
         </div>
@@ -126,7 +212,7 @@ export default function PrivacidadPage() {
           </Link>
 
           <Link
-            href="/products/cuadros-personalizados"
+            href="/products/cuadros-personalizados?step=1"
             className="p-5 rounded-2xl bg-white border border-[#c6a26c]/30 hover:border-[#174B3D] flex items-center justify-between group transition-all shadow-xs"
           >
             <div>
