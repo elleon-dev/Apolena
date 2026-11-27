@@ -2160,11 +2160,6 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
 
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {isPendingOrder && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-terracotta-500 text-white text-[10px] font-bold uppercase tracking-wider">
-                                  Pendiente
-                                </span>
-                              )}
                               <span className="text-sm font-bold text-stone-900">
                                 {order.order_code}
                               </span>
