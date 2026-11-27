@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Header } from "@/components/Header";
 import { EditOrderModal } from "@/components/EditOrderModal";
 import { EditTrackingModal } from "@/components/EditTrackingModal";
+import { SendToSupplierModal } from "@/components/SendToSupplierModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
 import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
@@ -250,6 +251,8 @@ export default function AdminDashboardPage() {
     | "completed"
   >("priority_all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [supplierModalOrder, setSupplierModalOrder] =
+    useState<OrderRecord | null>(null);
   const [aiHealthData, setAiHealthData] = useState<{
     health: {
       activeAlert: boolean;
@@ -5446,6 +5449,48 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               </>
                             )}
                           </button>
+
+                          {/* Botón de envío por correo al proveedor (se habilita al verificar el pago 100%) */}
+                          {(() => {
+                            const prevDispatch = (
+                              modalItem.customizations as any
+                            )?.production_dispatch;
+                            const isPaidFull =
+                              selectedOrder.payment_status === "paid_full";
+                            return (
+                              <div className="space-y-1.5 pt-1">
+                                <button
+                                  type="button"
+                                  disabled={!isPaidFull}
+                                  onClick={() =>
+                                    setSupplierModalOrder(selectedOrder)
+                                  }
+                                  className={`w-full py-2.5 px-4 rounded-full font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all ${
+                                    isPaidFull
+                                      ? "bg-[#174B3D] hover:bg-[#123B30] text-white cursor-pointer"
+                                      : "bg-stone-200 text-stone-500 cursor-not-allowed"
+                                  }`}
+                                >
+                                  <Mail className="w-3.5 h-3.5 text-[#c6a26c]" />
+                                  <span>
+                                    {isPaidFull
+                                      ? prevDispatch?.sent_at
+                                        ? "Reenviar Orden al Proveedor"
+                                        : "Enviar a Fabricación (Proveedor)"
+                                      : "Verifica el pago 100% para enviar al proveedor"}
+                                  </span>
+                                </button>
+                                {prevDispatch?.sent_at && (
+                                  <p className="text-[10px] text-emerald-700 font-medium text-center">
+                                    Enviado a {prevDispatch.supplier_email} el{" "}
+                                    {new Date(
+                                      prevDispatch.sent_at,
+                                    ).toLocaleString("es-PE")}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </>
                       ) : (
                         <p className="text-stone-500">
@@ -5904,6 +5949,16 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
             </div>
           </div>
         )}
+
+        {/* Modal de Envío de Orden de Fabricación al Proveedor */}
+        <SendToSupplierModal
+          order={supplierModalOrder}
+          onClose={() => setSupplierModalOrder(null)}
+          onSentSuccess={(msg) => {
+            showToast("success", msg);
+            void loadAdminData();
+          }}
+        />
 
         {/* Modal de confirmación genérico para acciones del Admin */}
         <ConfirmModal

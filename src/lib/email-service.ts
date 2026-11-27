@@ -14,12 +14,18 @@ import ClaimRegisteredConsumerEmail from "@/emails/ClaimRegisteredConsumerEmail"
 import ClaimRegisteredAdminEmail from "@/emails/ClaimRegisteredAdminEmail";
 import ContactInquiryEmail from "@/emails/ContactInquiryEmail";
 
+export interface EmailAttachmentPayload {
+  filename: string;
+  content: string; // Base64 sin prefijo data:
+}
+
 export interface SendEmailPayload {
   to: string;
   cc?: string[];
   subject: string;
   template: string;
   data: Record<string, any>;
+  attachments?: EmailAttachmentPayload[];
 }
 
 export function isResendConfigured(): boolean {
@@ -157,6 +163,64 @@ export async function renderEmailHtml(
       `;
     }
 
+    case "supplier_production_order": {
+      const orderCode = String(data.order_code || "");
+      const trackingId = String(data.tracking_id || "");
+      const rawMessage = String(data.message || "");
+      const escapedMessage = rawMessage
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br/>");
+      const attachmentName = data.attachment_filename
+        ? String(data.attachment_filename)
+        : null;
+      const masterUrl =
+        typeof data.master_art_url === "string" &&
+        data.master_art_url.startsWith("http")
+          ? data.master_art_url
+          : null;
+
+      return `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 660px; margin: 0 auto; background: #FFFBF2; padding: 28px; border-radius: 20px; color: #141414; border: 1px solid #E8DEC8;">
+          <div style="border-bottom: 2px solid #174B3D; padding-bottom: 14px; margin-bottom: 18px;">
+            <p style="font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #94713F; margin: 0 0 6px;">
+              APOLENA · ORDEN DE FABRICACIÓN PARA TALLER
+            </p>
+            <h1 style="font-family: Georgia, serif; color: #174B3D; font-size: 24px; margin: 0;">
+              Orden ${orderCode}${trackingId ? ` · Tracking ${trackingId}` : ""}
+            </h1>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid #E8DEC8; border-radius: 14px; padding: 18px 20px; font-size: 14px; line-height: 1.65; color: #1C1917;">
+            ${escapedMessage}
+          </div>
+
+          ${
+            attachmentName
+              ? `<div style="margin-top: 16px; padding: 12px 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; font-size: 13px; color: #065F46;">
+                  <strong>Archivo adjunto incluido:</strong> ${attachmentName} (listo para impresión a 300 DPI con margen de +4 cm por lado).
+                </div>`
+              : ""
+          }
+
+          ${
+            masterUrl
+              ? `<div style="margin-top: 16px;">
+                  <a href="${masterUrl}" style="display: inline-block; background: #174B3D; color: #FFFFFF; text-decoration: none; padding: 11px 22px; border-radius: 999px; font-size: 13px; font-weight: 700;">
+                    Descargar arte base HD de respaldo
+                  </a>
+                </div>`
+              : ""
+          }
+
+          <p style="font-size: 11px; color: #78716C; margin: 22px 0 0; border-top: 1px solid #E8DEC8; padding-top: 12px;">
+            Enviado desde el Dashboard Administrativo de Apolena (${appUrl}). Por favor confirmar recepción respondiendo a este correo.
+          </p>
+        </div>
+      `;
+    }
+
     case "country_launch_notification": {
       const countryName = String(data.country_name || "tu país");
       const targetUrl = String(data.app_url || appUrl);
@@ -232,6 +296,10 @@ export async function dispatchEmailWithResend(
         cc: payload.cc && payload.cc.length > 0 ? payload.cc : undefined,
         subject: payload.subject,
         html,
+        attachments:
+          payload.attachments && payload.attachments.length > 0
+            ? payload.attachments
+            : undefined,
       }),
     });
 
@@ -252,6 +320,10 @@ export async function dispatchEmailWithResend(
             cc: payload.cc && payload.cc.length > 0 ? payload.cc : undefined,
             subject: payload.subject,
             html,
+            attachments:
+              payload.attachments && payload.attachments.length > 0
+                ? payload.attachments
+                : undefined,
           }),
         });
 
