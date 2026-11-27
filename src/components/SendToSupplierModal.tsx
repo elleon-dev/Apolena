@@ -24,6 +24,7 @@ export const DEFAULT_SUPPLIER_EMAIL = "mariano260996@gmail.com";
 
 interface SendToSupplierModalProps {
   order: OrderRecord | null;
+  defaultSupplierEmail?: string;
   onClose: () => void;
   onSentSuccess: (message: string) => void;
 }
@@ -182,12 +183,15 @@ async function compressDataUrlForEmailAttachment(
 
 export function SendToSupplierModal({
   order,
+  defaultSupplierEmail,
   onClose,
   onSentSuccess,
 }: SendToSupplierModalProps) {
   const customFileRef = useRef<HTMLInputElement>(null);
 
-  const [toEmail, setToEmail] = useState(DEFAULT_SUPPLIER_EMAIL);
+  const resolvedDefaultEmail =
+    defaultSupplierEmail?.trim() || DEFAULT_SUPPLIER_EMAIL;
+  const [toEmail, setToEmail] = useState(resolvedDefaultEmail);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
@@ -213,7 +217,7 @@ export function SendToSupplierModal({
       order.packages?.[0]?.items?.[0]?.customizations as any
     )?.production_dispatch;
 
-    setToEmail(prevDispatch?.supplier_email || DEFAULT_SUPPLIER_EMAIL);
+    setToEmail(prevDispatch?.supplier_email || resolvedDefaultEmail);
     setSubject(defaults.subject);
     setMessage(defaults.message);
     setSubmitError(null);

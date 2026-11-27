@@ -267,6 +267,7 @@ export interface PlatformSettingsMap {
   ADMIN_NOTIFICATION_EMAILS: {
     emails: string[];
     whatsapp_support: string;
+    supplier_email?: string;
   };
 }
 
@@ -314,6 +315,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsMap = {
   ADMIN_NOTIFICATION_EMAILS: {
     emails: ["apolenaperu@gmail.com", "nmoriano26@gmail.com"],
     whatsapp_support: "+51 993 920 853",
+    supplier_email: "mariano260996@gmail.com",
   },
 };
 

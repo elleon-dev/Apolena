@@ -169,6 +169,9 @@ export default function AdminDashboardPage() {
   const [adminEmailsInput, setAdminEmailsInput] = useState<string>(
     "apolenaperu@gmail.com",
   );
+  const [supplierEmailInput, setSupplierEmailInput] = useState<string>(
+    "mariano260996@gmail.com",
+  );
   const [deletingOrder, setDeletingOrder] = useState<OrderRecord | null>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
@@ -484,6 +487,11 @@ export default function AdminDashboardPage() {
       if (data.settings?.ADMIN_NOTIFICATION_EMAILS?.emails) {
         setAdminEmailsInput(
           data.settings.ADMIN_NOTIFICATION_EMAILS.emails.join(", "),
+        );
+      }
+      if (data.settings?.ADMIN_NOTIFICATION_EMAILS?.supplier_email) {
+        setSupplierEmailInput(
+          data.settings.ADMIN_NOTIFICATION_EMAILS.supplier_email,
         );
       }
     } catch {
@@ -1483,16 +1491,21 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item.includes("@"));
+    const cleanSupplierEmail = supplierEmailInput.trim().includes("@")
+      ? supplierEmailInput.trim().toLowerCase()
+      : "mariano260996@gmail.com";
     const nextSettings = {
       ...settings,
       ADMIN_NOTIFICATION_EMAILS: {
         ...settings.ADMIN_NOTIFICATION_EMAILS,
         emails:
           parsedEmails.length > 0 ? parsedEmails : ["apolenaperu@gmail.com"],
+        supplier_email: cleanSupplierEmail,
       },
     };
     setSettings(nextSettings);
     setAdminEmailsInput(nextSettings.ADMIN_NOTIFICATION_EMAILS.emails.join(", "));
+    setSupplierEmailInput(cleanSupplierEmail);
     const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -4909,6 +4922,24 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       coma.
                     </p>
                   </div>
+
+                  <div className="space-y-1 sm:col-span-2 pt-1">
+                    <label className="font-semibold text-stone-800 block">
+                      Correo del Proveedor / Fabricador (por defecto)
+                    </label>
+                    <input
+                      type="email"
+                      disabled={!isSuperAdmin}
+                      placeholder="Ej. mariano260996@gmail.com"
+                      value={supplierEmailInput}
+                      onChange={(e) => setSupplierEmailInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-cream-50 border border-cream-200 font-medium disabled:opacity-60"
+                    />
+                    <p className="text-[11px] text-stone-500">
+                      Se pre-llenará automáticamente al enviar una orden de
+                      fabricación al taller una vez confirmado el pago 100%.
+                    </p>
+                  </div>
                 </div>
 
                 {isSuperAdmin ? (
@@ -5449,48 +5480,6 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                               </>
                             )}
                           </button>
-
-                          {/* Botón de envío por correo al proveedor (se habilita al verificar el pago 100%) */}
-                          {(() => {
-                            const prevDispatch = (
-                              modalItem.customizations as any
-                            )?.production_dispatch;
-                            const isPaidFull =
-                              selectedOrder.payment_status === "paid_full";
-                            return (
-                              <div className="space-y-1.5 pt-1">
-                                <button
-                                  type="button"
-                                  disabled={!isPaidFull}
-                                  onClick={() =>
-                                    setSupplierModalOrder(selectedOrder)
-                                  }
-                                  className={`w-full py-2.5 px-4 rounded-full font-semibold flex items-center justify-center gap-1.5 shadow-soft transition-all ${
-                                    isPaidFull
-                                      ? "bg-[#174B3D] hover:bg-[#123B30] text-white cursor-pointer"
-                                      : "bg-stone-200 text-stone-500 cursor-not-allowed"
-                                  }`}
-                                >
-                                  <Mail className="w-3.5 h-3.5 text-[#c6a26c]" />
-                                  <span>
-                                    {isPaidFull
-                                      ? prevDispatch?.sent_at
-                                        ? "Reenviar Orden al Proveedor"
-                                        : "Enviar a Fabricación (Proveedor)"
-                                      : "Verifica el pago 100% para enviar al proveedor"}
-                                  </span>
-                                </button>
-                                {prevDispatch?.sent_at && (
-                                  <p className="text-[10px] text-emerald-700 font-medium text-center">
-                                    Enviado a {prevDispatch.supplier_email} el{" "}
-                                    {new Date(
-                                      prevDispatch.sent_at,
-                                    ).toLocaleString("es-PE")}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })()}
                         </>
                       ) : (
                         <p className="text-stone-500">
@@ -5888,6 +5877,105 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         </div>
                       )}
                     </div>
+
+                    {/* 5. Despacho a Fabricación (Proveedor / Taller) */}
+                    {(() => {
+                      const prevDispatch = (
+                        modalItem?.customizations as any
+                      )?.production_dispatch;
+                      const isPaidFull =
+                        selectedOrder.payment_status === "paid_full";
+                      return (
+                        <div className="p-5 rounded-2xl bg-cream-50 border border-cream-200 space-y-3 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600 flex items-center gap-1.5">
+                              <Hammer className="w-3.5 h-3.5" />
+                              <span>Despacho a Fabricación (Proveedor)</span>
+                            </span>
+
+                            <div className="p-3 rounded-xl bg-white border border-cream-200 space-y-1.5 text-[11px]">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-stone-500">
+                                  Proveedor por defecto:
+                                </span>
+                                <span className="font-semibold text-stone-900 truncate">
+                                  {supplierEmailInput}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-stone-500">Estado:</span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    prevDispatch?.sent_at
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : isPaidFull
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-stone-200 text-stone-600"
+                                  }`}
+                                >
+                                  {prevDispatch?.sent_at
+                                    ? "Enviado al proveedor"
+                                    : isPaidFull
+                                      ? "Listo para enviar"
+                                      : "Esperando pago 100%"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {prevDispatch?.sent_at ? (
+                              <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-[11px] text-emerald-900 space-y-1">
+                                <p className="font-bold flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  <span>Orden despachada al taller</span>
+                                </p>
+                                <p>
+                                  <strong>Destino:</strong>{" "}
+                                  {prevDispatch.supplier_email}
+                                </p>
+                                <p>
+                                  <strong>Fecha:</strong>{" "}
+                                  {new Date(
+                                    prevDispatch.sent_at,
+                                  ).toLocaleString("es-PE")}
+                                </p>
+                                {prevDispatch.attachment_filename && (
+                                  <p className="truncate">
+                                    <strong>Adjunto:</strong>{" "}
+                                    {prevDispatch.attachment_filename}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-stone-600 leading-relaxed">
+                                {isPaidFull
+                                  ? "El pago del 100% ya está confirmado. Envía la ficha técnica completa y el Archivo Maestro HD (+4 cm) al taller para iniciar la fabricación."
+                                  : "Confirma primero el pago del 100% en Finanzas para habilitar el envío de la orden al taller."}
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={!isPaidFull}
+                            onClick={() => setSupplierModalOrder(selectedOrder)}
+                            className={`w-full py-2.5 px-4 rounded-full font-semibold text-xs flex items-center justify-center gap-1.5 shadow-soft transition-all ${
+                              isPaidFull
+                                ? "bg-[#174B3D] hover:bg-[#123B30] text-white cursor-pointer"
+                                : "bg-stone-200 text-stone-500 cursor-not-allowed"
+                            }`}
+                          >
+                            <Mail className="w-3.5 h-3.5 text-[#c6a26c]" />
+                            <span>
+                              {isPaidFull
+                                ? prevDispatch?.sent_at
+                                  ? "Reenviar Orden al Proveedor"
+                                  : "Enviar a Fabricación (Proveedor)"
+                                : "Verifica el pago 100% para habilitar"}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -5953,6 +6041,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
         {/* Modal de Envío de Orden de Fabricación al Proveedor */}
         <SendToSupplierModal
           order={supplierModalOrder}
+          defaultSupplierEmail={supplierEmailInput}
           onClose={() => setSupplierModalOrder(null)}
           onSentSuccess={(msg) => {
             showToast("success", msg);
