@@ -255,9 +255,9 @@ export type PrintFinishMode = "full-bleed" | "museum-matte";
 
 /**
  * Margen obligatorio de remangado para bastidor/marco de madera:
- * +5 cm en cada uno de los 4 lados (arriba, abajo, izquierda, derecha) = +10 cm al ancho y +10 cm al alto.
+ * +4 cm en cada uno de los 4 lados (arriba, abajo, izquierda, derecha) = +8 cm al ancho y +8 cm al alto.
  */
-export const CANVAS_WRAP_BLEED_CM = 5;
+export const CANVAS_WRAP_BLEED_CM = 4;
 
 export interface PrintBleedSpec {
   faceWidthCm: number;

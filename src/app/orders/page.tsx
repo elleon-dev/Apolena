@@ -113,8 +113,11 @@ export default function CommonUserOrdersPage() {
         cmDimensions:
           item.customizations?.cm_dimensions || item.customizations?.size_label,
       },
-      CANVAS_WRAP_BLEED_CM,
+      0,
     );
+    const inscriptionName = item.customizations?.pet_inscription?.enabled
+      ? item.customizations?.pet_inscription?.pet_name?.trim() || null
+      : null;
     setDownloadingOrderId(order.id);
     try {
       const exported = await exportPrintReadyImage(
@@ -123,11 +126,8 @@ export default function CommonUserOrdersPage() {
         item.customizations?.finish_mode === "museum-matte"
           ? "museum-matte"
           : "full-bleed",
-        CANVAS_WRAP_BLEED_CM,
-        (item.customizations?.pet_inscription?.enabled &&
-          item.customizations?.pet_inscription?.pet_name?.trim()) ||
-          item.customizations?.pet_name?.trim() ||
-          null,
+        0,
+        inscriptionName,
       );
       const link = document.createElement("a");
       link.href = exported.blob
