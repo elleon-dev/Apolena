@@ -27,7 +27,8 @@ export async function GET(
   );
 
   const isCompletedAndPaid =
-    order.status === "completed" && order.payment_status === "paid_full";
+    (order.status === "delivered" || order.status === "completed") &&
+    order.payment_status === "paid_full";
 
   // Solo el usuario dueño de la orden puede acceder al archivo maestro HD sin marca de agua cuando esté disponible
   const canDownloadHdMaster = isOwner && isCompletedAndPaid;

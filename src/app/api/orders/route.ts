@@ -25,7 +25,8 @@ import { getRequestOrigin } from "@/lib/app-url";
  */
 function sanitizeOrderArtworkForBuyer(order: any, isAdmin: boolean) {
   const isCompletedAndPaid =
-    order.status === "completed" && order.payment_status === "paid_full";
+    (order.status === "delivered" || order.status === "completed") &&
+    order.payment_status === "paid_full";
   if (isAdmin || isCompletedAndPaid) {
     return order;
   }

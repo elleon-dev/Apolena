@@ -90,7 +90,7 @@ Para garantizar que el catálogo escale a múltiples tipos de productos y que el
      3. **Capa 3 — Custodia del Archivo Master 300 DPI y Desbloqueo Post-Entrega (`completed` + `paid_full`):**
         - Al crearse una orden (`POST /api/orders`), el servidor vincula el archivo maestro limpio en `customizations.master_art_url`.
         - Los administradores en `/dashboard` siempre visualizan y descargan el archivo maestro limpio (`master_art_url`) para enviarlo a imprenta a 300 DPI.
-        - Para el comprador (`/orders` y `/track/[trackingId]`), las APIs filtran y ocultan `master_art_url` mientras el pedido está en curso. Únicamente cuando la orden alcanza el estado **`completed`** (entregada físicamente y con el 100% pagado, `payment_status === 'paid_full'`), el sistema desbloquea automáticamente el botón **"Descargar Recuerdo Digital HD (Sin Marca de Agua)"** como beneficio exclusivo post-compra.
+        - Para el comprador (`/orders` y `/track/[trackingId]`), las APIs filtran y ocultan `master_art_url` mientras el pedido está en curso. Únicamente cuando la orden alcanza el estado **`delivered`** (o el estado histórico `completed`) con el 100% pagado (`payment_status === 'paid_full'`), el sistema desbloquea automáticamente el botón **"Descargar Recuerdo Digital HD (Sin Marca de Agua)"** como beneficio exclusivo post-compra.
    - El cliente selecciona la medida de imprenta (300 DPI) según la **Guía de Tamaños y Precios Oficial Apolena** (Tabla "PRICE AND SIZES"):
      - **Foto Lienzo - Estilo 3D (Bastidor de madera maciza incluido, +S/ 0.00):**
        - **20 × 30 cm (`size-20x30`):** Precio **S/ 160.00** | Precio Antes S/ 190.00 | Ahorras S/ 30.00. Ideal para espacios reducidos, repisas o escritorios.

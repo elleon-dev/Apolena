@@ -32,9 +32,10 @@ export async function GET(
     );
   }
 
-  // Capa 3 Anti-Fuga: Ocultar master_art_url al comprador mientras la orden no esté completed + paid_full
+  // Capa 3 Anti-Fuga: Ocultar master_art_url al comprador mientras la orden no esté entregada + paid_full
   const isCompletedAndPaid =
-    order.status === "completed" && order.payment_status === "paid_full";
+    (order.status === "delivered" || order.status === "completed") &&
+    order.payment_status === "paid_full";
 
   const safeOrder =
     isAdmin || isCompletedAndPaid

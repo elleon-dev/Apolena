@@ -23,6 +23,7 @@ import {
   Hammer,
   Truck,
   PackageCheck,
+  Clock,
   AlertCircle,
   Download,
   Lock,
@@ -243,7 +244,10 @@ export default function CommonUserOrdersPage() {
 
   const filteredOrders = orders.filter((order) => {
     const matchesStatus =
-      statusFilter === "all" || order.status === statusFilter;
+      statusFilter === "all" ||
+      (statusFilter === "delivered"
+        ? order.status === "delivered" || order.status === "completed"
+        : order.status === statusFilter);
     const q = searchQuery.trim().toLowerCase();
     const matchesQuery =
       !q ||
@@ -256,7 +260,11 @@ export default function CommonUserOrdersPage() {
   });
 
   const countByStatus = (st: OrderStatus) =>
-    orders.filter((o) => o.status === st).length;
+    st === "delivered"
+      ? orders.filter(
+          (o) => o.status === "delivered" || o.status === "completed",
+        ).length
+      : orders.filter((o) => o.status === st).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFBF2] text-[#141414]">
@@ -370,6 +378,19 @@ export default function CommonUserOrdersPage() {
 
             <button
               type="button"
+              onClick={() => setStatusFilter("pending")}
+              className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                statusFilter === "pending"
+                  ? "bg-[#174B3D] text-white shadow-xs"
+                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Pendientes ({countByStatus("pending")})</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setStatusFilter("manufacturing")}
               className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 statusFilter === "manufacturing"
@@ -378,7 +399,7 @@ export default function CommonUserOrdersPage() {
               }`}
             >
               <Hammer className="w-3.5 h-3.5" />
-              <span>1. En Fabricación ({countByStatus("manufacturing")})</span>
+              <span>En Fabricación ({countByStatus("manufacturing")})</span>
             </button>
 
             <button
@@ -391,7 +412,7 @@ export default function CommonUserOrdersPage() {
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
-              <span>2. En Camino ({countByStatus("in_transit")})</span>
+              <span>En Camino ({countByStatus("in_transit")})</span>
             </button>
 
             <button
@@ -404,20 +425,7 @@ export default function CommonUserOrdersPage() {
               }`}
             >
               <PackageCheck className="w-3.5 h-3.5" />
-              <span>3. Entregado ({countByStatus("delivered")})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusFilter("completed")}
-              className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                statusFilter === "completed"
-                  ? "bg-[#174B3D] text-white shadow-xs"
-                  : "bg-[#FFFBF2] text-[#174B3D] border border-[#E8DEC8] hover:bg-[#F6EFE0]"
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Exitoso ({countByStatus("completed")})</span>
+              <span>Entregados ({countByStatus("delivered")})</span>
             </button>
           </div>
         </div>
@@ -493,10 +501,10 @@ export default function CommonUserOrdersPage() {
                           )}
                         </button>
 
-                        {order.status === "completed" ? (
+                        {order.status === "delivered" || order.status === "completed" ? (
                           <span className="text-xs px-3 py-1 rounded-full bg-[#174B3D] text-white font-bold flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5 text-[#c6a26c]" />
-                            <span>Exitoso · 100% Pagado</span>
+                            <span>Entregado · Completado</span>
                           </span>
                         ) : order.remaining_amount > 0 ? (
                           <span className="text-xs px-3 py-1 rounded-full bg-[#c6a26c]/20 text-[#174B3D] font-semibold border border-[#c6a26c]/40">
@@ -567,8 +575,11 @@ export default function CommonUserOrdersPage() {
                               user.email.toLowerCase() ===
                                 order.shipping.email.toLowerCase())),
                       );
+                      const isDeliveredFinal =
+                        order.status === "delivered" ||
+                        order.status === "completed";
                       const canDownloadCleanHd =
-                        order.status === "completed" &&
+                        isDeliveredFinal &&
                         isPaidFull &&
                         isOrderOwner;
 
@@ -688,7 +699,7 @@ export default function CommonUserOrdersPage() {
                                     : "Descargar Recuerdo Digital HD (Sin Marca de Agua)"}
                                 </span>
                               </button>
-                            ) : order.status === "completed" && isPaidFull && !isOrderOwner ? (
+                            ) : isDeliveredFinal && isPaidFull && !isOrderOwner ? (
                               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[11px] text-stone-600 font-medium">
                                 <Lock className="w-3 h-3 text-[#174B3D] shrink-0" />
                                 <span>

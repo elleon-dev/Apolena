@@ -25,7 +25,7 @@ Toda notificación por correo electrónico se registra primero en la tabla `emai
      - Incluye todos los detalles del cliente, teléfono/WhatsApp, dirección de delivery, opciones de personalización (tamaño, acabado, marco), imagen HD para impresión, método de pago elegido (`yape`, `plin`, `bank_transfer`) y enlace directo al Panel Admin (`/dashboard`).
 
 2. **Al Cambiar el Estado del Tracking (`template = "order_status_updated"`):**
-   - Notifica al comprador cuando su pedido avanza a **En camino (`in_transit`)**, **Entregado (`delivered`)** y cuando culmina como **Exitoso (`completed`)** con pago 100% verificado.
+   - Notifica al comprador cuando su pedido avanza de **Pendiente (`pending`)** a **En Fabricación (`manufacturing`, disparado automáticamente al enviar la orden al proveedor)**, **En camino (`in_transit`)** y **Entregado (`delivered`)** con pago 100% verificado.
 
 3. **Al Despachar Orden al Proveedor de Fabricación (`template = "supplier_production_order"`):**
    - Disparado desde el Dashboard Administrativo (`POST /api/admin/orders/[id]/send-to-supplier`) únicamente cuando `payment_status === "paid_full"`.

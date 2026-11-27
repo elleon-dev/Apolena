@@ -3,6 +3,7 @@ import { isAdminRole } from "@/lib/auth";
 import {
   findOrderById,
   getAuthoritativeSessionUser,
+  updateOrderAdminLifecycle,
 } from "@/lib/db-service";
 import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 import { dispatchEmailWithResend } from "@/lib/email-service";
@@ -192,14 +193,36 @@ export async function POST(
       );
     }
 
+    // Si la orden está en estado inicial "pending", pasa automáticamente a "manufacturing" (En Fabricación)
+    let transitionedToManufacturing = false;
+    let finalOrderStatus = order.status;
+    if (order.status === "pending") {
+      const updatedOrder = await updateOrderAdminLifecycle({
+        orderId: order.id,
+        adminId: admin.id,
+        action: "set_step_manufacturing",
+        app_url: request.nextUrl.origin,
+      });
+      if (updatedOrder) {
+        finalOrderStatus = updatedOrder.status;
+        transitionedToManufacturing = updatedOrder.status === "manufacturing";
+      }
+    }
+
     return NextResponse.json({
       success: true,
       sent: dispatch.sent,
       simulated: Boolean(dispatch.simulated),
       dispatch: dispatchRecord,
+      orderStatus: finalOrderStatus,
+      transitionedToManufacturing,
       message: dispatch.sent
-        ? `Orden de fabricación enviada correctamente a ${toEmail}.`
-        : `Orden registrada en email_queue para ${toEmail} (Resend en modo simulación).`,
+        ? transitionedToManufacturing
+          ? `Orden enviada al proveedor (${toEmail}) y pasada automáticamente a En Fabricación.`
+          : `Orden de fabricación enviada correctamente a ${toEmail}.`
+        : transitionedToManufacturing
+          ? `Orden registrada en email_queue para ${toEmail} y pasada a En Fabricación (modo simulación).`
+          : `Orden registrada en email_queue para ${toEmail} (Resend en modo simulación).`,
     });
   } catch (err: any) {
     console.error("[send-to-supplier] Error:", err);

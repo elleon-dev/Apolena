@@ -474,7 +474,8 @@ export default function TrackingDetailPage({
                               : "Descargar Recuerdo Digital HD (Sin Marca)"}
                           </span>
                         </button>
-                      ) : order.status === "completed" &&
+                      ) : (order.status === "delivered" ||
+                        order.status === "completed") &&
                         order.payment_status === "paid_full" &&
                         !isOwner ? (
                         <div className="inline-flex flex-wrap items-center gap-1.5 text-[11px] text-stone-600 font-medium">

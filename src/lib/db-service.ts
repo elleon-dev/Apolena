@@ -19,7 +19,12 @@ import {
 } from "@/lib/image-storage";
 
 export type OrderStatus =
-  "manufacturing" | "in_transit" | "delivered" | "completed" | "cancelled";
+  | "pending"
+  | "manufacturing"
+  | "in_transit"
+  | "delivered"
+  | "completed"
+  | "cancelled";
 
 export type PaymentStatus =
   "partial_pending" | "partial_paid" | "paid_full" | "refunded";
@@ -2332,7 +2337,7 @@ export async function createOrderWithSplitPayment(input: {
     order_code: orderCode,
     tracking_id: trackingId,
     buyer_id: validBuyerId,
-    status: "manufacturing",
+    status: "pending",
     payment_status: "partial_pending",
     payment_method: input.payment_method,
     subtotal,
@@ -2342,7 +2347,7 @@ export async function createOrderWithSplitPayment(input: {
     advance_amount: advanceAmount,
     remaining_amount: remainingAmount,
     notes: input.notes || null,
-    manufacturing_started_at: now,
+    manufacturing_started_at: null,
     shipped_at: null,
     delivered_at: null,
     completed_at: null,
@@ -2400,7 +2405,7 @@ export async function createOrderWithSplitPayment(input: {
         order_id: orderId,
         package_number: 1,
         total_packages: 1,
-        status: "manufacturing",
+        status: "pending",
         courier: "Apolena Express Delivery",
         tracking_number: trackingId,
         tracking_url: `/track/${trackingId}`,
@@ -2418,7 +2423,7 @@ export async function createOrderWithSplitPayment(input: {
             quantity,
             unit_price: input.unit_price,
             subtotal,
-            status: "manufacturing",
+            status: "pending",
             pet_photo_url: finalPetPhotoUrl,
             generated_art_url: finalGeneratedArtUrl,
             customizations: finalCustomizations,
@@ -2466,7 +2471,7 @@ export async function createOrderWithSplitPayment(input: {
           advance_amount: newOrder.advance_amount,
           remaining_amount: newOrder.remaining_amount,
           notes: newOrder.notes,
-          manufacturing_started_at: new Date(now),
+          manufacturing_started_at: null,
           shipping: newOrder.shipping
             ? {
                 create: {
@@ -2818,6 +2823,9 @@ export async function updateOrderAdminLifecycle(input: {
   } else if (input.action === "set_step_delivered") {
     order.status = "delivered";
     order.delivered_at = now;
+    if (order.payment_status === "paid_full") {
+      order.completed_at = order.completed_at || now;
+    }
     order.packages.forEach((pkg) => {
       pkg.status = "delivered";
       pkg.items.forEach((it) => (it.status = "delivered"));
@@ -3303,10 +3311,11 @@ export async function updateOrderAdminLifecycle(input: {
 
   if (shouldNotifyCustomer && order.shipping?.email) {
     const stepLabels: Record<OrderStatus, string> = {
+      pending: "Pedido Recibido · Pendiente de Validación",
       manufacturing: "En Fabricación (Paso 1 de 3)",
       in_transit: "En Camino a tu Domicilio (Paso 2 de 3)",
-      delivered: "Entregado en tu Domicilio (Paso 3 de 3)",
-      completed: "¡Orden Exitosa! Pago 100% Completado",
+      delivered: "Entregado en tu Domicilio · Pedido Completado",
+      completed: "Entregado en tu Domicilio · Pedido Completado",
       cancelled: "Orden Cancelada",
     };
     const effectiveAppUrl = resolveAppUrl(input.app_url);

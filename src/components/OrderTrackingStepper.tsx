@@ -56,50 +56,53 @@ export function OrderTrackingStepper({
   }
 
   const stepIndexMap: Record<OrderStatus, number> = {
-    manufacturing: 1,
-    in_transit: 2,
-    delivered: 3,
+    pending: 1,
+    manufacturing: 2,
+    in_transit: 3,
+    delivered: 4,
     completed: 4,
     cancelled: 0,
   };
 
   const currentStep = stepIndexMap[status] || 1;
   const isAllCompleted =
-    status === "completed" && paymentStatus === "paid_full";
+    (status === "delivered" || status === "completed") &&
+    paymentStatus === "paid_full";
 
   const steps = [
     {
       num: 1,
+      key: "pending",
+      title: "1. Pendiente",
+      subtitle:
+        "Pedido recibido · Validando tu pago para enviarlo al taller",
+      icon: Clock,
+      timestamp: null,
+    },
+    {
+      num: 2,
       key: "manufacturing",
-      title: "1. Fabricación",
+      title: "2. Fabricación",
       subtitle:
         "Impresión 300 DPI sobre lienzo de tela canvas y montado artesanal",
       icon: Hammer,
       timestamp: manufacturingStartedAt,
     },
     {
-      num: 2,
+      num: 3,
       key: "in_transit",
-      title: "2. En Camino",
+      title: "3. En Camino",
       subtitle: "Tu cuadro salió del taller rumbo a tu dirección de entrega",
       icon: Truck,
       timestamp: shippedAt,
     },
     {
-      num: 3,
+      num: 4,
       key: "delivered",
-      title: "3. Entregado",
+      title: "4. Entregado",
       subtitle: "Pedido entregado en tu dirección o agencia asignada",
       icon: PackageCheck,
-      timestamp: deliveredAt,
-    },
-    {
-      num: 4,
-      key: "completed",
-      title: "4. Exitoso",
-      subtitle: "Entrega verificada y orden culminada con éxito",
-      icon: CheckCircle2,
-      timestamp: completedAt,
+      timestamp: deliveredAt || completedAt,
     },
   ];
 

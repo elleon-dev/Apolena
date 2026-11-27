@@ -101,15 +101,15 @@ interface SessionUser {
  */
 function getOrderOperationalPriority(order: OrderRecord): number {
   if (order.status === "cancelled") return 99;
-  if (order.status === "completed") return 50;
-  // Si aún falta verificar el 50% de adelanto, máxima alerta (Prioridad 1)
+  if (order.status === "delivered" || order.status === "completed") return 50;
+  // Si aún falta verificar el pago, máxima alerta (Prioridad 1)
   if (order.payment_status === "partial_pending") return 1;
-  // Paso 1: En Fabricación
-  if (order.status === "manufacturing") return 2;
-  // Paso 2: En Camino
-  if (order.status === "in_transit") return 3;
-  // Paso 3: Entregado pero pendiente de confirmar 2do 50% contraentrega
-  if (order.status === "delivered") return 4;
+  // Estado inicial: Pendiente de envío al proveedor
+  if (order.status === "pending") return 2;
+  // En Fabricación
+  if (order.status === "manufacturing") return 3;
+  // En Camino
+  if (order.status === "in_transit") return 4;
   return 10;
 }
 
@@ -248,10 +248,10 @@ export default function AdminDashboardPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState<
     | "priority_all"
     | "active_pending"
+    | "pending"
     | "manufacturing"
     | "in_transit"
     | "delivered"
-    | "completed"
   >("priority_all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [supplierModalOrder, setSupplierModalOrder] =
@@ -689,7 +689,15 @@ export default function AdminDashboardPage() {
   const filteredOrders = useMemo(() => {
     return prioritizedOrders.filter((order) => {
       if (orderStatusFilter === "active_pending") {
-        if (order.status === "completed" || order.status === "cancelled") {
+        if (
+          order.status === "delivered" ||
+          order.status === "completed" ||
+          order.status === "cancelled"
+        ) {
+          return false;
+        }
+      } else if (orderStatusFilter === "delivered") {
+        if (order.status !== "delivered" && order.status !== "completed") {
           return false;
         }
       } else if (orderStatusFilter !== "priority_all") {
@@ -1565,14 +1573,16 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
   };
 
   // KPI Counters
+  const totalPending = orders.filter((o) => o.status === "pending").length;
   const totalManufacturing = orders.filter(
     (o) => o.status === "manufacturing",
   ).length;
   const totalInTransit = orders.filter((o) => o.status === "in_transit").length;
-  const totalDelivered = orders.filter((o) => o.status === "delivered").length;
-  const totalCompleted = orders.filter((o) => o.status === "completed").length;
+  const totalDelivered = orders.filter(
+    (o) => o.status === "delivered" || o.status === "completed",
+  ).length;
   const totalActivePending =
-    totalManufacturing + totalInTransit + totalDelivered;
+    totalPending + totalManufacturing + totalInTransit;
   const totalUnverifiedAdvance = orders.filter(
     (o) => o.payment_status === "partial_pending" && o.status !== "cancelled",
   ).length;
@@ -1667,16 +1677,36 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
             type="button"
             onClick={() => {
               setActiveTab("orders");
+              setOrderStatusFilter("pending");
+            }}
+            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-amber-400 cursor-pointer ${
+              orderStatusFilter === "pending" && activeTab === "orders"
+                ? "border-amber-500 ring-2 ring-amber-500/15"
+                : "border-amber-200"
+            }`}
+          >
+            <span className="text-[11px] font-semibold text-amber-800 block">
+              Pendientes
+            </span>
+            <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 mt-1">
+              {totalPending}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("orders");
               setOrderStatusFilter("manufacturing");
             }}
-            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-terracotta-400 ${
+            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-terracotta-400 cursor-pointer ${
               orderStatusFilter === "manufacturing" && activeTab === "orders"
                 ? "border-terracotta-500 ring-2 ring-terracotta-500/15"
                 : "border-cream-200"
             }`}
           >
             <span className="text-[11px] font-medium text-stone-500 block">
-              Paso 1 · En Fabricación
+              En Fabricación
             </span>
             <p className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1">
               {totalManufacturing}
@@ -1689,14 +1719,14 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
               setActiveTab("orders");
               setOrderStatusFilter("in_transit");
             }}
-            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-terracotta-400 ${
+            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-terracotta-400 cursor-pointer ${
               orderStatusFilter === "in_transit" && activeTab === "orders"
                 ? "border-terracotta-500 ring-2 ring-terracotta-500/15"
                 : "border-cream-200"
             }`}
           >
             <span className="text-[11px] font-medium text-stone-500 block">
-              Paso 2 · En Camino
+              En Camino
             </span>
             <p className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1">
               {totalInTransit}
@@ -1709,37 +1739,17 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
               setActiveTab("orders");
               setOrderStatusFilter("delivered");
             }}
-            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-terracotta-400 ${
+            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-sage-400 cursor-pointer ${
               orderStatusFilter === "delivered" && activeTab === "orders"
-                ? "border-terracotta-500 ring-2 ring-terracotta-500/15"
-                : "border-cream-200"
-            }`}
-          >
-            <span className="text-[11px] font-medium text-stone-500 block">
-              Paso 3 · Entregados (Por Cobrar)
-            </span>
-            <p className="font-serif text-2xl sm:text-3xl font-bold text-terracotta-600 mt-1">
-              {totalDelivered}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("orders");
-              setOrderStatusFilter("completed");
-            }}
-            className={`text-left bg-white border rounded-2xl p-4 sm:p-5 shadow-soft transition-all hover:border-sage-400 ${
-              orderStatusFilter === "completed" && activeTab === "orders"
                 ? "border-sage-600 ring-2 ring-sage-600/15"
                 : "border-sage-200"
             }`}
           >
             <span className="text-[11px] font-semibold text-sage-700 block">
-              Exitosos (100% Pagado)
+              Entregados
             </span>
             <p className="font-serif text-2xl sm:text-3xl font-bold text-sage-700 mt-1">
-              {totalCompleted}
+              {totalDelivered}
             </p>
           </button>
 
@@ -2018,20 +2028,20 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                     label: `Todas (${orders.length})`,
                   },
                   {
+                    id: "pending",
+                    label: `Pendientes (${totalPending})`,
+                  },
+                  {
                     id: "manufacturing",
-                    label: `1. Fabricación (${totalManufacturing})`,
+                    label: `Fabricación (${totalManufacturing})`,
                   },
                   {
                     id: "in_transit",
-                    label: `2. En Camino (${totalInTransit})`,
+                    label: `En Camino (${totalInTransit})`,
                   },
                   {
                     id: "delivered",
-                    label: `3. Entregado (${totalDelivered})`,
-                  },
-                  {
-                    id: "completed",
-                    label: `Exitoso (${totalCompleted})`,
+                    label: `Entregados (${totalDelivered})`,
                   },
                 ].map((tab) => (
                   <button
@@ -2080,6 +2090,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                   const item = order.packages?.[0]?.items?.[0];
                   const isBusy = updatingOrderId === order.id;
                   const isPendingOrder =
+                    order.status !== "delivered" &&
                     order.status !== "completed" &&
                     order.status !== "cancelled";
                   const needsAdvanceVerification =
@@ -2087,33 +2098,39 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                     order.status !== "cancelled";
 
                   const stepBadge =
-                    order.status === "manufacturing"
+                    order.status === "pending"
                       ? {
-                          label: "Paso 1 · En Fabricación",
-                          cls: "bg-amber-50 text-amber-800 border-amber-200",
-                          progress: 1,
+                          label: "Pendiente",
+                          cls: "bg-amber-100 text-amber-900 border-amber-300",
+                          progress: 0,
                         }
-                      : order.status === "in_transit"
+                      : order.status === "manufacturing"
                         ? {
-                            label: "Paso 2 · En Camino",
-                            cls: "bg-sky-50 text-sky-800 border-sky-200",
-                            progress: 2,
+                            label: "En Fabricación",
+                            cls: "bg-amber-50 text-amber-800 border-amber-200",
+                            progress: 1,
                           }
-                        : order.status === "delivered"
+                        : order.status === "in_transit"
                           ? {
-                              label:
-                                order.remaining_amount > 0 &&
-                                order.payment_status !== "paid_full"
-                                  ? "Paso 3 · Entregado (Cobrar Saldo)"
-                                  : "Paso 3 · Entregado",
-                              cls: "bg-terracotta-50 text-terracotta-700 border-terracotta-200",
-                              progress: 3,
+                              label: "En Camino",
+                              cls: "bg-sky-50 text-sky-800 border-sky-200",
+                              progress: 2,
                             }
-                          : {
-                              label: "Exitoso (100% Pagado)",
-                              cls: "bg-sage-100 text-sage-800 border-sage-200",
-                              progress: 4,
-                            };
+                          : order.status === "cancelled"
+                            ? {
+                                label: "Cancelada",
+                                cls: "bg-rose-50 text-rose-700 border-rose-200",
+                                progress: 0,
+                              }
+                            : {
+                                label:
+                                  order.remaining_amount > 0 &&
+                                  order.payment_status !== "paid_full"
+                                    ? "Entregado (Cobrar Saldo)"
+                                    : "Entregado",
+                                cls: "bg-sage-100 text-sage-800 border-sage-200",
+                                progress: 3,
+                              };
 
                   return (
                     <div
@@ -2341,6 +2358,22 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             </button>
                           )}
 
+                          {order.status === "pending" &&
+                            order.payment_status === "paid_full" && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSupplierModalOrder(order);
+                                }}
+                                className="px-3 py-1.5 rounded-full bg-[#174B3D] hover:bg-[#123B30] text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all cursor-pointer"
+                              >
+                                <Mail className="w-3 h-3 text-[#c6a26c]" />
+                                <span>Enviar a Proveedor</span>
+                              </button>
+                            )}
+
                           {order.status === "manufacturing" && (
                             <button
                               type="button"
@@ -2377,28 +2410,27 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                             </button>
                           )}
 
-                         {order.status === "delivered" && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={(e) =>
-                                handleOrderLifecycleAction(
-                                  order.id,
-                                  "complete_final_50_payment",
-                                  e,
-                                )
-                              }
-                              className="px-3 py-1.5 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all"
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>
-                                {order.remaining_amount > 0 &&
-                                order.payment_status !== "paid_full"
-                                  ? `Confirmar Saldo (S/ ${order.remaining_amount.toFixed(0)})`
-                                  : "Marcar Exitoso"}
-                              </span>
-                            </button>
-                          )}
+                          {order.status === "delivered" &&
+                            order.remaining_amount > 0 &&
+                            order.payment_status !== "paid_full" && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={(e) =>
+                                  handleOrderLifecycleAction(
+                                    order.id,
+                                    "complete_final_50_payment",
+                                    e,
+                                  )
+                                }
+                                className="px-3 py-1.5 rounded-full bg-sage-600 hover:bg-sage-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-soft transition-all"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>
+                                  {`Confirmar Saldo (S/ ${order.remaining_amount.toFixed(0)})`}
+                                </span>
+                              </button>
+                            )}
 
                           {/* Botón Editar Orden */}
                           <button
@@ -5261,36 +5293,36 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                         )
                       }
                       className={`px-3.5 py-2 rounded-full border font-semibold flex items-center gap-1.5 transition-all ${
-                        selectedOrder.status === "delivered"
-                          ? "bg-stone-900 text-white border-stone-900 shadow-soft"
+                        selectedOrder.status === "delivered" ||
+                        selectedOrder.status === "completed"
+                          ? "bg-sage-600 text-white border-sage-600 shadow-soft"
                           : "bg-white text-stone-700 border-cream-200 hover:bg-cream-100"
                       }`}
                     >
                       <PackageCheck className="w-3.5 h-3.5" />
-                      <span>3. Entregado</span>
+                      <span>Entregado</span>
                     </button>
 
-                    {selectedOrder.status !== "completed" && (
-                      <button
-                        type="button"
-                        disabled={updatingOrderId === selectedOrder.id}
-                        onClick={() =>
-                          handleOrderLifecycleAction(
-                            selectedOrder.id,
-                            "complete_final_50_payment",
-                          )
-                        }
-                        className="px-4 py-2 rounded-full bg-sage-600 hover:bg-sage-700 text-white font-semibold flex items-center gap-1.5 shadow-soft transition-all"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>
-                          {selectedOrder.remaining_amount > 0 &&
-                          selectedOrder.payment_status !== "paid_full"
-                            ? `Confirmar Saldo (S/ ${selectedOrder.remaining_amount.toFixed(2)}) y Marcar EXITOSO`
-                            : "Confirmar Entrega y Marcar EXITOSO"}
-                        </span>
-                      </button>
-                    )}
+                    {selectedOrder.status !== "completed" &&
+                      selectedOrder.remaining_amount > 0 &&
+                      selectedOrder.payment_status !== "paid_full" && (
+                        <button
+                          type="button"
+                          disabled={updatingOrderId === selectedOrder.id}
+                          onClick={() =>
+                            handleOrderLifecycleAction(
+                              selectedOrder.id,
+                              "complete_final_50_payment",
+                            )
+                          }
+                          className="px-4 py-2 rounded-full bg-sage-600 hover:bg-sage-700 text-white font-semibold flex items-center gap-1.5 shadow-soft transition-all"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>
+                            {`Confirmar Saldo (S/ ${selectedOrder.remaining_amount.toFixed(2)})`}
+                          </span>
+                        </button>
+                      )}
                   </div>
                 </div>
 

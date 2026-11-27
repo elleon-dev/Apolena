@@ -30,33 +30,33 @@ Toda orden generada en `orders` posee:
 
 ---
 
-## 2. Los 3 Pasos del Tracking Logístico + Estado Final Exitoso
+## 2. Máquina de Estados Oficial (`Pendiente` → `En Fabricación` → `En Camino` → `Entregado`)
 
-El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de **3 pasos operativos**, seguidos del **cierre exitoso** al confirmar la entrega:
+El seguimiento visual (`OrderTrackingStepper`) y los cards KPI superiores del Dashboard (`/dashboard`: `Pendientes` | `En Fabricación` | `En Camino` | `Entregados` | `Volumen Total Órdenes`) operan sobre **4 estados lineales** (sin card redundante de "Exitosos", ya que toda orden entra con pago 100%):
 
-### Paso 1 — Fabricación (`status = "manufacturing"`)
+### Estado 1 — Pendiente (`status = "pending"`) — Estado Inicial Obligatorio
+
+- **Regla Inalterable:** Toda orden recién creada (`createOrderWithSplitPayment` en `src/lib/db-service.ts`, `@default("pending")` en `orders`, `order_packages` y `order_items`) nace en **`status = "pending"`** con `manufacturing_started_at = null`.
+- **Descripción para el usuario:** _"Pedido recibido — Validando tu pago para enviarlo al taller."_
+- Permanece en `pending` hasta que el administrador verifica el pago del 100% (`payment_status === "paid_full"`) y **envía el correo de orden de fabricación con especificaciones e imagen HD (+4 cm) al proveedor/fabricador** (`POST /api/admin/orders/[id]/send-to-supplier`), momento en el cual la orden pasa **automáticamente** a `manufacturing`.
+
+### Estado 2 — En Fabricación (`status = "manufacturing"`)
 
 - **Descripción para el usuario:** _"En fabricación — Estamos imprimiendo y preparando el cuadro personalizado de tu mascota con acabado de galería."_
-- Se activa al crearse/confirmarse la orden con el pago del 100%.
+- Se activa automáticamente al despachar el correo al proveedor/fabricador desde el Dashboard (`send-to-supplier`), o manualmente por administración.
 - Timestamps asociados: `manufacturing_started_at`.
 
-### Paso 2 — En Camino (`status = "in_transit"`)
+### Estado 3 — En Camino (`status = "in_transit"`)
 
 - **Descripción para el usuario:** _"En camino — Tu pedido ya salió de nuestro taller hacia tu dirección de entrega."_
 - El administrador actualiza el paquete (`order_packages`) y la orden a `in_transit`, pudiendo adjuntar `courier`, `carrier_phone` y `estimated_delivery`.
 - Timestamps asociados: `shipped_at`.
 
-### Paso 3 — Entregado (`status = "delivered"`)
+### Estado 4 — Entregado (`status = "delivered"`) — Cierre Final
 
 - **Descripción para el usuario:** _"Entregado — Pedido entregado en tu dirección o agencia asignada."_
-- El producto ha sido entregado físicamente al cliente.
-- Timestamps asociados: `delivered_at`.
-
-### Culminación del Proceso — Exitoso (`status = "completed"`)
-
-- **Condición obligatoria:** La orden se encuentra entregada (`delivered`) **Y** el pago total del 100% está verificado (`payment_status === "paid_full"`). (Para órdenes históricas 50%/50% con `remaining_amount > 0`, además liquida el saldo pendiente contraentrega).
-- **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y desbloqueando la descarga del **Recuerdo Digital HD (sin marca de agua, sin el margen de +4 cm de imprenta y con el nombre de la mascota únicamente si el cliente lo activó)**.
-- Timestamps asociados: `completed_at`.
+- **Cierre automático:** Cuando `status === "delivered"` (o el estado histórico `"completed"`) **Y** `payment_status === "paid_full"`, la orden se considera culminada: registra `delivered_at` y `completed_at`, habilita al usuario para dejar su reseña en `reviews` y desbloquea automáticamente la descarga del **Recuerdo Digital HD (sin marca de agua, sin el margen de +4 cm de imprenta y con el nombre de la mascota únicamente si el cliente lo activó)**.
+- Las órdenes históricas en estado `completed` se agrupan y cuentan junto con `delivered` en los KPIs y filtros de `/dashboard` y `/orders`.
 
 _(Estado adicional de excepción: `cancelled` si una orden es anulada por administración antes de su entrega)._
 
@@ -99,4 +99,4 @@ Una vez que el pago total del 100% de una orden está verificado (`payment_statu
 - **Modal de Despacho (`src/components/SendToSupplierModal.tsx`):**
   - Prellena automáticamente el correo del proveedor desde `platform_settings.ADMIN_NOTIFICATION_EMAILS.supplier_email` (editable desde Parámetros Operativos en `/dashboard`; por defecto `mariano260996@gmail.com`), asunto estructurado y ficha técnica completa (código de orden, tracking ID, medida visible, medida total de impresión con +4 cm por lado a 300 DPI, marco, acabado, nombre de mascota si aplica, dedicatoria y datos de entrega con Pin GPS).
   - Genera y adjunta automáticamente el **Archivo Maestro HD con +4 cm de remangado** (comprimido automáticamente si supera 2.4 MB; tope manual de 3.0 MB para respetar el límite serverless de 4.5 MB).
-- **Trazabilidad Escalable:** Cada envío se registra en `email_queue` (`template = "supplier_production_order"`) y guarda `production_dispatch` (último despacho) junto con `production_dispatch_history` (historial auditable) dentro de `order_items.customizations`, dejando el contrato listo para incorporar en el futuro un rol `supplier` / fabricador que gestione sus órdenes y las pase a `in_transit`.
+- **Trazabilidad Escalable y Transición Automática a Fabricación:** Cada envío se registra en `email_queue` (`template = "supplier_production_order"`), guarda `production_dispatch` (último despacho) junto con `production_dispatch_history` (historial auditable) dentro de `order_items.customizations`, y **si la orden estaba en `pending`, la transiciona automáticamente a `manufacturing`** (sincronizando `orders`, `order_packages`, `order_items`, seteando `manufacturing_started_at` y notificando al cliente). Esto deja el contrato listo para incorporar en el futuro un rol `supplier` / fabricador que gestione sus órdenes y las pase a `in_transit`.
