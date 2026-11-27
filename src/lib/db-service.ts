@@ -839,7 +839,7 @@ export async function upsertOAuthProfile(input: {
           where: { id: existing.id },
           data: {
             role: resolvedRole,
-            avatar_url: avatarUrl || existing.avatar_url,
+            avatar_url: existing.avatar_url || avatarUrl,
             name: existing.name || displayName,
           },
         });
@@ -881,7 +881,7 @@ export async function upsertOAuthProfile(input: {
   );
   if (existingLocal) {
     existingLocal.role = resolveUserRole(cleanEmail, existingLocal.role);
-    existingLocal.avatar_url = avatarUrl || existingLocal.avatar_url;
+    existingLocal.avatar_url = existingLocal.avatar_url || avatarUrl;
     existingLocal.name = existingLocal.name || displayName;
     existingLocal.updated_at = new Date().toISOString();
     writeLocalDb(db);

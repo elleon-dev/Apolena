@@ -141,6 +141,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (googleUser?.email_verified !== true) {
+      return redirectWithError(
+        origin,
+        "Tu correo de Google debe estar verificado para iniciar sesión en Apolena.",
+        savedCallbackUrl,
+      );
+    }
+
     const fullName =
       String(googleUser?.name || "").trim() ||
       userEmail.split("@")[0] ||
