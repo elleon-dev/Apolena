@@ -72,6 +72,11 @@ function LoginForm() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const urlError = searchParams.get("error");
+    if (urlError) {
+      setError(urlError);
+    }
+
     const hasHashToken = window.location.hash.includes("access_token=");
     const hasCode = searchParams.get("code");
     if (hasHashToken || hasCode) {
@@ -80,42 +85,14 @@ function LoginForm() {
     }
   }, [router, searchParams]);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setError(null);
     setIsGoogleLoading(true);
-    try {
-      if (!supabaseBrowser) {
-        setError(
-          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
-        );
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      const redirectUrl = new URL("/auth/callback", window.location.origin);
-      if (callbackUrl) {
-        redirectUrl.searchParams.set("callbackUrl", callbackUrl);
-      }
-
-      const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl.toString(),
-          queryParams: {
-            access_type: "offline",
-            prompt: "select_account",
-          },
-        },
-      });
-
-      if (oauthError) {
-        setError(oauthError.message || "Error al conectar con Google.");
-        setIsGoogleLoading(false);
-      }
-    } catch {
-      setError("No se pudo iniciar la autenticación con Google.");
-      setIsGoogleLoading(false);
+    const targetUrl = new URL("/api/auth/google", window.location.origin);
+    if (callbackUrl) {
+      targetUrl.searchParams.set("callbackUrl", callbackUrl);
     }
+    window.location.href = targetUrl.toString();
   };
 
   const onSubmit = async (data: LoginFormData) => {

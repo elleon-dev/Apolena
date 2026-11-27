@@ -63,42 +63,14 @@ function RegisterForm() {
     if (qPhone && !phone) setPhone(qPhone);
   }, [searchParams]);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setError(null);
     setIsGoogleLoading(true);
-    try {
-      if (!supabaseBrowser) {
-        setError(
-          "El cliente de Supabase no está configurado. Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-        );
-        setIsGoogleLoading(false);
-        return;
-      }
-
-      const redirectUrl = new URL("/auth/callback", window.location.origin);
-      if (callbackUrl) {
-        redirectUrl.searchParams.set("callbackUrl", callbackUrl);
-      }
-
-      const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl.toString(),
-          queryParams: {
-            access_type: "offline",
-            prompt: "select_account",
-          },
-        },
-      });
-
-      if (oauthError) {
-        setError(oauthError.message || "Error al conectar con Google.");
-        setIsGoogleLoading(false);
-      }
-    } catch {
-      setError("No se pudo iniciar el registro con Google.");
-      setIsGoogleLoading(false);
+    const targetUrl = new URL("/api/auth/google", window.location.origin);
+    if (callbackUrl) {
+      targetUrl.searchParams.set("callbackUrl", callbackUrl);
     }
+    window.location.href = targetUrl.toString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
