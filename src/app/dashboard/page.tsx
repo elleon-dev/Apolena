@@ -5511,23 +5511,63 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
 
                       {modalItem ? (
                         <>
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={
-                                modalItem.customizations?.master_art_url ||
-                                modalItem.generated_art_url ||
-                                "/samples/cat-suit.jpg"
-                              }
-                              alt="Arte Generado HD"
-                              className="w-24 h-24 rounded-2xl object-cover border border-cream-200 flex-shrink-0 shadow-soft"
-                            />
-                            {modalItem.pet_photo_url && (
+                          <div className="flex items-end gap-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const artUrl =
+                                  modalItem.customizations?.master_art_url ||
+                                  modalItem.generated_art_url ||
+                                  "/samples/cat-suit.jpg";
+                                setVoucherPreviewModal({
+                                  url: artUrl,
+                                  title: `Retrato Generado · ${selectedOrder.order_code}`,
+                                  subtitle: `${modalItem.customizations?.theme_name || "Personalizado"} · ${bleedSpec?.faceCmLabel || modalItem.customizations?.size_label || ""}`,
+                                });
+                              }}
+                              title="Clic para ver el retrato en pantalla completa"
+                              className="group relative w-24 h-24 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 shadow-soft cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
+                            >
                               <img
-                                src={modalItem.pet_photo_url}
-                                alt="Mascota Original"
-                                title="Foto original subida por el cliente"
-                                className="w-16 h-16 rounded-2xl object-cover border border-cream-200 flex-shrink-0"
+                                src={
+                                  modalItem.customizations?.master_art_url ||
+                                  modalItem.generated_art_url ||
+                                  "/samples/cat-suit.jpg"
+                                }
+                                alt="Arte Generado HD"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                               />
+                              <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/95 text-[#174B3D] text-[10px] font-bold shadow-xs">
+                                  <Eye className="w-3 h-3" />
+                                  <span>Ver</span>
+                                </span>
+                              </span>
+                            </button>
+                            {modalItem.pet_photo_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setVoucherPreviewModal({
+                                    url: modalItem.pet_photo_url!,
+                                    title: `Foto Original de Mascota · ${selectedOrder.order_code}`,
+                                    subtitle:
+                                      selectedOrder.shipping?.name ||
+                                      "Subida por el cliente",
+                                  })
+                                }
+                                title="Clic para ver la foto original de la mascota en pantalla completa"
+                                className="group relative w-16 h-16 rounded-2xl overflow-hidden border border-cream-200 flex-shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#174B3D]"
+                              >
+                                <img
+                                  src={modalItem.pet_photo_url}
+                                  alt="Mascota Original"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                />
+                                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Eye className="w-4 h-4 text-white drop-shadow" />
+                                </span>
+                              </button>
                             )}
                           </div>
 
