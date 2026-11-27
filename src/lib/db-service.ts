@@ -3312,8 +3312,8 @@ export async function updateOrderAdminLifecycle(input: {
   if (shouldNotifyCustomer && order.shipping?.email) {
     const stepLabels: Record<OrderStatus, string> = {
       pending: "Pedido Recibido · Pendiente de Validación",
-      manufacturing: "En Fabricación (Paso 1 de 3)",
-      in_transit: "En Camino a tu Domicilio (Paso 2 de 3)",
+      manufacturing: "En Fabricación (Enviado a Taller)",
+      in_transit: "En Camino a tu Domicilio",
       delivered: "Entregado en tu Domicilio · Pedido Completado",
       completed: "Entregado en tu Domicilio · Pedido Completado",
       cancelled: "Orden Cancelada",

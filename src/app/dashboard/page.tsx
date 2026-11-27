@@ -5236,15 +5236,21 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-terracotta-600 block">
-                      Gestión de Estados y Entrega (3 Pasos + Exitoso)
+                      Gestión de Estados y Entrega (Pendiente → Fabricación → En Camino → Entregado)
                     </span>
                     <p className="text-xs text-stone-600">
-                      Actualiza el paso actual de la orden; el cliente verá el
-                      avance en tiempo real con su Tracking ID.
+                      Al enviar la orden al proveedor pasa automáticamente a En Fabricación; el cliente ve el avance en tiempo real con su Tracking ID.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {selectedOrder.status === "pending" && (
+                      <span className="px-3.5 py-2 rounded-full border bg-amber-100 text-amber-900 border-amber-300 font-semibold flex items-center gap-1.5 shadow-soft">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Pendiente</span>
+                      </span>
+                    )}
+
                     <button
                       type="button"
                       disabled={updatingOrderId === selectedOrder.id}
@@ -5254,14 +5260,14 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           "set_step_manufacturing",
                         )
                       }
-                      className={`px-3.5 py-2 rounded-full border font-semibold flex items-center gap-1.5 transition-all ${
+                      className={`px-3.5 py-2 rounded-full border font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                         selectedOrder.status === "manufacturing"
                           ? "bg-stone-900 text-white border-stone-900 shadow-soft"
                           : "bg-white text-stone-700 border-cream-200 hover:bg-cream-100"
                       }`}
                     >
                       <Hammer className="w-3.5 h-3.5" />
-                      <span>1. Fabricación</span>
+                      <span>En Fabricación</span>
                     </button>
 
                     <button
@@ -5273,14 +5279,14 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           "set_step_in_transit",
                         )
                       }
-                      className={`px-3.5 py-2 rounded-full border font-semibold flex items-center gap-1.5 transition-all ${
+                      className={`px-3.5 py-2 rounded-full border font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                         selectedOrder.status === "in_transit"
                           ? "bg-stone-900 text-white border-stone-900 shadow-soft"
                           : "bg-white text-stone-700 border-cream-200 hover:bg-cream-100"
                       }`}
                     >
                       <Truck className="w-3.5 h-3.5" />
-                      <span>2. En Camino</span>
+                      <span>En Camino</span>
                     </button>
 
                     <button

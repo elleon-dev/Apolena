@@ -30,6 +30,7 @@ export default function OrderStatusUpdatedEmail({
 }: OrderStatusUpdatedEmailProps) {
   const trackingUrl = `${app_url}/track/${tracking_id}`;
 
+  const isManufacturing = status === "manufacturing";
   const isCompleted = status === "completed" || status === "delivered";
   const isInTransit = status === "in_transit";
 
@@ -51,6 +52,11 @@ export default function OrderStatusUpdatedEmail({
           <Section style={statusBox}>
             <Text style={statusSubtitle}>ESTADO ACTUAL DEL PEDIDO</Text>
             <Text style={statusTitle}>{status_label}</Text>
+            {isManufacturing && (
+              <Text style={statusDescription}>
+                Tu cuadro personalizado ya fue enviado a nuestro taller artesanal para impresión en lienzo a 300 DPI y tensado en bastidor de madera.
+              </Text>
+            )}
             {isInTransit && (
               <Text style={statusDescription}>
                 Tu lienzo está en manos de nuestro courier asignado y en ruta a tu dirección de entrega.

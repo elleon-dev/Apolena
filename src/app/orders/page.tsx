@@ -287,10 +287,10 @@ export default function CommonUserOrdersPage() {
               </h1>
               <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                 Visualiza el avance de tu cuadro personalizado en tiempo real:{" "}
-                <strong className="text-white">1. En Fabricación</strong> →{" "}
-                <strong className="text-white">2. En Camino</strong> →{" "}
-                <strong className="text-white">3. Entregado</strong> y cierre{" "}
-                <strong className="text-[#c6a26c]">Exitoso</strong>.
+                <strong className="text-white">1. Pendiente</strong> →{" "}
+                <strong className="text-white">2. En Fabricación</strong> →{" "}
+                <strong className="text-white">3. En Camino</strong> →{" "}
+                <strong className="text-[#c6a26c]">4. Entregado</strong>.
               </p>
             </div>
 
