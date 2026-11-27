@@ -860,12 +860,12 @@ async function runGeminiFusion(
       geminiKey,
     ));
 
-  // Para Gemini, SIEMPRE extraemos la descripción rica y neutral del vestuario/escena
-  // a partir de `themeData` (cuando existe) y NO enviamos `themeData` como imagen al
-  // generador de imagen, porque `gemini-2.5-flash-image` tiende a copiar el rostro/cuerpo
-  // del animal de muestra de la imagen de referencia (contaminando o deformando proporciones).
+  // Para Gemini multi-imagen (priorizando gemini-3.1-flash-image-preview),
+  // enviamos primero la imagen base del personaje (escena, luz, vestuario y encuadre exactos)
+  // y luego la foto de la mascota del cliente con instrucción explícita de reemplazo de sujeto
+  // manteniendo proporciones anatómicas naturales y el brillo original del personaje.
   let wardrobeDesc = precomputedWardrobeDesc ?? null;
-  if (!wardrobeDesc && themeData) {
+  if (!wardrobeDesc && themeData && !isCustomRef && (character.description?.trim().length ?? 0) < 40) {
     try {
       wardrobeDesc = await extractWardrobeFromThemeImage(
         themeData,
@@ -887,7 +887,7 @@ async function runGeminiFusion(
     wardrobeDesc,
     petIdentityFingerprint,
     isCustomRef,
-    false,
+    Boolean(themeData),
   );
 
   const petParts: any[] = [
@@ -909,10 +909,23 @@ async function runGeminiFusion(
   }
 
   const parts: any[] = [
+    ...(themeData
+      ? [
+          {
+            text: "IMAGE 1 — BASE CHARACTER TEMPLATE TO EDIT (KEEP THIS EXACT COSTUME, ACCESSORIES, POSE, BACKGROUND SCENE, BRIGHTNESS, AND VIBRANT LIGHTING — REPLACE ONLY THE ANIMAL):",
+          },
+          {
+            inlineData: {
+              mimeType: themeData.mimeType,
+              data: themeData.base64,
+            },
+          },
+        ]
+      : []),
     {
       text: hasSecondPet
-        ? "CUSTOMER PET PHOTO 1 (PRIMARY SUBJECT — PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND NATURAL PROPORTIONS 100%):"
-        : "CUSTOMER PET PHOTO (PRIMARY SUBJECT — PRESERVE THIS EXACT PET'S FACE, EYES, FUR MARKINGS, COLORS, EARS, AND NATURAL PROPORTIONS 100%):",
+        ? "IMAGE 2 — CUSTOMER PET 1 (REPLACE THE ANIMAL IN IMAGE 1 WITH THIS EXACT PET AND PET 2 BELOW — COPY 100% OF THIS PET'S REAL FACE, EYES, FUR COLOR/PATTERN, NOSE, AND EARS):"
+        : "IMAGE 2 — CUSTOMER PET PHOTO (COMPLETELY REPLACE THE ANIMAL IN IMAGE 1 WITH THIS EXACT PET — COPY 100% OF THIS PET'S REAL SPECIES, FACE, EYES, FUR COLOR/PATTERN, NOSE, EARS, AND PAWS):",
     },
     {
       inlineData: {
@@ -923,7 +936,7 @@ async function runGeminiFusion(
     ...(pet2Data
       ? [
           {
-            text: "CUSTOMER PET PHOTO 2 (SECOND SUBJECT — PRESERVE THIS EXACT PET'S FACE, FUR, AND NATURAL PROPORTIONS 100%):",
+            text: "IMAGE 3 — CUSTOMER PET 2 (ALSO PLACE THIS EXACT SECOND PET SIDE-BY-SIDE IN THE PORTRAIT, PRESERVING 100% OF ITS REAL FACE, FUR, AND IDENTITY):",
           },
           {
             inlineData: {
@@ -934,15 +947,15 @@ async function runGeminiFusion(
         ]
       : []),
     {
-      text: `${fusionPrompt}\n\nMANDATORY OUTPUT FORMAT, ANATOMY & IDENTITY CHECK:\n- Output MUST be a ${hasSecondPet ? "HORIZONTAL 3:2" : "VERTICAL 2:3"} full-bleed fine-art chiaroscuro portrait with NO picture frame, NO border, and NO wall.\n- Paint ONLY the exact customer pet${hasSecondPet ? "s" : ""} shown in the attached photo${hasSecondPet ? "s" : ""}, keeping 100% of their real species, fur color/pattern, eye color, nose, and ears.\n- Maintain 100% realistic, natural head-to-shoulders anatomical proportions (NEVER an oversized head, bobblehead, or pasted-head look). Leave 20-25% open painted background headroom above the head/ears/hat.`,
+      text: `${fusionPrompt}\n\nSTRICT EDITING & FIDELITY RULES:\n1. Edit IMAGE 1 by COMPLETELY REPLACING its animal with the EXACT customer pet${hasSecondPet ? "s" : ""} from IMAGE 2${hasSecondPet ? " and IMAGE 3" : ""}. Zero trace of the original sample animal's face or fur may remain.\n2. Keep IMAGE 1's exact costume, jewelry/accessories, background, camera framing, brightness, and vibrant natural lighting — DO NOT darken the scene or add gloomy shadows.\n3. Keep 100% realistic, natural head-to-shoulders anatomical proportions (NEVER an oversized bobblehead or pasted-head look) with 20-25% headroom above the ears/hat.\n4. Output a ${hasSecondPet ? "HORIZONTAL 3:2" : "VERTICAL 2:3"} full-bleed painting with NO picture frame, NO border, and NO watermark.`,
     },
   ];
 
-  // Ordered from lowest cost ($0.039/img) to standard ($0.067/img), avoiding expensive pro tier ($0.134/img)
+  // Priorizar gemini-3.1-flash-image-preview (mejor edición multi-imagen) con fallback a gemini-2.5-flash-image
   const candidateModels = [
-    "gemini-2.5-flash-image",
-    "gemini-3.1-flash-image",
     "gemini-3.1-flash-image-preview",
+    "gemini-3.1-flash-image",
+    "gemini-2.5-flash-image",
   ];
 
   let lastError = "";
@@ -1382,98 +1395,66 @@ export async function runMultiModelFusionPipeline(
         .join("\n"),
     };
 
-    const runProposalWithFallback = async (
-      proposalInput: MultiModelFusionInput,
-    ): Promise<{
-      imageUrl: string;
-      modelUsed: string;
-      provider: "openai" | "gemini";
-    }> => {
-      if (hasValidOpenAI) {
-        try {
-          const res = await runOpenAIFusion(
-            proposalInput,
+    // Arquitectura 1 propuesta = 1 proveedor en paralelo:
+    // Propuesta 1: OpenAI (gpt-image-1.5) | Propuesta 2: Google Gemini (gemini-3.1-flash-image-preview)
+    const [openaiResult, geminiResult] = await Promise.allSettled([
+      hasValidOpenAI
+        ? runOpenAIFusion(
+            proposal1Input,
             character,
             openaiKey,
             undefined,
             sharedPetFingerprint,
             sharedWardrobeDesc,
             sharedAssets,
-          );
-          return { ...res, provider: "openai" };
-        } catch (openaiErr) {
-          if (hasValidGemini) {
-            console.warn(
-              "[Proposal OpenAI -> Gemini fallback]:",
-              openaiErr,
-            );
-            const fallbackRes = await runGeminiFusion(
-              proposalInput,
-              character,
-              geminiKey,
-              openaiKey,
-              sharedPetFingerprint,
-              sharedWardrobeDesc,
-              sharedAssets,
-            );
-            return { ...fallbackRes, provider: "gemini" };
-          }
-          throw openaiErr;
-        }
-      }
-      if (hasValidGemini) {
-        const res = await runGeminiFusion(
-          proposalInput,
-          character,
-          geminiKey,
-          openaiKey,
-          sharedPetFingerprint,
-          sharedWardrobeDesc,
-          sharedAssets,
-        );
-        return { ...res, provider: "gemini" };
-      }
-      throw new Error("Ningún proveedor de IA configurado");
-    };
-
-    const [proposal1Result, proposal2Result] = await Promise.allSettled([
-      runProposalWithFallback(proposal1Input),
-      runProposalWithFallback(proposal2Input),
+          )
+        : Promise.reject(new Error("OpenAI no configurado")),
+      hasValidGemini
+        ? runGeminiFusion(
+            proposal2Input,
+            character,
+            geminiKey,
+            openaiKey,
+            sharedPetFingerprint,
+            sharedWardrobeDesc,
+            sharedAssets,
+          )
+        : Promise.reject(new Error("Gemini no configurado")),
     ]);
 
-    if (proposal1Result.status === "fulfilled") {
+    if (openaiResult.status === "fulfilled") {
       variants.push({
         id: "variant-1",
-        provider: proposal1Result.value.provider,
+        provider: "openai",
         providerTitle: "Propuesta 1 · Óleo Fine Art",
         modelUsed: "Técnica Óleo Bellas Artes",
-        imageUrl: proposal1Result.value.imageUrl,
+        imageUrl: openaiResult.value.imageUrl,
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
       });
     } else {
       console.warn(
-        "[Proposal 1 Error]:",
-        (proposal1Result as PromiseRejectedResult).reason,
+        "[OpenAI Proposal 1 Error]:",
+        (openaiResult as PromiseRejectedResult).reason,
       );
     }
 
-    if (proposal2Result.status === "fulfilled") {
+    if (geminiResult.status === "fulfilled") {
       variants.push({
         id: "variant-2",
-        provider: proposal2Result.value.provider,
+        provider: "gemini",
         providerTitle: "Propuesta 2 · Detalle y Luminosidad",
         modelUsed: "Técnica Detalle de Estudio",
-        imageUrl: proposal2Result.value.imageUrl,
+        imageUrl: geminiResult.value.imageUrl,
         executionSeconds: parseFloat(
           ((Date.now() - startTime) / 1000).toFixed(2),
         ),
       });
     } else {
       console.warn(
-        "[Proposal 2 Error]:",
-        (proposal2Result as PromiseRejectedResult).reason,
+        "[Gemini Proposal 2 Error]:",
+        (geminiResult as PromiseRejectedResult).reason,
       );
     }
 
