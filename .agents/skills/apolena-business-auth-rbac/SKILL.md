@@ -17,7 +17,7 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 - La tabla `profiles` es la entidad central de identidad en la base de datos gestionada por Prisma.
 - Soporta dos modalidades de inicio de sesión que convergen en la misma sesión firmada (`apolena_session`) y en `public.profiles`:
   1. **Credenciales (Correo + Contraseña):** `/api/auth/login` y `/api/auth/register`.
-  2. **Proveedor Google OAuth (vía Supabase Auth):** El botón _"Continuar con Google"_ en `/auth/login` y `/auth/register` inicia `supabaseBrowser.auth.signInWithOAuth({ provider: "google" })`, redirige a `/auth/callback` y sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `POST /api/auth/oauth/google` y `upsertOAuthProfile`.
+  2. **Proveedor Google OAuth 2.0 Directo (`www.apolena.shop`):** El botón _"Continuar con Google"_ en `/auth/login` y `/auth/register` inicia el flujo OAuth 2.0 directo en `GET /api/auth/google` (con cookie `httpOnly` de estado anti-CSRF y marca verificada de Apolena en Google Cloud), recibe el retorno en `GET /api/auth/google/callback`, sincroniza el perfil (`email`, `name`, `avatar_url` y `role`) mediante `upsertOAuthProfile` y emite la cookie firmada `apolena_session`.
 - **Recuperación Segura de Contraseña:** Flujo con token criptográfico HMAC SHA-256 (`signPasswordResetToken` / `verifyPasswordResetToken` con TTL de 60 min) enviado a la cola `email_queue` (`template: "password_reset"`), procesado en `/auth/forgot-password`, `/auth/reset-password` y `/api/auth/reset-password`.
 - **Autenticación Obligatoria en Checkout:** Queda prohibida la generación de órdenes anónimas o la creación silenciosa de cuentas con contraseñas por defecto (`"cliente123"`). Todo comprador debe identificarse o registrarse previamente en `/checkout` antes de emitir la orden en `/api/orders`.
 - **Sincronización en Tiempo Real de Roles y Cookie de Sesión (`getAuthoritativeSessionUser` + `/api/auth/me` + `middleware.ts`):**
@@ -40,13 +40,13 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 
 1. **`super_admin` (Super Administrador — `nmoriano26@gmail.com`):**
    - **Regla Inalterable:** El usuario con el correo electrónico **`nmoriano26@gmail.com`** **SIEMPRE** debe tener el rol **`"super_admin"`** y `is_active: true` (se asigna y sincroniza de forma automática e irrevocable en `resolveUserRole`, registro, login, Google OAuth, checkout y seed).
-   - **Acceso Total:** Posee control absoluto sobre el Dashboard Administrativo (`/dashboard` y `/admin`), gestión de órdenes, gestión de **todos** los usuarios y roles (`user`, `admin`, `super_admin`) y edición de la configuración global de Apolena (`platform_settings` y catálogo `products`).
+   - **Acceso Total:** Posee control absoluto sobre el Dashboard Administrativo (`/dashboard` y `/admin`), gestión de órdenes, gestión de **todos** los usuarios y roles (`user`, `admin`, `super_admin`), **eliminación definitiva de usuarios** (`DELETE /api/admin/users` — exclusivo de `super_admin`, prohibido eliminar cuentas `super_admin`) y edición de la configuración global de Apolena (`platform_settings` y catálogo `products`).
 
 2. **`admin` (Administrador de Apolena):**
    - Rol para el equipo administrativo y operativo de Apolena.
    - Tiene acceso al Dashboard Administrativo (`/dashboard` y `/admin`) para:
-     - **Gestionar Órdenes:** Validar pagos del 50% inicial y del 50% contraentrega, avanzar los 3 steps logísticos (`manufacturing` → `in_transit` → `delivered` → `completed`) y consultar `email_queue`.
-     - **Gestionar Usuarios (`user` y `admin`):** Puede crear y editar usuarios con roles `user` y `admin` (`/api/admin/users`), pero **NO** puede asignar el rol `super_admin` ni modificar cuentas con rol `super_admin`.
+     - **Gestionar Órdenes:** Validar el pago total del 100%, despachar órdenes pagadas al proveedor de fabricación, avanzar los 3 steps logísticos (`manufacturing` → `in_transit` → `delivered` → `completed`) y consultar `email_queue`.
+     - **Gestionar Usuarios (`user` y `admin`):** Puede crear y editar usuarios con roles `user` y `admin` (`/api/admin/users`), pero **NO** puede asignar el rol `super_admin`, modificar cuentas con rol `super_admin` ni eliminar usuarios definitivamente.
      - **Configuración de Apolena:** Visualización en modo lectura de `platform_settings` (la edición de parámetros globales y cuentas receptoras está reservada a `super_admin`).
 
 3. **`user` (Cliente / Comprador):**
@@ -63,14 +63,20 @@ Este skill define la lógica de negocio inalterable para la autenticación gesti
 | `/`, `/products/*`, `/track/*`                     | **Público**                                               | Accesible para cualquier visitante (permite explorar, probar fusión y rastrear por `tracking_id`).                                                                                                            |
 | `/auth/login`, `/auth/register`                    | **Público (Solo invitados)**                              | Si ya tiene sesión activa, redirige a `/dashboard` (si es `admin` o `super_admin`) o a `/orders` (si es `user`).                                                                                              |
 | `/orders`, `/orders/*`                             | **Vista Común Privada (`user`, `admin`, `super_admin`)**  | Si no está autenticado, redirige a `/auth/login?callbackUrl=/orders`. Permite a todo tipo de usuario visualizar sus órdenes, buscar por `tracking_id` y seguir el progreso en los 3 steps + estado `Exitoso`. |
+| `/profile`, `/api/account`                         | **Perfil Privado del Usuario (`user`, `admin`, `super_admin`)** | Si no está autenticado, redirige a `/auth/login?callbackUrl=/profile`. Permite actualizar datos personales, dirección predeterminada de envío, foto de perfil (`uploads/` en Supabase Storage, máx. 3 MB, sin incrustar `data:` en la cookie JWT) y darse de baja voluntariamente (excepto `super_admin`). |
 | `/dashboard`, `/dashboard/*`, `/admin`, `/admin/*` | **Dashboard Privado Exclusivo (`admin` y `super_admin`)** | Si no está autenticado → redirige a `/auth/login`. Si está autenticado con `role === "user"` → redirige a `/orders` (código 403 en `/api/admin/*`).                                                           |
 
 ---
 
-## 4. Aislamiento de Datos en la Vista Común de Órdenes (`/orders`)
+## 4. Aislamiento de Datos en `/orders` y Eliminación Segura Reutilizable de Cuentas (`deleteUserAccountAndData`)
 
 - En todas las consultas de `/orders` y `/api/orders` (modo cliente), las consultas **DEBEN** filtrar obligatoriamente por el `user_id` o `email` del usuario en sesión.
 - Un usuario con rol `user` jamás puede listar ni modificar órdenes pertenecientes a otro comprador.
+- **Servicio Centralizado de Eliminación Segura (`src/lib/user-deletion.ts`):**
+  - Reutilizado tanto por **`DELETE /api/admin/users`** (exclusivo `super_admin`) como por **`DELETE /api/account`** (baja voluntaria del usuario en `/profile` escribiendo `ELIMINAR`).
+  - Las cuentas `super_admin` están protegidas contra eliminación y auto-eliminación.
+  - **Regla de Integridad de BD:** Dentro de `prisma.$transaction`, elimina únicamente registros filtrados estrictamente por `user_id`, `buyer_id`, `order_id` propios y `email` (case-insensitive) en `reviews`, `payment_transactions`, `order_items`, `order_packages`, `order_invoices`, `order_shippings`, `orders`, `generation_jobs`, `email_queue`, `newsletter_subscribers` y `profiles`.
+  - **Regla de Integridad de Storage:** Solo puede borrar archivos de Supabase Storage bajo la lista blanca de prefijos de usuario (`pets/`, `previews/`, `artworks/`, `proofs/`, `uploads/`) — **nunca** `characters/`, `products/`, `frames/` o `watermarks/` — y ejecuta una **verificación cruzada previa** en `generation_jobs`, `order_items`, `payment_transactions` y `profiles` para asegurar que ningún otro usuario ni registro restante referencie la URL antes de eliminarla.
 
 ---
 

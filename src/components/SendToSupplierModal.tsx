@@ -284,7 +284,7 @@ export function SendToSupplierModal({
     return () => {
       cancelled = true;
     };
-  }, [order]);
+  }, [order, resolvedDefaultEmail]);
 
   if (!order) return null;
 
@@ -292,9 +292,9 @@ export function SendToSupplierModal({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 3.5 * 1024 * 1024) {
+    if (file.size > 3.0 * 1024 * 1024) {
       setAttachmentError(
-        "El archivo seleccionado supera los 3.5 MB. Usa una versión optimizada para envío por correo.",
+        "El archivo seleccionado supera los 3.0 MB. Usa una versión optimizada para envío por correo.",
       );
       return;
     }

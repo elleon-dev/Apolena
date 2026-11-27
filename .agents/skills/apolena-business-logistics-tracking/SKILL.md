@@ -55,7 +55,7 @@ El seguimiento visual del usuario (`Stepper de Tracking`) consta exactamente de 
 ### Culminación del Proceso — Exitoso (`status = "completed"`)
 
 - **Condición obligatoria:** La orden se encuentra entregada (`delivered`) **Y** el pago total del 100% está verificado (`payment_status === "paid_full"`). (Para órdenes históricas 50%/50% con `remaining_amount > 0`, además liquida el saldo pendiente contraentrega).
-- **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y desbloqueando la descarga del Recuerdo Digital HD.
+- **Resultado:** El estatus de la orden cambia a **`completed` ("Exitoso")**, habilitando al usuario para dejar su reseña en `reviews` y desbloqueando la descarga del **Recuerdo Digital HD (sin marca de agua, sin el margen de +4 cm de imprenta y con el nombre de la mascota únicamente si el cliente lo activó)**.
 - Timestamps asociados: `completed_at`.
 
 _(Estado adicional de excepción: `cancelled` si una orden es anulada por administración antes de su entrega)._
@@ -88,3 +88,15 @@ Los administradores pueden editar el `tracking_id` generado y gestionar los dato
      - Fecha estimada de entrega (`estimated_delivery`).
 - **Transición inmediata a "En Camino":** El modal incluye la opción de avanzar la orden de `manufacturing` a `in_transit` al momento de registrar los datos del despacho, sincronizando `orders`, `order_packages` y `order_items`.
 - **Visibilidad:** Los datos del courier se exponen en las tarjetas de órdenes del dashboard (`/dashboard`), en el expediente completo de la orden, en el listado de pedidos del cliente (`/orders`) y en la página pública de rastreo (`/track/[trackingId]`).
+
+---
+
+## 5. Despacho a Fabricación (Proveedor / Taller)
+
+Una vez que el pago total del 100% de una orden está verificado (`payment_status === "paid_full"`), el Dashboard Administrativo habilita la tarjeta dedicada **`DESPACHO A FABRICACIÓN (PROVEEDOR)`** (ubicada junto a `FINANZAS (PAGO 100%) Y FACTURACIÓN`):
+
+- **Condición obligatoria:** Bloqueada mientras `payment_status !== "paid_full"` (validado tanto en UI como en backend `POST /api/admin/orders/[id]/send-to-supplier`).
+- **Modal de Despacho (`src/components/SendToSupplierModal.tsx`):**
+  - Prellena automáticamente el correo del proveedor desde `platform_settings.ADMIN_NOTIFICATION_EMAILS.supplier_email` (editable desde Parámetros Operativos en `/dashboard`; por defecto `mariano260996@gmail.com`), asunto estructurado y ficha técnica completa (código de orden, tracking ID, medida visible, medida total de impresión con +4 cm por lado a 300 DPI, marco, acabado, nombre de mascota si aplica, dedicatoria y datos de entrega con Pin GPS).
+  - Genera y adjunta automáticamente el **Archivo Maestro HD con +4 cm de remangado** (comprimido automáticamente si supera 2.4 MB; tope manual de 3.0 MB para respetar el límite serverless de 4.5 MB).
+- **Trazabilidad Escalable:** Cada envío se registra en `email_queue` (`template = "supplier_production_order"`) y guarda `production_dispatch` (último despacho) junto con `production_dispatch_history` (historial auditable) dentro de `order_items.customizations`, dejando el contrato listo para incorporar en el futuro un rol `supplier` / fabricador que gestione sus órdenes y las pase a `in_transit`.

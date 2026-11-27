@@ -199,11 +199,15 @@ export async function deleteUserAccountAndData(
     });
 
     await tx.emailQueue.deleteMany({
-      where: { to_email: targetProfile.email },
+      where: {
+        to_email: { equals: targetProfile.email, mode: "insensitive" },
+      },
     });
 
     await tx.newsletterSubscriber.deleteMany({
-      where: { email: targetProfile.email },
+      where: {
+        email: { equals: targetProfile.email, mode: "insensitive" },
+      },
     });
 
     await tx.profile.delete({
@@ -224,7 +228,7 @@ export async function deleteUserAccountAndData(
 
   if (isSupabaseConfigured && supabase && safeTargets.length > 0) {
     const rawUrlList = safeTargets.map((t) => t.rawUrl);
-    const [otherJobs, otherItems, otherTxs] = await Promise.all([
+    const [otherJobs, otherItems, otherTxs, otherProfiles] = await Promise.all([
       prisma.generationJob.findMany({
         where: {
           OR: [
@@ -254,6 +258,10 @@ export async function deleteUserAccountAndData(
         where: { proof_image_url: { in: rawUrlList } },
         select: { proof_image_url: true },
       }),
+      prisma.profile.findMany({
+        where: { avatar_url: { in: rawUrlList } },
+        select: { avatar_url: true },
+      }),
     ]);
 
     const stillReferenced = new Set<string>();
@@ -269,6 +277,9 @@ export async function deleteUserAccountAndData(
     }
     for (const t of otherTxs) {
       if (t.proof_image_url) stillReferenced.add(t.proof_image_url);
+    }
+    for (const p of otherProfiles) {
+      if (p.avatar_url) stillReferenced.add(p.avatar_url);
     }
 
     const bucketMap = new Map<string, Set<string>>();

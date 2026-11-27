@@ -136,12 +136,27 @@ export async function PATCH(request: NextRequest) {
       typeof body.avatarDataUrl === "string" &&
       body.avatarDataUrl.startsWith("data:image/")
     ) {
+      if (body.avatarDataUrl.length > 4_200_000) {
+        return NextResponse.json(
+          { error: "La foto de perfil es demasiado pesada (máximo 3 MB)." },
+          { status: 400 },
+        );
+      }
       const uploaded = await externalizeBase64Image(
         body.avatarDataUrl,
         "uploads",
         { maxDimension: 512, quality: 85 },
       );
-      resolvedAvatarUrl = uploaded || body.avatarDataUrl;
+      if (!uploaded || uploaded.startsWith("data:")) {
+        return NextResponse.json(
+          {
+            error:
+              "No se pudo almacenar la foto de perfil en el servidor de medios. Intenta nuevamente.",
+          },
+          { status: 500 },
+        );
+      }
+      resolvedAvatarUrl = uploaded;
     }
 
     const updated = await prisma.profile.update({

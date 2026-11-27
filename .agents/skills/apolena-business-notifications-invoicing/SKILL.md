@@ -18,18 +18,26 @@ Toda notificación por correo electrónico se registra primero en la tabla `emai
 
 1. **Al Crearse una Orden (Doble Notificación Obligatoria):**
    - **Email 1 — Al Usuario Comprador (`template = "order_created_buyer"`):**
-     - Confirma que su orden ha sido generada exitosamente.
-     - Incluye la miniatura/enlace de su cuadro personalizado, el monto del 50% inicial, el saldo del 50% contraentrega, la dirección de envío y su **`tracking_id`** con enlace directo para rastrear los 3 pasos (`Fabricación` → `En camino` → `Entregado`).
+     - Confirma que su orden ha sido generada exitosamente bajo la modalidad de **Pago Total 100% al Ordenar**.
+     - Incluye la miniatura/enlace de su cuadro personalizado, el monto total abonado (100%), la dirección de envío y su **`tracking_id`** con enlace directo para rastrear los 3 pasos (`Fabricación` → `En camino` → `Entregado`).
    - **Email 2 — A los Administradores (`template = "order_created_admin"`):**
      - Se envía al correo de administración configurado en `platform_settings` (y/o usuarios con `role = "admin"`).
-     - Incluye todos los detalles del cliente, teléfono/WhatsApp, dirección de delivery, opciones de personalización (tamaño, acabado, marco), imagen HD para impresión, método de pago elegido (`yape`, `plin`, `bank_transfer`) y enlace directo al Panel Admin (`/admin/orders/[id]`).
+     - Incluye todos los detalles del cliente, teléfono/WhatsApp, dirección de delivery, opciones de personalización (tamaño, acabado, marco), imagen HD para impresión, método de pago elegido (`yape`, `plin`, `bank_transfer`) y enlace directo al Panel Admin (`/dashboard`).
 
 2. **Al Cambiar el Estado del Tracking (`template = "order_status_updated"`):**
-   - Notifica al comprador cuando su pedido avanza a **En camino (`in_transit`)**, **Entregado (`delivered`)** y cuando culmina como **Exitoso (`completed`)** tras abonar el 50% final.
+   - Notifica al comprador cuando su pedido avanza a **En camino (`in_transit`)**, **Entregado (`delivered`)** y cuando culmina como **Exitoso (`completed`)** con pago 100% verificado.
 
-3. **Al Registrarse una Hoja de Reclamación Virtual (`/libro-de-reclamaciones`):**
+3. **Al Despachar Orden al Proveedor de Fabricación (`template = "supplier_production_order"`):**
+   - Disparado desde el Dashboard Administrativo (`POST /api/admin/orders/[id]/send-to-supplier`) únicamente cuando `payment_status === "paid_full"`.
+   - Soporta adjuntos binarios en Resend (`attachments` en `dispatchEmailWithResend` / `src/lib/email-service.ts`), enviando la ficha técnica completa y el Archivo Maestro HD con +4 cm por lado.
+   - Se registra en `email_queue` y actualiza `production_dispatch` + `production_dispatch_history` en `order_items.customizations`.
+
+4. **Al Registrarse una Hoja de Reclamación Virtual (`/libro-de-reclamaciones`):**
    - **Email 1 — Al Consumidor Reclamante (`template = "claim_registered_consumer"`):** Envío formal de copia y código único correlativo (`REC-YYYYMMDD-XXXX`) conforme a la Ley N° 29571 y D.S. N° 011-2011-PCM (plazo de 15 días hábiles).
    - **Email 2 — Al Equipo Legal de Apolena (`template = "claim_registered_admin"`):** Notificación inmediata con todos los detalles y pedido concreto del consumidor para su atención.
+
+5. **Autenticación DNS del Remitente (`notificaciones@apolena.shop` vía Resend):**
+   - Para evitar entregas a Spam en Gmail y otros proveedores, el dominio `apolena.shop` (gestionado en GoDaddy DNS) mantiene publicados y verificados los registros **DKIM** (`TXT resend._domainkey`), **SPF** (`CNAME rsend` y `CNAME send`) y **DMARC** (`TXT _dmarc`).
 
 ---
 
@@ -54,9 +62,9 @@ Toda notificación por correo electrónico se registra primero en la tabla `emai
 
 - Ningún dato operativo cambiante debe estar hardcodeado en el frontend o backend.
 - Claves estándar en `platform_settings`:
-  - `PAYMENT_METHODS_CONFIG`: Números de celular titulares de **Yape** y **Plin**, configuración bancaria con campos desagregados (**Banco / Moneda**, **Número de Cuenta**, **Código de Cuenta Interbancario `cci`** y **Nombre Completo del Titular `holder_name`**), y porcentaje de adelanto (`advance_percentage: 0.50`). Estos datos alimentan dinámicamente las tarjetas de pago con copiado en `/checkout`, las transacciones en `payment_transactions` y el email `order_created_buyer`.
+  - `PAYMENT_METHODS_CONFIG`: Números de celular titulares de **Yape** y **Plin**, configuración bancaria con campos desagregados (**Banco / Moneda**, **Número de Cuenta**, **Código de Cuenta Interbancario `cci`** y **Nombre Completo del Titular `holder_name`**), y porcentaje de pago al ordenar (`advance_percentage: 1.0`, Pago Total 100%). Estos datos alimentan dinámicamente las tarjetas de pago con copiado en `/checkout`, las transacciones en `payment_transactions` y el email `order_created_buyer`.
   - `SHIPPING_RATES_CONFIG`: Tarifas de delivery por Lima Metropolitana / Provincias y tiempo estimado de fabricación.
-  - `ADMIN_NOTIFICATION_EMAILS`: Lista de correos de los administradores que reciben alertas de nuevas órdenes.
+  - `ADMIN_NOTIFICATION_EMAILS`: Lista de correos de los administradores que reciben alertas de nuevas órdenes (`emails`), número de soporte WhatsApp (`whatsapp_support`) y correo predeterminado del proveedor de fabricación (`supplier_email`, por defecto `mariano260996@gmail.com`, editable y persistente desde `/dashboard` → Parámetros Operativos).
 
 ---
 

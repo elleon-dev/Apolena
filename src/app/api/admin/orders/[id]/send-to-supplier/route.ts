@@ -73,6 +73,16 @@ export async function POST(
         ? body.attachment.base64.replace(/^data:[^;]+;base64,/, "").trim()
         : "";
 
+    if (rawBase64.length > 4_300_000) {
+      return NextResponse.json(
+        {
+          error:
+            "El archivo adjunto excede el límite permitido (máx. 3 MB). Usa una versión optimizada.",
+        },
+        { status: 400 },
+      );
+    }
+
     const attachments =
       attachmentFilename && rawBase64
         ? [{ filename: attachmentFilename, content: rawBase64 }]
@@ -143,9 +153,24 @@ export async function POST(
     };
 
     if (isDatabaseConfigured() && firstItem?.id) {
+      const prevCustomizations = (firstItem.customizations || {}) as Record<
+        string,
+        any
+      >;
+      const prevHistory = Array.isArray(
+        prevCustomizations.production_dispatch_history,
+      )
+        ? prevCustomizations.production_dispatch_history
+        : prevCustomizations.production_dispatch
+          ? [prevCustomizations.production_dispatch]
+          : [];
       const updatedCustomizations = {
-        ...(firstItem.customizations || {}),
+        ...prevCustomizations,
         production_dispatch: dispatchRecord,
+        production_dispatch_history: [dispatchRecord, ...prevHistory].slice(
+          0,
+          20,
+        ),
       };
       await prisma.orderItem
         .update({

@@ -174,6 +174,9 @@ export async function renderEmailHtml(
         .replace(/\n/g, "<br/>");
       const attachmentName = data.attachment_filename
         ? String(data.attachment_filename)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
         : null;
       const masterUrl =
         typeof data.master_art_url === "string" &&
