@@ -2136,7 +2136,7 @@ export default function personalizedWallArt() {
                   )}
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center">
+                <div className="flex-1 flex flex-col justify-between gap-3">
                   {!petImage ? (
                     <div
                       onDragOver={(e) => e.preventDefault()}
@@ -2152,8 +2152,11 @@ export default function personalizedWallArt() {
                       onClick={() => {
                         if (!isValidatingPetPhoto) fileInput1Ref.current?.click();
                       }}
-                      className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl border-2 border-dashed border-cream-300 hover:border-terracotta-500 bg-cream-50/70 hover:bg-terracotta-50/30 flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all group"
+                      className="relative w-full min-h-[250px] sm:min-h-[285px] max-h-[340px] rounded-2xl border-2 border-dashed border-cream-300 hover:border-terracotta-500 bg-cream-50/70 hover:bg-terracotta-50/30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all group"
                     >
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#174B3D]/10 text-[#174B3D] text-[10px] font-bold">
+                        Foto 1 · Principal (obligatoria)
+                      </span>
                       <input
                         ref={fileInput1Ref}
                         type="file"
@@ -2166,39 +2169,42 @@ export default function personalizedWallArt() {
                         }}
                         className="hidden"
                       />
-                      <div className="w-14 h-14 rounded-full bg-white border border-cream-200 flex items-center justify-center text-stone-600 group-hover:text-terracotta-600 mb-3.5 shadow-soft transition-colors">
-                        <Upload className="w-6 h-6" />
+                      <div className="w-12 h-12 rounded-full bg-white border border-cream-200 flex items-center justify-center text-stone-600 group-hover:text-terracotta-600 mb-3 shadow-soft transition-colors">
+                        <Upload className="w-5 h-5" />
                       </div>
-                      <p className="text-base font-semibold text-stone-900 mb-1">
+                      <p className="text-sm sm:text-base font-semibold text-stone-900 mb-1">
                         Seleccionar o arrastrar fotografía
                       </p>
                       <p className="text-xs text-stone-500 max-w-xs leading-relaxed">
                         Haz clic para buscar en tu dispositivo o arrastra el archivo aquí
                       </p>
                       {isValidatingPetPhoto ? (
-                        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#174B3D] px-4 py-2 text-xs font-semibold text-white">
+                        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174B3D] px-4 py-2 text-xs font-semibold text-white">
                           <Loader2 className="h-4 w-4 animate-spin text-[#c6a26c]" />
                           Validando que sea una mascota...
                         </div>
                       ) : fusionError ? (
-                        <div className="mt-4 max-w-sm rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium leading-relaxed text-red-700">
+                        <div className="mt-3 max-w-sm rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium leading-relaxed text-red-700">
                           {fusionError}
                         </div>
                       ) : null}
                     </div>
                   ) : (
-                    <div className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square min-h-[360px] sm:min-h-[440px] max-h-[500px] rounded-2xl overflow-hidden border border-cream-200 bg-[#f8f6f0] flex items-center justify-center">
+                    <div className="relative w-full min-h-[250px] sm:min-h-[285px] max-h-[340px] rounded-2xl overflow-hidden border border-cream-200 bg-[#f8f6f0] flex items-center justify-center">
                       <img
                         src={petImage}
                         alt="Tu Mascota"
                         className="w-full h-full object-contain object-center"
                       />
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-stone-900/75 text-white text-[10px] font-semibold">
+                        Foto 1 · Principal
+                      </span>
                       <button
                         onClick={() => {
                           if (!isValidatingPetPhoto) fileInput1Ref.current?.click();
                         }}
                         disabled={isValidatingPetPhoto}
-                        className="absolute bottom-3 right-3 px-4 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-cream-200 text-stone-800 hover:text-terracotta-600 text-xs font-semibold flex items-center gap-1.5 shadow-card transition-colors z-10"
+                        className="absolute bottom-3 right-3 px-4 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-cream-200 text-stone-800 hover:text-terracotta-600 text-xs font-semibold flex items-center gap-1.5 shadow-card transition-colors z-10 cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Cambiar foto</span>
@@ -2226,12 +2232,12 @@ export default function personalizedWallArt() {
                     </div>
                   )}
 
-                  {/* Fotos adicionales opcionales de la MISMA mascota (hasta 2 más = máx. 3 en total) */}
-                  {petImage && !secondPetImage && (
-                    <div className="pt-2 space-y-2">
+                  {/* Fotos adicionales opcionales de la MISMA mascota (visibles desde el inicio · hasta 3 fotos en total) */}
+                  {!secondPetImage && (
+                    <div className="pt-1 space-y-2">
                       <div className="flex items-center justify-between gap-2 text-[11px]">
                         <span className="font-bold text-[#174B3D]">
-                          Fotos extra de la misma mascota (opcional · {1 + extraPetImages.length}/3)
+                          Fotos extra de la misma mascota (opcional · {(petImage ? 1 : 0) + extraPetImages.length}/3)
                         </span>
                         <span className="text-stone-500">
                           Mejora el parecido facial
@@ -2276,7 +2282,11 @@ export default function personalizedWallArt() {
                               key={`extra-pet-empty-${slotIdx}`}
                               type="button"
                               disabled={isValidatingPetPhoto}
-                              onClick={() => extraPetInputRef.current?.click()}
+                              onClick={() =>
+                                !petImage
+                                  ? fileInput1Ref.current?.click()
+                                  : extraPetInputRef.current?.click()
+                              }
                               className="h-24 rounded-xl border-2 border-dashed border-cream-300 hover:border-[#174B3D] bg-cream-50/70 hover:bg-[#174B3D]/5 disabled:opacity-50 flex flex-col items-center justify-center gap-1 text-center px-2 transition-colors cursor-pointer"
                             >
                               <Plus className="w-4 h-4 text-[#174B3D]" />
@@ -2299,11 +2309,15 @@ export default function personalizedWallArt() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           e.target.value = "";
-                          if (file && extraPetImages.length < 2) {
+                          if (file) {
                             readAndCompressImage(file, (compressedUrl) => {
-                              setExtraPetImages((prev) =>
-                                [...prev, compressedUrl].slice(0, 2),
-                              );
+                              if (!petImage) {
+                                setPetImage(compressedUrl);
+                              } else {
+                                setExtraPetImages((prev) =>
+                                  [...prev, compressedUrl].slice(0, 2),
+                                );
+                              }
                             });
                           }
                         }}
@@ -2311,7 +2325,7 @@ export default function personalizedWallArt() {
                       />
 
                       <p className="text-[10px] text-stone-500 leading-snug">
-                        Sube otros ángulos de la <strong>misma mascota</strong> para lograr un parecido aún más fiel. En el cuadro aparecerá 1 sola mascota.
+                        Puedes subir hasta 3 ángulos de la <strong>misma mascota</strong> para lograr un parecido aún más fiel. En el cuadro aparecerá 1 sola mascota.
                       </p>
                     </div>
                   )}
