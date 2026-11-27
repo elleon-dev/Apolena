@@ -102,8 +102,8 @@ export async function evaluatePortraitQuality(params: {
     {
       text: `You are a strict art quality inspector for luxury custom pet portraits. Evaluate IMAGE C against IMAGE A${themeData ? " and IMAGE B" : ""}.
 Score each metric from 1 (terrible) to 10 (perfect):
-1. "petFidelity": Does IMAGE C depict the EXACT same animal species, face, eye color, fur colors/markings, and ears as IMAGE A? (Score <= 5 if it kept the sample animal from Image B or changed fur/species).
-2. "proportions": Are the head-to-body and shoulder proportions realistic and natural? (Score <= 5 if bobblehead / oversized head / pasted-head look).
+1. "petFidelity": Does IMAGE C depict the EXACT same animal species, face, natural real eye color/expression, fur colors/markings, and ears as IMAGE A? (Score <= 5 if it kept the sample animal from Image B, changed fur/species, or over-brightened/cartoonized the face).
+2. "proportions": Are the head-to-body proportions, neck-to-collar blending, and visible paws/limbs realistic and natural? (Score <= 5 if bobblehead, pasted/floating cutout head at the collar, or oversized/bulky/splayed paws).
 3. "characterMatch": Does IMAGE C match the costume, accessories, brightness, and vibrant colors of "${characterName}"${themeData ? " in IMAGE B" : ""}? (Score <= 5 if overly dark/gloomy or wrong costume).
 4. "framing": Is the full head/ears/hat uncropped with clean headroom and NO picture frame, border, or wall?
 
