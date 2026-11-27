@@ -1136,7 +1136,7 @@ export async function getProducts(onlyActive = true): Promise<ProductRecord[]> {
       try {
         const charRows = await prisma.characterTemplate.findMany({
           where: onlyActive ? { is_available: true } : undefined,
-          orderBy: { position: "asc" },
+          orderBy: [{ position: "asc" }, { created_at: "desc" }],
         });
         if (charRows.length > 0) {
           dbCharacters = charRows.map((c) => ({
@@ -1263,7 +1263,7 @@ export async function getWallArtCharacters(
     try {
       const rows = await prisma.characterTemplate.findMany({
         where: onlyActive ? { is_available: true } : undefined,
-        orderBy: { position: "asc" },
+        orderBy: [{ position: "asc" }, { created_at: "desc" }],
       });
       return rows.map((c) => ({
         id: c.slug,
@@ -1521,7 +1521,7 @@ export async function updateProductCustomizationConfig(
       let dbCharacters: FamousCharacter[] = [];
       try {
         const charRows = await prisma.characterTemplate.findMany({
-          orderBy: { position: "asc" },
+          orderBy: [{ position: "asc" }, { created_at: "desc" }],
         });
         dbCharacters = charRows.map((c) => ({
           id: c.slug,

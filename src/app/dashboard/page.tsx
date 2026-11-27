@@ -57,6 +57,7 @@ import {
   PenTool,
   Gift,
   Maximize2,
+  GripVertical,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -1113,7 +1114,7 @@ export default function AdminDashboardPage() {
       ? currentChars.map((c) =>
           c.id === editingCharacterId ? characterRecord : c,
         )
-      : [...currentChars.filter((c) => c.id !== cleanId), characterRecord];
+      : [characterRecord, ...currentChars.filter((c) => c.id !== cleanId)];
 
     setShowCharacterModal(false);
     await persistWallArtConfig(
@@ -1124,6 +1125,48 @@ export default function AdminDashboardPage() {
       editingCharacterId
         ? `Personaje "${characterRecord.name}" actualizado.`
         : `Personaje "${characterRecord.name}" agregado al Estudio IA.`,
+    );
+  };
+
+  const [draggedCharIndex, setDraggedCharIndex] = useState<number | null>(null);
+  const [dragOverCharIndex, setDragOverCharIndex] = useState<number | null>(
+    null,
+  );
+
+  const handleDropCharacter = async (targetIdx: number) => {
+    if (
+      draggedCharIndex === null ||
+      draggedCharIndex === targetIdx ||
+      isSavingCuadros
+    ) {
+      setDraggedCharIndex(null);
+      setDragOverCharIndex(null);
+      return;
+    }
+
+    const currentChars = [...(wallArtConfig.characters || [])];
+    if (
+      draggedCharIndex < 0 ||
+      draggedCharIndex >= currentChars.length ||
+      targetIdx < 0 ||
+      targetIdx >= currentChars.length
+    ) {
+      setDraggedCharIndex(null);
+      setDragOverCharIndex(null);
+      return;
+    }
+
+    const [moved] = currentChars.splice(draggedCharIndex, 1);
+    currentChars.splice(targetIdx, 0, moved);
+    setDraggedCharIndex(null);
+    setDragOverCharIndex(null);
+
+    await persistWallArtConfig(
+      {
+        ...wallArtConfig,
+        characters: currentChars,
+      },
+      `Orden actualizado: "${moved.name}" pasó a la posición #${targetIdx + 1}.`,
     );
   };
 
@@ -3054,8 +3097,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                       Personajes y Escenas de la Colección IA
                     </h3>
                     <p className="text-xs text-stone-500">
-                      Agrega nuevas temáticas, cambia imágenes de referencia o
-                      activa/oculta personajes en el Estudio IA.
+                      Los nuevos personajes aparecen primero (DESC). Arrastra y suelta las tarjetas para definir el orden prioritario en Home y Estudio IA.
                     </p>
                   </div>
 
@@ -3063,7 +3105,7 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                     type="button"
                     disabled={isSavingCuadros}
                     onClick={openCreateCharacterModal}
-                    className="px-4 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-semibold shadow-soft flex items-center gap-1.5 self-start sm:self-auto"
+                    className="px-4 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-semibold shadow-soft flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Nuevo Personaje / Escena</span>
@@ -3073,16 +3115,57 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(wallArtConfig.characters || []).map((char, charIdx) => {
                     const isActive = char.isAvailable !== false;
+                    const isDragging = draggedCharIndex === charIdx;
+                    const isDragOver =
+                      dragOverCharIndex === charIdx &&
+                      draggedCharIndex !== null &&
+                      draggedCharIndex !== charIdx;
                     return (
                       <div
                         key={`char-${char.id}-${charIdx}`}
-                        className={`bg-white border rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-4 transition-all ${
-                          isActive
-                            ? "border-cream-200"
-                            : "border-stone-200 opacity-65"
+                        draggable={!isSavingCuadros}
+                        onDragStart={(e) => {
+                          setDraggedCharIndex(charIdx);
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", String(charIdx));
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          if (dragOverCharIndex !== charIdx) {
+                            setDragOverCharIndex(charIdx);
+                          }
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverCharIndex === charIdx) {
+                            setDragOverCharIndex(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          void handleDropCharacter(charIdx);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedCharIndex(null);
+                          setDragOverCharIndex(null);
+                        }}
+                        className={`bg-white border rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-4 transition-all cursor-grab active:cursor-grabbing ${
+                          isDragOver
+                            ? "border-[#174B3D] ring-2 ring-[#174B3D]/25 scale-[1.01] bg-emerald-50/30"
+                            : isDragging
+                              ? "opacity-45 border-dashed border-stone-400"
+                              : isActive
+                                ? "border-cream-200 hover:border-cream-300"
+                                : "border-stone-200 opacity-65"
                         }`}
                       >
                         <div className="flex items-start gap-4">
+                          <div className="flex flex-col items-center gap-1.5 pt-1 text-stone-400 select-none shrink-0" title="Arrastra para reordenar">
+                            <GripVertical className="w-4 h-4 text-stone-400" />
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-cream-100 text-stone-600 border border-cream-200">
+                              #{charIdx + 1}
+                            </span>
+                          </div>
                           <button
                             type="button"
                             onClick={() =>
