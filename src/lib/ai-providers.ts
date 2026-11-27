@@ -281,7 +281,14 @@ function buildFusionPrompt(
   petIdentityFingerprint?: string | null,
   hasCustomReferenceImage: boolean = false,
   hasThemeRefImage: boolean = false,
+  species?: "dog" | "cat" | "both" | "other",
 ): string {
+  const speciesAnatomyRule =
+    species === "cat"
+      ? "SPECIES-MATCHED ANATOMY LOCK (CAT): Every visible body part — head, ears, muzzle, neck, legs, AND paws — MUST be 100% FELINE (small, dainty, compact, soft cat paws matching the cat in Image 1). STRICTLY DISCARD any bulky dog paws or canine limbs from the character reference image."
+      : species === "dog"
+        ? "SPECIES-MATCHED ANATOMY LOCK (DOG): Every visible body part — head, ears, muzzle, neck, legs, AND paws — MUST be 100% CANINE matching the exact dog breed and paw anatomy of Image 1. STRICTLY DISCARD any cat paws or other-breed limbs from the character reference image."
+        : "SPECIES-MATCHED ANATOMY LOCK: Every visible body part (head, ears, muzzle, neck, legs, and paws/limbs) MUST 100% match the exact species and breed of the uploaded pet in Image 1 — STRICTLY DISCARD paws or limbs of any different species from the character reference image.";
   const petCountText = hasSecondPet
     ? "BOTH uploaded pets (Pet #1 from Image 1 and Pet #2 from Image 2) side by side"
     : "the exact uploaded pet shown in Image 1";
@@ -333,7 +340,7 @@ MANDATORY PET IDENTITY, WHOLE-BODY COAT CONSISTENCY & FULL-BLEED PORTRAIT RULES:
 2. FULL-BLEED EDGE-TO-EDGE ARTWORK ONLY (CRITICAL): Render a flat, full-bleed 2D portrait filling 100% of the image rectangle edge-to-edge. NEVER draw a picture frame, 3D canvas edge, wooden stretcher, white border, margin, mat, wall, or product mockup around the portrait.
 3. COMPLETE UNCROPPED HEAD, EARS & 20% HEADROOM: NEVER crop or cut off the top of the pet's head, forehead, ears, crown/hat, or chin! Even if the uploaded pet photo is tightly cropped, reconstruct the COMPLETE head, both complete ears, and upper chest/torso in a balanced medium-wide chest-up portrait shot with 20% to 25% of open background space above the highest point of the head/ears/headwear and 15% breathing room on both sides.
 4. UNOBSTRUCTED PET FACE & EARS: Any crown, hat, helmet, or headwear from Image ${refImageIndex} must sit lightly and naturally on top of the head so the pet's eyes, muzzle, forehead markings, and natural ears remain clearly visible and true to Image 1.
-5. NATURAL ANATOMICAL PROPORTIONS, DELICATE PAWS & COMPLETE COSTUME FIT: Reproduce the FULL torso costume, uniform, collar, badges, jewelry, and props from Image ${refImageIndex} with realistic head-to-shoulder proportions and real fur micro-textures matching Image 1 naturally overlapping the collar, cuffs, and neckline with soft realistic contact shadows (NEVER a pasted or floating cutout head). Any visible paws or limbs MUST be anatomically accurate, proportional, sleek, and delicate for the pet's real breed and size — NEVER oversized, bulky, splayed, mutated, extra-toed, or human-like hands/fingers. Never make the portrait look cartoon, 3D-rendered, or plastic.
+5. NATURAL ANATOMICAL PROPORTIONS, SPECIES-MATCHED PAWS & COMPLETE COSTUME FIT: Reproduce the FULL torso costume, uniform, collar, badges, jewelry, and props from Image ${refImageIndex} with realistic head-to-shoulder proportions and real fur micro-textures matching Image 1 naturally overlapping the collar, cuffs, and neckline with soft realistic contact shadows (NEVER a pasted or floating cutout head). ${speciesAnatomyRule} Never make paws oversized, bulky, splayed, mutated, or human-like hands/fingers, and never make the portrait look cartoon, 3D-rendered, or plastic.
 6. PHOTOGRAPHY SPECS: Medium-wide half-body fine-art portrait (35mm full-frame camera, 50mm portrait lens), museum-grade lighting matching Image ${refImageIndex}, crisp eye catchlights. No watermarks, no text, no borders, no frames.`;
 
   const extraUserPrompt = customPrompt?.trim()
@@ -576,6 +583,7 @@ async function runOpenAIFusion(
       petIdentityFingerprint,
       isCustomRef,
       Boolean(themeData),
+      input.species,
     ) + multiAnglePromptNote;
 
   // Attempt 1: Native Multi-Image Fusion (/v1/images/edits) with High Input Fidelity
@@ -924,6 +932,7 @@ async function runGeminiFusion(
     petIdentityFingerprint,
     isCustomRef,
     Boolean(themeData),
+    input.species,
   );
 
   const petParts: any[] = [
