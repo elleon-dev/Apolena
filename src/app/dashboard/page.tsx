@@ -304,6 +304,7 @@ export default function AdminDashboardPage() {
     url: string;
     title: string;
     subtitle?: string;
+    petInscriptionName?: string | null;
   } | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
   const [copiedDedicationId, setCopiedDedicationId] = useState<string | null>(null);
@@ -5519,10 +5520,16 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                                   modalItem.customizations?.master_art_url ||
                                   modalItem.generated_art_url ||
                                   "/samples/cat-suit.jpg";
+                                const inscriptionName = modalItem.customizations
+                                  ?.pet_inscription?.enabled
+                                  ? modalItem.customizations?.pet_inscription?.pet_name?.trim() ||
+                                    null
+                                  : null;
                                 setVoucherPreviewModal({
                                   url: artUrl,
                                   title: `Retrato Generado · ${selectedOrder.order_code}`,
-                                  subtitle: `${modalItem.customizations?.theme_name || "Personalizado"} · ${bleedSpec?.faceCmLabel || modalItem.customizations?.size_label || ""}`,
+                                  subtitle: `${modalItem.customizations?.theme_name || "Personalizado"} · ${bleedSpec?.faceCmLabel || modalItem.customizations?.size_label || ""}${inscriptionName ? ` · Nombre: "${inscriptionName}"` : ""}`,
+                                  petInscriptionName: inscriptionName,
                                 });
                               }}
                               title="Clic para ver el retrato en pantalla completa"
@@ -6247,11 +6254,24 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
               </div>
 
               <div className="p-4 sm:p-6 bg-stone-950/95 flex items-center justify-center overflow-auto flex-1">
-                <img
-                  src={voucherPreviewModal.url}
-                  alt={voucherPreviewModal.title}
-                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
-                />
+                <div className="relative inline-block max-w-full">
+                  <img
+                    src={voucherPreviewModal.url}
+                    alt={voucherPreviewModal.title}
+                    className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-lg block"
+                  />
+                  {voucherPreviewModal.petInscriptionName && (
+                    <span
+                      className="font-brush pointer-events-none select-none absolute bottom-4 right-5 sm:bottom-6 sm:right-7 -rotate-[6.5deg] text-white text-2xl sm:text-4xl tracking-wide leading-none"
+                      style={{
+                        textShadow:
+                          "0 2px 10px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9)",
+                      }}
+                    >
+                      {voucherPreviewModal.petInscriptionName}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
