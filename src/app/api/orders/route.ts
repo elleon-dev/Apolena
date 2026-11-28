@@ -94,11 +94,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (
-      !body.proof_image_url ||
-      typeof body.proof_image_url !== "string" ||
-      !body.proof_image_url.trim()
-    ) {
+    const hasCouponCode =
+      typeof body.coupon_code === "string" && body.coupon_code.trim().length > 0;
+    const rawProofImageUrl =
+      typeof body.proof_image_url === "string" ? body.proof_image_url.trim() : "";
+
+    if (!rawProofImageUrl && !hasCouponCode) {
       return NextResponse.json(
         {
           error:
@@ -161,7 +162,7 @@ export async function POST(request: Request) {
           : 0,
       payment_method: paymentMethod,
       operation_number: body.operation_number?.trim() || null,
-      proof_image_url: body.proof_image_url,
+      proof_image_url: rawProofImageUrl || null,
       coupon_code:
         typeof body.coupon_code === "string" ? body.coupon_code.trim() : null,
       notes: body.notes || null,

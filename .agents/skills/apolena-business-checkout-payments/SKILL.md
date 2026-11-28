@@ -31,12 +31,13 @@ Una vez que el usuario genera y selecciona el retrato de su mascota:
 4. **Cálculo de Importes en la Orden (`orders`) y Cupones de Descuento (`src/lib/coupons.ts`):**
    - `subtotal`: Suma de los `order_items`.
    - `discount_amount` (opcional vía cupón en `platform_settings.DISCOUNT_COUPONS`):
-     - Soporta cupones por **porcentaje (`percentage`, 1%–90%)** o **monto fijo (`fixed`, S/)**, con controles opcionales de pedido mínimo (`minOrderAmount`), límite de usos (`maxUses` / `usedCount`), fecha de vencimiento (`expiresAt`) y estado `isActive`.
+     - Soporta cupones por **porcentaje (`percentage`, 1%–100%)** o **monto fijo (`fixed`, S/)**, con controles opcionales de pedido mínimo (`minOrderAmount`), límite de usos (`maxUses` / `usedCount`), fecha de vencimiento (`expiresAt`) y estado `isActive`.
      - Validación en vivo en `POST /api/coupons/validate` (disponible en Estudio IA Paso 3 y `/checkout`, sincronizado vía `apolena_checkout_draft`).
      - **Validación autoritativa en servidor:** Al emitir la orden (`POST /api/orders` → `createOrderWithSplitPayment`), el backend revalida el cupón contra PostgreSQL, aplica el descuento, guarda el snapshot en `order_items.customizations.coupon` e incrementa `usedCount`.
+     - **Órdenes de Cortesía (Cupón 100% / Total S/ 0.00):** Cuando el cupón cubre el 100% del total (`total_amount === 0`), `/checkout` oculta el bloque de Yape/Plin/Transferencia y no exige subir voucher; el servidor crea la orden en estado logístico `pending` con `payment_status = "paid_full"` y `payment_transactions[0].status = "verified"` (`verified_by = "Sistema (Cupón 100%)"`), lista para que el administrador revise el arte y despache a fabricación.
      - Gestión completa para administradores en `GET/POST/PATCH/DELETE /api/admin/coupons` y pestaña dedicada **`Cupones`** en `/dashboard` (`src/components/AdminCouponsTab.tsx`).
    - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`; Lima Metropolitana = S/ 0.00 incluido, Provincias = S/ 20.00).
-   - `total_amount`: $\max(1,\; \text{subtotal} - \text{discount\_amount} + \text{shipping\_cost})$.
+   - `total_amount`: $\max(0,\; \text{subtotal} - \text{discount\_amount} + \text{shipping\_cost})$.
    - `advance_amount`: $\text{total\_amount}$ (**100% del total** a pagar al confirmar la orden).
    - `remaining_amount`: $0$ (sin saldos pendientes contraentrega).
 

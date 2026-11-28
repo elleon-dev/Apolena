@@ -1583,16 +1583,13 @@ export default function personalizedWallArt() {
       ? Math.round(
           Math.min(
             (currentUnitPrice * appliedCoupon.value) / 100,
-            Math.max(0, currentUnitPrice - 1),
+            currentUnitPrice,
           ) * 100,
         ) / 100
-      : Math.round(
-          Math.min(appliedCoupon.value, Math.max(0, currentUnitPrice - 1)) *
-            100,
-        ) / 100
+      : Math.round(Math.min(appliedCoupon.value, currentUnitPrice) * 100) / 100
     : 0;
   const finalPriceWithCoupon = Number(
-    Math.max(1, currentUnitPrice - couponDiscountPen).toFixed(2),
+    Math.max(0, currentUnitPrice - couponDiscountPen).toFixed(2),
   );
 
   const handleProceedToCheckout = () => {

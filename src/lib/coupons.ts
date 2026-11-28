@@ -54,18 +54,18 @@ export function calculateCouponDiscount(
 
   let rawDiscount = 0;
   if (coupon.type === "percentage") {
-    const pct = Math.min(90, Math.max(1, Number(coupon.value) || 0));
+    const pct = Math.min(100, Math.max(1, Number(coupon.value) || 0));
     rawDiscount = (safeSubtotal * pct) / 100;
   } else {
     rawDiscount = Math.max(0, Number(coupon.value) || 0);
   }
 
-  // Asegurar que el descuento nunca deje el subtotal por debajo de S/ 1.00
-  const maxAllowedDiscount = Math.max(0, safeSubtotal - 1);
+  // Permite descuentos hasta el 100% del subtotal (cortesías / canjes con influencers = S/ 0.00)
+  const maxAllowedDiscount = safeSubtotal;
   const discountAmount =
     Math.round(Math.min(rawDiscount, maxAllowedDiscount) * 100) / 100;
   const finalSubtotal =
-    Math.round(Math.max(1, safeSubtotal - discountAmount) * 100) / 100;
+    Math.round(Math.max(0, safeSubtotal - discountAmount) * 100) / 100;
 
   return { discountAmount, finalSubtotal };
 }
@@ -241,7 +241,7 @@ export function buildNewCouponRecord(input: {
     type: input.type === "fixed" ? "fixed" : "percentage",
     value:
       input.type === "percentage"
-        ? Math.min(90, Math.max(1, Number(input.value) || 10))
+        ? Math.min(100, Math.max(1, Number(input.value) || 10))
         : Math.max(1, Number(input.value) || 10),
     description: input.description?.trim().slice(0, 140) || null,
     minOrderAmount: Math.max(0, Number(input.minOrderAmount) || 0),

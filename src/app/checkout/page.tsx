@@ -225,18 +225,14 @@ function CheckoutContent() {
   const discountAmount = appliedCoupon
     ? appliedCoupon.type === "percentage"
       ? Math.round(
-          Math.min(
-            (subtotal * appliedCoupon.value) / 100,
-            Math.max(0, subtotal - 1),
-          ) * 100,
+          Math.min((subtotal * appliedCoupon.value) / 100, subtotal) * 100,
         ) / 100
-      : Math.round(
-          Math.min(appliedCoupon.value, Math.max(0, subtotal - 1)) * 100,
-        ) / 100
+      : Math.round(Math.min(appliedCoupon.value, subtotal) * 100) / 100
     : 0;
   const totalAmount = Number(
-    Math.max(1, subtotal - discountAmount + shippingCost).toFixed(2),
+    Math.max(0, subtotal - discountAmount + shippingCost).toFixed(2),
   );
+  const isCourtesyOrder = totalAmount <= 0 && discountAmount > 0;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -254,7 +250,7 @@ function CheckoutContent() {
       return;
     }
 
-    if (!proofImageUrl) {
+    if (!isCourtesyOrder && !proofImageUrl) {
       setError("Por favor adjunta la captura o voucher de tu pago para confirmar el pedido.");
       return;
     }
@@ -317,8 +313,12 @@ function CheckoutContent() {
           unit_price: subtotal,
           shipping_cost: shippingCost,
           payment_method: paymentMethod,
-          operation_number: operationNumber,
-          proof_image_url: proofImageUrl,
+          operation_number: isCourtesyOrder
+            ? appliedCoupon?.code
+              ? `CUPON-${appliedCoupon.code}`
+              : "CORTESIA-100"
+            : operationNumber,
+          proof_image_url: isCourtesyOrder ? null : proofImageUrl,
           notes,
           customizations: {
             ...draft.customizations,
@@ -790,20 +790,48 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* STEP 2: PAGO TOTAL 100% (YAPE, PLIN O TRANSFERENCIA) */}
+              {/* STEP 2: PAGO TOTAL 100% (YAPE, PLIN O TRANSFERENCIA) O CORTESÍA 100% */}
               <div className="bg-white border border-cream-200 rounded-3xl p-6 shadow-soft space-y-5">
                 <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                   <div className="flex items-center gap-2.5">
                     <CreditCard className="w-4 h-4 text-terracotta-500" />
                     <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      2. Pago Total del Pedido (S/ {totalAmount.toFixed(2)})
+                      {isCourtesyOrder
+                        ? "2. Pedido Cubierto al 100% (S/ 0.00)"
+                        : `2. Pago Total del Pedido (S/ ${totalAmount.toFixed(2)})`}
                     </h2>
                   </div>
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#174B3D]/10 text-[#174B3D] border border-[#174B3D]/20">
-                    Pago Único 100%
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+                      isCourtesyOrder
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-[#174B3D]/10 text-[#174B3D] border-[#174B3D]/20"
+                    }`}
+                  >
+                    {isCourtesyOrder
+                      ? "Cortesía · 100% Cubierto"
+                      : "Pago Único 100%"}
                   </span>
                 </div>
 
+                {isCourtesyOrder ? (
+                  <div className="p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-start gap-3.5 text-xs">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-emerald-950 text-sm">
+                        Tu cupón {appliedCoupon?.code} cubre el 100% de esta
+                        orden
+                      </p>
+                      <p className="text-emerald-900/90 leading-relaxed">
+                        El total a pagar es <strong>S/ 0.00</strong>. No
+                        necesitas realizar ninguna transferencia ni adjuntar
+                        comprobante; tu orden se verificará automáticamente al
+                        confirmar.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 {/* Selector de Método: Yape, Plin, Transferencia */}
                 <div className="grid grid-cols-3 gap-3 text-xs">
                   <button
@@ -1131,6 +1159,8 @@ function CheckoutContent() {
                     />
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1254,11 +1284,17 @@ function CheckoutContent() {
                 {/* Total 100% Payment Highlight Box */}
                 <div className="p-4 rounded-2xl bg-[#174B3D]/5 border border-[#174B3D]/20 space-y-1.5 text-xs">
                   <div className="flex items-center justify-between font-bold text-[#174B3D] text-sm">
-                    <span>Total a pagar ahora (100%):</span>
+                    <span>
+                      {isCourtesyOrder
+                        ? "Total a pagar (Cortesía):"
+                        : "Total a pagar ahora (100%):"}
+                    </span>
                     <span>S/ {totalAmount.toFixed(2)}</span>
                   </div>
                   <p className="text-[11px] text-stone-600">
-                    Pago único al ordenar. No tendrás saldos pendientes al recibir tu cuadro.
+                    {isCourtesyOrder
+                      ? "Cubierto al 100% por cupón. Sin cobros ni comprobantes requeridos."
+                      : "Pago único al ordenar. No tendrás saldos pendientes al recibir tu cuadro."}
                   </p>
                 </div>
 
@@ -1275,7 +1311,9 @@ function CheckoutContent() {
                   ) : (
                     <>
                       <span>
-                        Confirmar Orden y Pago (S/ {totalAmount.toFixed(2)})
+                        {isCourtesyOrder
+                          ? "Confirmar Orden de Cortesía (S/ 0.00)"
+                          : `Confirmar Orden y Pago (S/ ${totalAmount.toFixed(2)})`}
                       </span>
                       <ArrowRight className="w-4 h-4 text-[#c6a26c]" />
                     </>

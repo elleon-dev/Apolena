@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (type === "percentage" && value > 90) {
+    if (type === "percentage" && value > 100) {
       return NextResponse.json(
-        { error: "El descuento porcentual máximo permitido es 90%." },
+        { error: "El descuento porcentual máximo permitido es 100%." },
         { status: 400 },
       );
     }
@@ -148,9 +148,9 @@ export async function PATCH(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (nextType === "percentage" && nextValue > 90) {
+    if (nextType === "percentage" && nextValue > 100) {
       return NextResponse.json(
-        { error: "El descuento porcentual máximo es 90%." },
+        { error: "El descuento porcentual máximo permitido es 100%." },
         { status: 400 },
       );
     }

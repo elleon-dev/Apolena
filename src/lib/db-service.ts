@@ -2317,10 +2317,17 @@ export async function createOrderWithSplitPayment(input: {
   }
 
   const totalAmount = Number(
-    Math.max(1, subtotal - appliedDiscountAmount + shippingCost).toFixed(2),
+    Math.max(0, subtotal - appliedDiscountAmount + shippingCost).toFixed(2),
   );
+  const isCourtesyOrder = totalAmount <= 0 && appliedDiscountAmount > 0;
 
-  // Regla de Negocio Oficial: Cobro del 100% al ordenar
+  if (!isCourtesyOrder && !finalProofImageUrl) {
+    throw new Error(
+      "Adjunta la captura o voucher de tu pago para confirmar el pedido.",
+    );
+  }
+
+  // Regla de Negocio Oficial: Cobro del 100% al ordenar (o Cortesía S/ 0.00 cubierta 100% por cupón)
   const advanceAmount = totalAmount;
   const remainingAmount = 0;
 
@@ -2352,7 +2359,9 @@ export async function createOrderWithSplitPayment(input: {
   const plinCfg = settings.PAYMENT_METHODS_CONFIG.plin;
 
   let advancePaymentNotes = "Pago total del 100% al confirmar pedido";
-  if (input.payment_method === "bank_transfer") {
+  if (isCourtesyOrder) {
+    advancePaymentNotes = `Cortesía cubierto al 100% con cupón ${appliedCouponCode || ""}`.trim();
+  } else if (input.payment_method === "bank_transfer") {
     advancePaymentNotes = `Pago 100% vía Transferencia (${bankCfg.bank_name || "BCP Soles"} · Cta: ${bankCfg.account_number} · CCI: ${bankCfg.cci} · Titular: ${bankCfg.holder_name})`;
   } else if (input.payment_method === "yape") {
     advancePaymentNotes = `Pago 100% vía Yape (Tel: ${yapeCfg.phone} · Titular: ${yapeCfg.holder_name || bankCfg.holder_name})`;
@@ -2360,13 +2369,19 @@ export async function createOrderWithSplitPayment(input: {
     advancePaymentNotes = `Pago 100% vía Plin (Tel: ${plinCfg.phone} · Titular: ${plinCfg.holder_name || bankCfg.holder_name})`;
   }
 
+  const finalOperationNumber = isCourtesyOrder
+    ? appliedCouponCode
+      ? `CUPON-${appliedCouponCode}`
+      : "CORTESIA-100"
+    : input.operation_number?.trim() || null;
+
   const newOrder: OrderRecord = {
     id: orderId,
     order_code: orderCode,
     tracking_id: trackingId,
     buyer_id: validBuyerId,
     status: "pending",
-    payment_status: "partial_pending",
+    payment_status: isCourtesyOrder ? "paid_full" : "partial_pending",
     payment_method: input.payment_method,
     subtotal,
     shipping_cost: shippingCost,
@@ -2465,16 +2480,16 @@ export async function createOrderWithSplitPayment(input: {
         order_id: orderId,
         payment_stage: "advance_50",
         payment_method: input.payment_method,
-        status: "pending_verification",
+        status: isCourtesyOrder ? "verified" : "pending_verification",
         amount: advanceAmount,
         currency: "PEN",
-        operation_number: input.operation_number?.trim() || null,
-        proof_image_url: finalProofImageUrl,
+        operation_number: finalOperationNumber,
+        proof_image_url: isCourtesyOrder ? null : finalProofImageUrl,
         payer_name: input.shipping.name.trim(),
         payer_phone: input.shipping.phone.trim(),
         notes: advancePaymentNotes,
-        verified_by: null,
-        verified_at: null,
+        verified_by: isCourtesyOrder ? "Sistema (Cupón 100%)" : null,
+        verified_at: isCourtesyOrder ? now : null,
         created_at: now,
       },
     ],
@@ -2538,7 +2553,7 @@ export async function createOrderWithSplitPayment(input: {
               id: packageId,
               package_number: 1,
               total_packages: 1,
-              status: "manufacturing",
+              status: "pending",
               courier: "Apolena Express Delivery",
               tracking_number: trackingId,
               tracking_url: `/track/${trackingId}`,
@@ -2556,7 +2571,7 @@ export async function createOrderWithSplitPayment(input: {
                   quantity,
                   unit_price: input.unit_price,
                   subtotal,
-                  status: "manufacturing",
+                  status: "pending",
                   pet_photo_url: finalPetPhotoUrl,
                   generated_art_url: finalGeneratedArtUrl,
                   customizations: finalCustomizations as any,
@@ -2569,14 +2584,16 @@ export async function createOrderWithSplitPayment(input: {
               id: newOrder.paymentTransactions[0].id,
               payment_stage: "advance_50",
               payment_method: input.payment_method,
-              status: "pending_verification",
+              status: isCourtesyOrder ? "verified" : "pending_verification",
               amount: advanceAmount,
               currency: "PEN",
-              operation_number: input.operation_number?.trim() || null,
-              proof_image_url: finalProofImageUrl,
+              operation_number: finalOperationNumber,
+              proof_image_url: isCourtesyOrder ? null : finalProofImageUrl,
               payer_name: input.shipping.name.trim(),
               payer_phone: input.shipping.phone.trim(),
               notes: advancePaymentNotes,
+              verified_by: isCourtesyOrder ? "Sistema (Cupón 100%)" : null,
+              verified_at: isCourtesyOrder ? new Date(now) : null,
             },
           },
         },

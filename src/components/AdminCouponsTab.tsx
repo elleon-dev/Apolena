@@ -70,11 +70,11 @@ const couponFormSchema = z
   })
   .superRefine((data, ctx) => {
     const numVal = Number(data.value);
-    if (data.type === "percentage" && numVal > 90) {
+    if (data.type === "percentage" && numVal > 100) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["value"],
-        message: "El porcentaje máximo permitido es 90%.",
+        message: "El porcentaje máximo permitido es 100%.",
       });
     }
     if (data.type === "fixed" && numVal > 9999) {
@@ -130,6 +130,9 @@ export function AdminCouponsTab({
   });
 
   const watchedType = watch("type");
+  const watchedValue = watch("value");
+  const isFullCourtesyPercent =
+    watchedType === "percentage" && Number(watchedValue) === 100;
 
   const openCreateModal = () => {
     setEditingCoupon(null);
@@ -560,7 +563,7 @@ export function AdminCouponsTab({
                 <FormInput
                   label={
                     watchedType === "percentage"
-                      ? "Porcentaje (1% - 90%)"
+                      ? "Porcentaje (1% - 100%)"
                       : "Monto Fijo en Soles (S/)"
                   }
                   required
@@ -571,6 +574,15 @@ export function AdminCouponsTab({
                   {...register("value")}
                 />
               </div>
+
+              {isFullCourtesyPercent && (
+                <div className="px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 leading-relaxed">
+                  <strong>Cupón de cortesía (100%):</strong> Si el envío es
+                  gratis (Lima), el pedido quedará en <strong>S/ 0.00</strong> y
+                  se aprobará automáticamente sin exigir voucher. Recomendamos
+                  definir un <strong>Límite de usos</strong> (por ejemplo, 1).
+                </div>
+              )}
 
               <FormInput
                 label="Campaña / Nota interna (opcional)"
