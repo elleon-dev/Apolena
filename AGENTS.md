@@ -27,6 +27,15 @@ Si una solicitud requiere alterar o romper alguna regla de negocio plasmada en l
 
 ---
 
+## 📝 Regla Obligatoria de Formularios (`react-hook-form` + `zod` + Componentes Genéricos)
+
+Todo formulario **nuevo o actualizado** en Apolena **DEBE** cumplir sin excepción:
+
+1. **Validación con `react-hook-form` + `zod` (`@hookform/resolvers/zod`):** Prohibido depender de validación nativa del navegador (`required`, tooltips `"Please fill out this field."`). Todo `<form>` debe llevar `noValidate` y mostrar mensajes de error claros en español junto a cada campo.
+2. **Componentes Genéricos Reutilizables (`src/components/ui/FormFields.tsx`):** Reutilizar `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox` y `FormFieldError` (o ampliar dicha librería genérica si surge un nuevo tipo de control) en lugar de duplicar markup de inputs y errores.
+
+---
+
 ## 🔄 Protocolo de Sincronización Obligatoria de Skills (Post-Cambio / Pre-Commit)
 
 Ninguna tarea, implementación, actualización o commit se considera terminado sin ejecutar la **sincronización de skills en el mismo ciclo**:

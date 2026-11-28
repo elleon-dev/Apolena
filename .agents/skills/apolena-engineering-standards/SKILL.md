@@ -27,9 +27,10 @@ Este skill define el **protocolo de desarrollo obligatorio** que todo cambio —
 - Verificar si el cambio requiere modificar alguna **regla de negocio establecida** → si es así, emitir alerta y solicitar aprobación explícita del usuario.
 - Evaluar efectos colaterales en otros módulos (Estudio IA, Checkout Pago Total 100%, Tracking Público, Perfil `/profile`, Dashboard Usuario `/orders`, Panel Admin `/dashboard`, Despacho a Proveedor, Cola de Emails).
 
-### Fase 3 — Reutilización Primero
+### Fase 3 — Reutilización Primero y Estándar de Formularios
 
 - **Componentes UI:** Buscar componentes existentes en `src/components/ui/` y `src/components/` antes de crear uno nuevo. Si no existe, crear un componente genérico y reutilizable.
+- **Formularios Obligatorios con `react-hook-form` + `zod`:** Todo formulario nuevo o actualizado DEBE implementarse con `react-hook-form`, esquema `zod` (`zodResolver`), atributo `noValidate` en `<form>` (cero tooltips nativos del navegador) y reutilizar los controles genéricos en `src/components/ui/FormFields.tsx` (`FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormFieldError`).
 - **Funciones y Servicios:** Buscar funciones existentes en `src/lib/services/`, `src/lib/utils/` y `src/lib/` antes de escribir lógica nueva.
 - **Tipos e Interfaces:** Reutilizar los tipos generados por Prisma (`@prisma/client`) y los tipos compartidos en `src/lib/types.ts`. No duplicar definiciones de tipos.
 
