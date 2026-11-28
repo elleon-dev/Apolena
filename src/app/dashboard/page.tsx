@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { EditOrderModal } from "@/components/EditOrderModal";
@@ -1145,46 +1145,93 @@ export default function AdminDashboardPage() {
     );
   };
 
-  const [draggedCharIndex, setDraggedCharIndex] = useState<number | null>(null);
-  const [dragOverCharIndex, setDragOverCharIndex] = useState<number | null>(
-    null,
-  );
+  const [draggedCharId, setDraggedCharId] = useState<string | null>(null);
+  const [dragOverCharId, setDragOverCharId] = useState<string | null>(null);
+  const [isReorderingChars, setIsReorderingChars] = useState(false);
+  const reorderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reorderRevisionRef = useRef(0);
 
-  const handleDropCharacter = async (targetIdx: number) => {
-    if (
-      draggedCharIndex === null ||
-      draggedCharIndex === targetIdx ||
-      isSavingCuadros
-    ) {
-      setDraggedCharIndex(null);
-      setDragOverCharIndex(null);
+  const flushCharacterReorder = async (
+    orderedIds: string[],
+    revision: number,
+  ) => {
+    setIsReorderingChars(true);
+    try {
+      const res = await fetch("/api/admin/characters/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      const data = await res.json();
+      if (revision !== reorderRevisionRef.current) return;
+      if (res.ok && data.success) {
+        showToast("success", "Orden de personajes guardado.");
+      } else {
+        showToast(
+          "error",
+          data.error || "No se pudo guardar el orden de los personajes.",
+        );
+      }
+    } catch {
+      if (revision === reorderRevisionRef.current) {
+        showToast(
+          "error",
+          "Error de red al guardar el orden de los personajes.",
+        );
+      }
+    } finally {
+      if (revision === reorderRevisionRef.current) {
+        setIsReorderingChars(false);
+      }
+    }
+  };
+
+  const handleDropCharacter = (
+    targetCharId: string,
+    sourceIdOverride?: string | null,
+  ) => {
+    const sourceCharId = sourceIdOverride || draggedCharId;
+    setDraggedCharId(null);
+    setDragOverCharId(null);
+
+    if (!sourceCharId || sourceCharId === targetCharId || !wallArtProduct) {
       return;
     }
 
     const currentChars = [...(wallArtConfig.characters || [])];
-    if (
-      draggedCharIndex < 0 ||
-      draggedCharIndex >= currentChars.length ||
-      targetIdx < 0 ||
-      targetIdx >= currentChars.length
-    ) {
-      setDraggedCharIndex(null);
-      setDragOverCharIndex(null);
+    const fromIdx = currentChars.findIndex((c) => c.id === sourceCharId);
+    const toIdx = currentChars.findIndex((c) => c.id === targetCharId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
       return;
     }
 
-    const [moved] = currentChars.splice(draggedCharIndex, 1);
-    currentChars.splice(targetIdx, 0, moved);
-    setDraggedCharIndex(null);
-    setDragOverCharIndex(null);
+    const [moved] = currentChars.splice(fromIdx, 1);
+    currentChars.splice(toIdx, 0, moved);
 
-    await persistWallArtConfig(
-      {
-        ...wallArtConfig,
-        characters: currentChars,
-      },
-      `Orden actualizado: "${moved.name}" pasó a la posición #${targetIdx + 1}.`,
+    // 1. Actualización optimista instantánea (0 ms) para permitir múltiples movimientos seguidos sin demora
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === wallArtProduct.id || p.slug === wallArtProduct.slug
+          ? {
+              ...p,
+              customization_config: {
+                ...wallArtConfig,
+                characters: currentChars,
+              },
+            }
+          : p,
+      ),
     );
+
+    // 2. Persistencia rápida en transacción única (debounce 250ms para agrupar arrastres consecutivos)
+    const nextOrderedIds = currentChars.map((c) => c.id);
+    const nextRevision = ++reorderRevisionRef.current;
+    if (reorderTimerRef.current) {
+      clearTimeout(reorderTimerRef.current);
+    }
+    reorderTimerRef.current = setTimeout(() => {
+      void flushCharacterReorder(nextOrderedIds, nextRevision);
+    }, 250);
   };
 
   const handleToggleCharacterAvailability = async (charId: string) => {
@@ -3146,53 +3193,67 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    disabled={isSavingCuadros}
-                    onClick={openCreateCharacterModal}
-                    className="px-4 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-semibold shadow-soft flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Nuevo Personaje / Escena</span>
-                  </button>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {isReorderingChars && (
+                      <span className="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold inline-flex items-center gap-1.5">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Guardando orden...</span>
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      disabled={isSavingCuadros}
+                      onClick={openCreateCharacterModal}
+                      className="px-4 py-2.5 rounded-full bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-semibold shadow-soft flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Nuevo Personaje / Escena</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(wallArtConfig.characters || []).map((char, charIdx) => {
                     const isActive = char.isAvailable !== false;
-                    const isDragging = draggedCharIndex === charIdx;
+                    const isDragging = draggedCharId === char.id;
                     const isDragOver =
-                      dragOverCharIndex === charIdx &&
-                      draggedCharIndex !== null &&
-                      draggedCharIndex !== charIdx;
+                      dragOverCharId === char.id &&
+                      draggedCharId !== null &&
+                      draggedCharId !== char.id;
                     return (
                       <div
-                        key={`char-${char.id}-${charIdx}`}
-                        draggable={!isSavingCuadros}
+                        key={char.id}
+                        draggable
                         onDragStart={(e) => {
-                          setDraggedCharIndex(charIdx);
+                          setDraggedCharId(char.id);
                           e.dataTransfer.effectAllowed = "move";
-                          e.dataTransfer.setData("text/plain", String(charIdx));
+                          e.dataTransfer.setData("text/plain", char.id);
                         }}
                         onDragOver={(e) => {
                           e.preventDefault();
                           e.dataTransfer.dropEffect = "move";
-                          if (dragOverCharIndex !== charIdx) {
-                            setDragOverCharIndex(charIdx);
+                          if (dragOverCharId !== char.id) {
+                            setDragOverCharId(char.id);
                           }
                         }}
-                        onDragLeave={() => {
-                          if (dragOverCharIndex === charIdx) {
-                            setDragOverCharIndex(null);
+                        onDragLeave={(e) => {
+                          if (
+                            !e.currentTarget.contains(
+                              e.relatedTarget as Node | null,
+                            ) &&
+                            dragOverCharId === char.id
+                          ) {
+                            setDragOverCharId(null);
                           }
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
-                          void handleDropCharacter(charIdx);
+                          const dtId = e.dataTransfer.getData("text/plain");
+                          handleDropCharacter(char.id, dtId || draggedCharId);
                         }}
                         onDragEnd={() => {
-                          setDraggedCharIndex(null);
-                          setDragOverCharIndex(null);
+                          setDraggedCharId(null);
+                          setDragOverCharId(null);
                         }}
                         className={`bg-white border rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-4 transition-all cursor-grab active:cursor-grabbing ${
                           isDragOver

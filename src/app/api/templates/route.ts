@@ -8,7 +8,7 @@ export async function GET() {
     try {
       const rows = await prisma.characterTemplate.findMany({
         where: { is_available: true },
-        orderBy: { position: "asc" },
+        orderBy: [{ position: "asc" }, { created_at: "desc" }],
       });
       return NextResponse.json({
         success: true,

@@ -1613,6 +1613,57 @@ export async function updateProductCustomizationConfig(
   return db.products[idx];
 }
 
+export async function reorderWallArtCharacters(
+  orderedSlugs: string[],
+): Promise<{ orderedIds: string[] }> {
+  const uniqueSlugs = Array.from(
+    new Set(
+      orderedSlugs
+        .map((s) => String(s || "").trim())
+        .filter((s) => s.length > 0),
+    ),
+  );
+
+  invalidateProductsCache();
+
+  if (isDatabaseConfigured() && uniqueSlugs.length > 0) {
+    // Una sola transacción en PostgreSQL actualiza todas las posiciones en ~100ms
+    await prisma.$transaction(
+      uniqueSlugs.map((slug, idx) =>
+        prisma.characterTemplate.updateMany({
+          where: { slug },
+          data: { position: idx },
+        }),
+      ),
+    );
+    invalidateProductsCache();
+
+    // Sincronizar fallback local sin bloquear la respuesta
+    void readLocalDb().then((db) => {
+      const prod = db.products.find((p) => isWallArtProductSlug(p.slug));
+      if (prod?.customization_config?.characters) {
+        const orderMap = new Map(uniqueSlugs.map((s, idx) => [s, idx]));
+        prod.customization_config.characters = [
+          ...prod.customization_config.characters,
+        ].sort((a, b) => {
+          const pa = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : 9999;
+          const pb = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : 9999;
+          return pa - pb;
+        });
+        writeLocalDb(db);
+      }
+    });
+
+    const rows = await prisma.characterTemplate.findMany({
+      orderBy: [{ position: "asc" }, { created_at: "desc" }],
+      select: { slug: true },
+    });
+    return { orderedIds: rows.map((r) => r.slug) };
+  }
+
+  return { orderedIds: uniqueSlugs };
+}
+
 export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
   const now = Date.now();
   if (memCache.settings && memCache.settings.expiresAt > now) {
