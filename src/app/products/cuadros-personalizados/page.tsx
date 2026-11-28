@@ -3924,7 +3924,7 @@ export default function personalizedWallArt() {
                   >
                     <ShoppingBag className="w-4 h-4 text-[#c6a26c]" />
                     <span>
-                      Ordenar Cuadro · S/ {finalPriceWithCoupon.toFixed(2)}
+                      Continuar · S/ {finalPriceWithCoupon.toFixed(2)}
                     </span>
                   </button>
 

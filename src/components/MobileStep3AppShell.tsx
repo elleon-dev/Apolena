@@ -755,7 +755,7 @@ export function MobileStep3AppShell({
           >
             <ShoppingBag className="w-4 h-4 text-[#c6a26c] shrink-0" />
             <span className="truncate">
-              Ordenar · S/ {currentUnitPrice.toFixed(2)}
+              Continuar · S/ {currentUnitPrice.toFixed(2)}
             </span>
           </button>
         </div>
