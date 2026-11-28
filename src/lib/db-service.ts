@@ -17,6 +17,10 @@ import {
   externalizeBase64Image,
   stripHeavyFieldsForEmailData,
 } from "@/lib/image-storage";
+import {
+  incrementCouponUsage,
+  validateCouponCode,
+} from "@/lib/coupons";
 
 export type OrderStatus =
   | "pending"
@@ -2213,6 +2217,7 @@ export async function createOrderWithSplitPayment(input: {
   proof_image_url?: string | null;
   notes?: string | null;
   app_url?: string | null;
+  coupon_code?: string | null;
   customizations: OrderItemCustomizations;
   shipping: {
     name: string;
@@ -2290,7 +2295,30 @@ export async function createOrderWithSplitPayment(input: {
   const quantity = Math.max(1, input.quantity || 1);
   const subtotal = Number((input.unit_price * quantity).toFixed(2));
   const shippingCost = Number(input.shipping_cost.toFixed(2));
-  const totalAmount = Number((subtotal + shippingCost).toFixed(2));
+
+  // Validación autoritativa de cupón de descuento en servidor
+  let appliedDiscountAmount = 0;
+  let appliedCouponCode: string | null = null;
+  if (input.coupon_code && input.coupon_code.trim()) {
+    const couponCheck = await validateCouponCode(input.coupon_code, subtotal);
+    if (!couponCheck.valid || !couponCheck.coupon) {
+      throw new Error(
+        couponCheck.error || "El cupón de descuento ingresado no es válido.",
+      );
+    }
+    appliedDiscountAmount = couponCheck.discountAmount;
+    appliedCouponCode = couponCheck.coupon.code;
+    (finalCustomizations as Record<string, any>).coupon = {
+      code: couponCheck.coupon.code,
+      type: couponCheck.coupon.type,
+      value: couponCheck.coupon.value,
+      discount_amount: couponCheck.discountAmount,
+    };
+  }
+
+  const totalAmount = Number(
+    Math.max(1, subtotal - appliedDiscountAmount + shippingCost).toFixed(2),
+  );
 
   // Regla de Negocio Oficial: Cobro del 100% al ordenar
   const advanceAmount = totalAmount;
@@ -2615,6 +2643,10 @@ export async function createOrderWithSplitPayment(input: {
     ]);
   } catch (err) {
     console.warn("Background email dispatch warning:", err);
+  }
+
+  if (appliedCouponCode) {
+    await incrementCouponUsage(appliedCouponCode);
   }
 
   return newOrder;

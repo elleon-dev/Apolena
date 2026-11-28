@@ -28,10 +28,15 @@ Una vez que el usuario genera y selecciona el retrato de su mascota:
    - **Mapa Interactivo con Pin Exacto (`DeliveryMapPicker`):** Incluye un mapa interactivo (con vista Satélite + Calles y Mapa de Calles, buscador de dirección, geolocalización GPS y auto-centrado por distrito) donde el usuario puede colocar o arrastrar un pin en su puerta exacta. Las coordenadas se guardan directamente en las columnas relacionales de PostgreSQL `order_shippings` (`latitude`, `longitude`, `map_url`), además de respaldarse en `customizations.delivery_location` y `order_shippings.reference`, mostrándose tanto al comprador (`/checkout`, `/orders`, `/track/[trackingId]`, email `order_created_buyer`) como al administrador (`/dashboard`, `EditOrderModal`, email `order_created_admin`).
 3. **Datos de Comprobante (`order_invoices`):**
    - Selección de Boleta o Factura con sus datos respectivos.
-4. **Cálculo de Importes en la Orden (`orders`):**
+4. **Cálculo de Importes en la Orden (`orders`) y Cupones de Descuento (`src/lib/coupons.ts`):**
    - `subtotal`: Suma de los `order_items`.
+   - `discount_amount` (opcional vía cupón en `platform_settings.DISCOUNT_COUPONS`):
+     - Soporta cupones por **porcentaje (`percentage`, 1%–90%)** o **monto fijo (`fixed`, S/)**, con controles opcionales de pedido mínimo (`minOrderAmount`), límite de usos (`maxUses` / `usedCount`), fecha de vencimiento (`expiresAt`) y estado `isActive`.
+     - Validación en vivo en `POST /api/coupons/validate` (disponible en Estudio IA Paso 3 y `/checkout`, sincronizado vía `apolena_checkout_draft`).
+     - **Validación autoritativa en servidor:** Al emitir la orden (`POST /api/orders` → `createOrderWithSplitPayment`), el backend revalida el cupón contra PostgreSQL, aplica el descuento, guarda el snapshot en `order_items.customizations.coupon` e incrementa `usedCount`.
+     - Gestión completa para administradores en `GET/POST/PATCH/DELETE /api/admin/coupons` y pestaña dedicada **`Cupones`** en `/dashboard` (`src/components/AdminCouponsTab.tsx`).
    - `shipping_cost`: Costo de delivery según ubicación (obtenido de `platform_settings`; Lima Metropolitana = S/ 0.00 incluido, Provincias = S/ 20.00).
-   - `total_amount`: $\text{subtotal} + \text{shipping\_cost}$.
+   - `total_amount`: $\max(1,\; \text{subtotal} - \text{discount\_amount} + \text{shipping\_cost})$.
    - `advance_amount`: $\text{total\_amount}$ (**100% del total** a pagar al confirmar la orden).
    - `remaining_amount`: $0$ (sin saldos pendientes contraentrega).
 

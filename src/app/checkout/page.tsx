@@ -4,6 +4,10 @@ import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
+import {
+  AppliedCouponClient,
+  CouponInputBox,
+} from "@/components/CouponInputBox";
 import { removeSavedCreation } from "@/lib/studio-drafts";
 import { trackPurchase } from "@/lib/analytics";
 import {
@@ -130,6 +134,8 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<AppliedCouponClient | null>(null);
 
   useEffect(() => {
     try {
@@ -138,6 +144,9 @@ function CheckoutContent() {
         const parsed = JSON.parse(saved);
         if (parsed?.generated_art_url && parsed?.customizations) {
           setDraft(parsed);
+          if (parsed?.coupon?.code) {
+            setAppliedCoupon(parsed.coupon);
+          }
         }
       }
 
@@ -213,7 +222,21 @@ function CheckoutContent() {
       : shippingRates.provincias_pen;
 
   const subtotal = draft.unit_price;
-  const totalAmount = Number((subtotal + shippingCost).toFixed(2));
+  const discountAmount = appliedCoupon
+    ? appliedCoupon.type === "percentage"
+      ? Math.round(
+          Math.min(
+            (subtotal * appliedCoupon.value) / 100,
+            Math.max(0, subtotal - 1),
+          ) * 100,
+        ) / 100
+      : Math.round(
+          Math.min(appliedCoupon.value, Math.max(0, subtotal - 1)) * 100,
+        ) / 100
+    : 0;
+  const totalAmount = Number(
+    Math.max(1, subtotal - discountAmount + shippingCost).toFixed(2),
+  );
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -283,6 +306,7 @@ function CheckoutContent() {
         body: JSON.stringify({
           product_id: draft.product_id,
           generation_job_id: draft.generation_job_id || null,
+          coupon_code: appliedCoupon?.code || null,
           selected_variant_id:
             draft.selected_variant_id ||
             draft.customizations?.selected_variant_id ||
@@ -1197,6 +1221,28 @@ function CheckoutContent() {
                         </span>
                       </span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-sage-600 shrink-0" />
+                    </div>
+                  )}
+                  <div className="pt-2">
+                    <CouponInputBox
+                      subtotal={subtotal}
+                      appliedCoupon={
+                        appliedCoupon
+                          ? { ...appliedCoupon, discountAmount }
+                          : null
+                      }
+                      onApply={(coupon) => setAppliedCoupon(coupon)}
+                      onRemove={() => setAppliedCoupon(null)}
+                      compact
+                    />
+                  </div>
+                  {appliedCoupon && discountAmount > 0 && (
+                    <div className="flex justify-between text-xs font-semibold text-emerald-700 pt-1">
+                      <span>
+                        Descuento cupón{" "}
+                        <span className="font-mono">{appliedCoupon.code}</span>
+                      </span>
+                      <span>- S/ {discountAmount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-cream-200">

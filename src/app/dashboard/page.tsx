@@ -6,6 +6,8 @@ import { Header } from "@/components/Header";
 import { EditOrderModal } from "@/components/EditOrderModal";
 import { EditTrackingModal } from "@/components/EditTrackingModal";
 import { SendToSupplierModal } from "@/components/SendToSupplierModal";
+import { AdminCouponsTab } from "@/components/AdminCouponsTab";
+import type { DiscountCoupon } from "@/lib/coupons";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { OrderTrackingStepper } from "@/components/OrderTrackingStepper";
 import { parseDeliveryPinFromOrder } from "@/lib/delivery-location";
@@ -58,6 +60,7 @@ import {
   Gift,
   Maximize2,
   GripVertical,
+  Ticket,
 } from "lucide-react";
 import type {
   OrderRecord,
@@ -149,8 +152,9 @@ export default function AdminDashboardPage() {
 
 
   const [activeTab, setActiveTab] = useState<
-    "orders" | "cuadros" | "users" | "settings" | "emails"
+    "orders" | "cuadros" | "coupons" | "users" | "settings" | "emails"
   >("orders");
+  const [coupons, setCoupons] = useState<DiscountCoupon[]>([]);
 
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -575,6 +579,18 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const loadCoupons = async () => {
+    try {
+      const res = await fetch("/api/admin/coupons", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.coupons)) setCoupons(data.coupons);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const loadAiHealth = async () => {
     try {
       const res = await fetch("/api/admin/ai-health", { cache: "no-store" });
@@ -607,6 +623,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     loadAdminData();
     loadAiHealth();
+    loadCoupons();
   }, []);
 
   const isSuperAdmin = currentUser?.role === "super_admin";
@@ -1941,6 +1958,34 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                 }`}
               />
               <span>Configuración Apolena</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("coupons")}
+              className={`relative px-3 lg:px-3.5 py-2.5 text-xs font-semibold transition-all flex items-center gap-1.5 rounded-t-xl border-b-2 whitespace-nowrap shrink-0 cursor-pointer ${
+                activeTab === "coupons"
+                  ? "border-terracotta-500 text-stone-900 bg-white shadow-xs"
+                  : "border-transparent text-stone-500 hover:text-stone-800 hover:bg-white/60"
+              }`}
+            >
+              <Ticket
+                className={`w-3.5 h-3.5 shrink-0 ${
+                  activeTab === "coupons"
+                    ? "text-terracotta-500"
+                    : "text-stone-400"
+                }`}
+              />
+              <span>Cupones</span>
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeTab === "coupons"
+                    ? "bg-terracotta-500 text-white"
+                    : "bg-cream-200 text-stone-700"
+                }`}
+              >
+                {coupons.filter((c) => c.isActive).length}
+              </span>
             </button>
 
             <button
@@ -4629,6 +4674,12 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
               </div>
             )}
           </div>
+        ) : activeTab === "coupons" ? (
+          <AdminCouponsTab
+            coupons={coupons}
+            onCouponsChange={setCoupons}
+            showToast={showToast}
+          />
         ) : activeTab === "settings" ? (
           /* ================================================================= */
           /* TAB 3: CONFIGURACIÓN DE APOLENA, MOTORES IA Y CATÁLOGO            */
@@ -5959,6 +6010,24 @@ const handleDeleteCharacter = (charId: string, charName: string) => {
                           <span>Subtotal producto:</span>
                           <span>S/ {selectedOrder.subtotal.toFixed(2)}</span>
                         </div>
+                        {(modalItem?.customizations as any)?.coupon?.code && (
+                          <div className="flex justify-between text-emerald-700 font-semibold">
+                            <span>
+                              Cupón{" "}
+                              <span className="font-mono">
+                                {(modalItem?.customizations as any).coupon.code}
+                              </span>
+                              :
+                            </span>
+                            <span>
+                              - S/{" "}
+                              {Number(
+                                (modalItem?.customizations as any).coupon
+                                  .discount_amount || 0,
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-stone-600">
                           <span>Costo de envío:</span>
                           <span>

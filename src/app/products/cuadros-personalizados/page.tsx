@@ -8,6 +8,10 @@ import "swiper/css";
 import "swiper/css/free-mode";
 import { Header } from "@/components/Header";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
+import {
+  AppliedCouponClient,
+  CouponInputBox,
+} from "@/components/CouponInputBox";
 import { MobileStep3AppShell } from "@/components/MobileStep3AppShell";
 import SocialShareModal from "@/components/SocialShareModal";
 import { FAMOUS_CHARACTERS, FamousCharacter } from "@/data/characters";
@@ -449,6 +453,8 @@ export default function personalizedWallArt() {
   const [feedbackSentJobId, setFeedbackSentJobId] = useState<string | null>(
     null,
   );
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<AppliedCouponClient | null>(null);
 
   const handleSubmitPortraitFeedback = async (
     reason: "no_match_pet" | "bad_proportions" | "too_dark" | "cropped_ears",
@@ -1572,6 +1578,23 @@ export default function personalizedWallArt() {
   const currentUnitPrice =
     selectedPrintPreset.pricePen + (selectedFrame?.priceModifierPen || 0);
 
+  const couponDiscountPen = appliedCoupon
+    ? appliedCoupon.type === "percentage"
+      ? Math.round(
+          Math.min(
+            (currentUnitPrice * appliedCoupon.value) / 100,
+            Math.max(0, currentUnitPrice - 1),
+          ) * 100,
+        ) / 100
+      : Math.round(
+          Math.min(appliedCoupon.value, Math.max(0, currentUnitPrice - 1)) *
+            100,
+        ) / 100
+    : 0;
+  const finalPriceWithCoupon = Number(
+    Math.max(1, currentUnitPrice - couponDiscountPen).toFixed(2),
+  );
+
   const handleProceedToCheckout = () => {
     const finalArtUrl = fusedResultUrl || selectedCharacter.fusionSampleUrl;
     const hasInscription =
@@ -1608,6 +1631,12 @@ export default function personalizedWallArt() {
             }
           : null,
       },
+      coupon: appliedCoupon
+        ? {
+            ...appliedCoupon,
+            discountAmount: couponDiscountPen,
+          }
+        : null,
     };
     try {
       localStorage.setItem("apolena_checkout_draft", JSON.stringify(draft));
@@ -3877,20 +3906,45 @@ export default function personalizedWallArt() {
                           )}
                       </div>
                     </div>
+                    {appliedCoupon && couponDiscountPen > 0 && (
+                      <div className="flex items-center justify-between text-emerald-700 font-semibold">
+                        <span>
+                          Cupón{" "}
+                          <span className="font-mono">{appliedCoupon.code}</span>
+                          :
+                        </span>
+                        <span>- S/ {couponDiscountPen.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-[#174B3D] font-semibold pt-1.5 border-t border-cream-200/80">
                       <span>Total a abonar al ordenar (100%):</span>
-                      <span className="font-bold text-sm">S/ {currentUnitPrice.toFixed(2)}</span>
+                      <span className="font-bold text-sm">
+                        S/ {finalPriceWithCoupon.toFixed(2)}
+                      </span>
                     </div>
                   </div>
+
+                  {/* Cupón de Descuento (opcional) */}
+                  <CouponInputBox
+                    subtotal={currentUnitPrice}
+                    appliedCoupon={
+                      appliedCoupon
+                        ? { ...appliedCoupon, discountAmount: couponDiscountPen }
+                        : null
+                    }
+                    onApply={(coupon) => setAppliedCoupon(coupon)}
+                    onRemove={() => setAppliedCoupon(null)}
+                    compact
+                  />
 
                   {/* Primary Order & Checkout CTA */}
                   <button
                     onClick={handleOrderButtonClick}
-                    className="w-full py-4 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all"
+                    className="w-full py-4 px-5 rounded-full bg-[#174B3D] hover:bg-[#134034] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-soft transition-all cursor-pointer"
                   >
                     <ShoppingBag className="w-4 h-4 text-[#c6a26c]" />
                     <span>
-                      Ordenar Cuadro · S/ {currentUnitPrice.toFixed(2)}
+                      Ordenar Cuadro · S/ {finalPriceWithCoupon.toFixed(2)}
                     </span>
                   </button>
 

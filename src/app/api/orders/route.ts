@@ -162,6 +162,8 @@ export async function POST(request: Request) {
       payment_method: paymentMethod,
       operation_number: body.operation_number?.trim() || null,
       proof_image_url: body.proof_image_url,
+      coupon_code:
+        typeof body.coupon_code === "string" ? body.coupon_code.trim() : null,
       notes: body.notes || null,
       customizations: enrichedCustomizations,
       shipping: {
