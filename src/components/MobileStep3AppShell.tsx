@@ -26,6 +26,7 @@ import {
   Upload,
   X,
   ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { ProtectedArtworkCanvas } from "@/components/ProtectedArtworkCanvas";
 import type { FrameOption, PrintPreset } from "@/lib/print-export";
@@ -83,6 +84,8 @@ type ActiveSheet = "size" | "frame" | "customize" | "details" | null;
 
 // Activar en true en el futuro para volver a mostrar la Tarjeta de Dedicatoria en mobile
 const SHOW_MOBILE_DEDICATION = false;
+// Activar en true en el futuro para volver a mostrar el comparador Antes/Después
+const SHOW_BEFORE_AFTER_COMPARATOR = false;
 
 function getShortSizeLabel(preset: PrintPreset): string {
   const cleanCm = preset.cmDimensions.replace(/\s*\(.*?\)\s*/g, "").trim();
@@ -146,26 +149,31 @@ export function MobileStep3AppShell({
     activeIndex: number;
   } | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const [showMobileZoomModal, setShowMobileZoomModal] = useState(false);
+  const [mobileZoomScale, setMobileZoomScale] = useState<number>(1.75);
 
   const originalPrice = currentUnitPrice + 20;
   const shortSize = getShortSizeLabel(selectedPrintPreset);
   const hasName = includePetInscription && Boolean(petInscriptionName.trim());
   const hasDedication = Boolean(dedicationNote.trim());
 
-  // Bloquear scroll del body mientras un bottom sheet está abierto
+  // Bloquear scroll del body mientras un bottom sheet o modal de zoom está abierto
   useEffect(() => {
-    if (!activeSheet) return;
+    if (!activeSheet && !showMobileZoomModal) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setActiveSheet(null);
+      if (e.key === "Escape") {
+        setActiveSheet(null);
+        setShowMobileZoomModal(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [activeSheet]);
+  }, [activeSheet, showMobileZoomModal]);
 
   return (
     <div className="lg:hidden pb-28 space-y-3 animate-in fade-in duration-200">
@@ -227,7 +235,7 @@ export function MobileStep3AppShell({
               <Sparkles className="w-3 h-3" />
               <span>Obra</span>
             </button>
-            {petImage && (
+            {SHOW_BEFORE_AFTER_COMPARATOR && petImage && (
               <button
                 type="button"
                 onClick={() => onChangeViewMode("compare")}
@@ -281,31 +289,37 @@ export function MobileStep3AppShell({
           </div>
         </div>
 
-        {/* Lienzo / Comparador / Sala (Altura optimizada para pantalla móvil) */}
+        {/* Lienzo / Sala (Altura optimizada para pantalla móvil + marco proporcionado + botón Zoom) */}
         <div
-          className={`relative px-4 pt-2 pb-4 flex items-center justify-center min-h-[290px] max-h-[46vh] overflow-hidden select-none ${
+          className={`relative px-3 pt-2 pb-4 flex items-center justify-center min-h-[320px] max-h-[54vh] overflow-hidden select-none ${
             viewMode === "room" ? "bg-[#ece9e2]/70" : "bg-[#F8F3EA]"
           }`}
         >
-          {/* MODO 1: OBRA CON MARCO EN VIVO */}
+          {/* MODO 1: OBRA CON MARCO EN VIVO (Marco refinado y proporcionado en mobile) */}
           {viewMode === "fusion" && (
             <div
               onContextMenu={(e) => e.preventDefault()}
               className="relative transition-all duration-300 select-none"
               style={{
                 ...visualFrame.outerStyle,
-                padding: visualFrame.isFramed ? "11px" : 0,
+                padding: visualFrame.isFramed ? "7px" : 0,
+                borderRadius: visualFrame.isFramed ? "4px" : "0.5rem",
                 WebkitTouchCallout: "none",
               }}
             >
               <div
                 className="relative overflow-hidden bg-stone-900 transition-all duration-300"
-                style={visualFrame.innerStyle}
+                style={{
+                  ...visualFrame.innerStyle,
+                  boxShadow: visualFrame.isFramed
+                    ? "0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.45)"
+                    : visualFrame.innerStyle.boxShadow,
+                }}
               >
                 <ProtectedArtworkCanvas
                   src={artworkUrl}
                   alt="Retrato finalizado"
-                  maxHeightPx={320}
+                  maxHeightPx={360}
                   className="rounded-none block"
                 />
 
@@ -333,8 +347,8 @@ export function MobileStep3AppShell({
             </div>
           )}
 
-          {/* MODO 2: COMPARADOR ANTES / DESPUÉS */}
-          {viewMode === "compare" && petImage && (
+          {/* MODO 2: COMPARADOR ANTES / DESPUÉS (Oculto temporalmente) */}
+          {SHOW_BEFORE_AFTER_COMPARATOR && viewMode === "compare" && petImage && (
             <div
               onContextMenu={(e) => e.preventDefault()}
               className="relative h-[300px] aspect-[3/4] max-w-full rounded-2xl overflow-hidden border border-cream-200 bg-white shadow-card cursor-ew-resize select-none touch-none"
@@ -394,7 +408,7 @@ export function MobileStep3AppShell({
             </div>
           )}
 
-          {/* MODO 3: EN SALA */}
+          {/* MODO 3: EN SALA (Marco delgado a escala y altura optimizada en mobile) */}
           {viewMode === "room" && (
             <div
               onContextMenu={(e) => e.preventDefault()}
@@ -404,7 +418,7 @@ export function MobileStep3AppShell({
                 src="/images/room-sizes-reference-2.png"
                 alt="Escala en sala"
                 draggable={false}
-                className="block w-auto max-w-full max-h-[300px] object-contain pointer-events-none mx-auto"
+                className="block w-auto max-w-full max-h-[360px] object-contain pointer-events-none mx-auto"
               />
               <div
                 style={{
@@ -417,8 +431,11 @@ export function MobileStep3AppShell({
                 className="absolute transition-all duration-300 z-10"
               >
                 <div
-                  style={visualFrame.roomOuterStyle}
-                  className="relative w-full h-full rounded-xs shadow-lg ring-1 ring-black/20 overflow-hidden bg-stone-900"
+                  style={{
+                    ...visualFrame.roomOuterStyle,
+                    padding: visualFrame.isFramed ? "2px" : 0,
+                  }}
+                  className="relative w-full h-full rounded-[1px] shadow-lg ring-1 ring-black/20 overflow-hidden bg-stone-900"
                 >
                   <img
                     src={artworkUrl}
@@ -430,6 +447,20 @@ export function MobileStep3AppShell({
               </div>
             </div>
           )}
+
+          {/* Botón flotante de Zoom en Mobile (Obra y Sala) */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileZoomScale(viewMode === "room" ? 2.1 : 1.5);
+              setShowMobileZoomModal(true);
+            }}
+            className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900/85 hover:bg-stone-900 text-white text-[11px] font-bold shadow-lg backdrop-blur-sm border border-white/15 active:scale-95 transition-transform"
+            aria-label="Hacer zoom al cuadro"
+          >
+            <ZoomIn className="w-3.5 h-3.5 text-[#c6a26c]" />
+            <span>Zoom</span>
+          </button>
         </div>
 
         {/* Tira de Propuestas IA (Estilo miniaturas Nike justo debajo de la obra) */}
@@ -1139,6 +1170,198 @@ export function MobileStep3AppShell({
           </div>
         );
       })()}
+
+      {/* =================================================================== */}
+      {/* MODAL FULLSCREEN DE ZOOM EN MOBILE (OBRA PROTEGIDA Y SALA A ESCALA) */}
+      {/* =================================================================== */}
+      {showMobileZoomModal && (
+        <div
+          className="fixed inset-0 z-[90] bg-stone-950/95 backdrop-blur-md flex flex-col"
+          onContextMenu={(e) => e.preventDefault()}
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Barra superior */}
+          <div className="px-4 py-3 flex items-center justify-between gap-2 border-b border-white/10 shrink-0">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#c6a26c]">
+                {viewMode === "room"
+                  ? `Vista en Sala · ${shortSize}`
+                  : `Vista Detallada · ${shortSize}`}
+              </p>
+              <p className="text-xs font-semibold text-white truncate">
+                {activeThemeName} · {getShortFrameName(selectedFrame)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  setMobileZoomScale((s) => (s >= 2.2 ? 1 : s >= 1.5 ? 2.4 : 1.75))
+                }
+                className="px-2.5 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold inline-flex items-center gap-1"
+              >
+                {mobileZoomScale > 1.05 ? (
+                  <ZoomOut className="w-3.5 h-3.5 text-[#c6a26c]" />
+                ) : (
+                  <ZoomIn className="w-3.5 h-3.5 text-[#c6a26c]" />
+                )}
+                <span>{mobileZoomScale.toFixed(1)}x</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMobileZoomModal(false)}
+                aria-label="Cerrar zoom"
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Área desplazable con zoom */}
+          <div className="flex-1 overflow-auto flex items-center justify-center p-4 select-none">
+            {viewMode === "room" ? (
+              <div
+                className="relative w-fit max-w-full rounded-2xl overflow-hidden bg-[#EFEFEF] shadow-2xl transition-transform duration-300 origin-center"
+                style={{
+                  transform: `scale(${mobileZoomScale})`,
+                }}
+              >
+                <img
+                  src="/images/room-sizes-reference-2.png"
+                  alt="Escala en sala ampliada"
+                  draggable={false}
+                  className="block w-[88vw] max-w-[440px] h-auto object-contain pointer-events-none"
+                />
+                <div
+                  style={{
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    bottom: `${currentRoomCoords.bottom}%`,
+                    width: `${currentRoomCoords.width}%`,
+                    height: `${currentRoomCoords.height}%`,
+                  }}
+                  className="absolute transition-all duration-300 z-10"
+                >
+                  <div
+                    style={{
+                      ...visualFrame.roomOuterStyle,
+                      padding: visualFrame.isFramed ? "2.5px" : 0,
+                    }}
+                    className="relative w-full h-full rounded-[1px] shadow-xl ring-1 ring-black/25 overflow-hidden bg-stone-900"
+                  >
+                    <img
+                      src={artworkUrl}
+                      alt="Cuadro ampliado en sala"
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="transition-transform duration-300 origin-center"
+                style={{
+                  transform: `scale(${mobileZoomScale})`,
+                }}
+              >
+                <div
+                  className="relative select-none"
+                  style={{
+                    ...visualFrame.outerStyle,
+                    padding: visualFrame.isFramed ? "8px" : 0,
+                    borderRadius: visualFrame.isFramed ? "5px" : "0.5rem",
+                    WebkitTouchCallout: "none",
+                  }}
+                >
+                  <div
+                    className="relative overflow-hidden bg-stone-900"
+                    style={{
+                      ...visualFrame.innerStyle,
+                      boxShadow: visualFrame.isFramed
+                        ? "0 0 0 1.5px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5)"
+                        : visualFrame.innerStyle.boxShadow,
+                    }}
+                  >
+                    <ProtectedArtworkCanvas
+                      src={artworkUrl}
+                      alt="Retrato ampliado"
+                      maxHeightPx={480}
+                      className="rounded-none block"
+                    />
+                    {hasName && (
+                      <div className="absolute bottom-10 right-5 z-20 pointer-events-none select-none max-w-[75%] text-right transform -rotate-[6deg] origin-bottom-right">
+                        <span
+                          className={`font-brush ${
+                            petInscriptionName.trim().length > 14
+                              ? "text-lg"
+                              : petInscriptionName.trim().length > 9
+                                ? "text-2xl"
+                                : "text-3xl"
+                          } text-white tracking-wide font-normal leading-none whitespace-nowrap block`}
+                        >
+                          {petInscriptionName.trim()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 z-10 pointer-events-auto select-none" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Barra inferior: selector rápido de medidas en Sala o niveles de zoom */}
+          <div className="px-4 py-3 border-t border-white/10 bg-stone-950/90 space-y-2 shrink-0">
+            {viewMode === "room" && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 shrink-0 mr-1">
+                  Medida:
+                </span>
+                {catalogSizes.map((preset) => {
+                  const isCurrent = selectedPrintPreset.id === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => onSelectPrintPreset(preset)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 transition-all ${
+                        isCurrent
+                          ? "bg-[#174B3D] text-white ring-1 ring-[#c6a26c]"
+                          : "bg-white/10 text-stone-300"
+                      }`}
+                    >
+                      {getShortSizeLabel(preset)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 text-[11px] text-stone-400">
+              <span>Desliza con el dedo para recorrer la imagen ampliada</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {[1, 1.75, 2.4].map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setMobileZoomScale(lvl)}
+                    className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      Math.abs(mobileZoomScale - lvl) < 0.15
+                        ? "bg-[#c6a26c] text-stone-950"
+                        : "bg-white/10 text-stone-300"
+                    }`}
+                  >
+                    {lvl === 1 ? "1x" : `${lvl}x`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3060,7 +3060,7 @@ export default function personalizedWallArt() {
 
                 {/* Viewer Controls Bar (Segmented Control en Mobile · Pill en Desktop) */}
                 <div className="flex items-center justify-between gap-2 p-1 sm:p-1.5 rounded-2xl sm:rounded-full bg-white border border-cream-200 shadow-soft">
-                  <div className="grid grid-cols-3 sm:flex sm:items-center gap-1 w-full sm:w-auto">
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-1 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => {
@@ -3076,23 +3076,6 @@ export default function personalizedWallArt() {
                       <Maximize2 className="w-3.5 h-3.5 shrink-0" />
                       <span className="sm:hidden">Obra</span>
                       <span className="hidden sm:inline">Obra Completa</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewMode("compare");
-                        setIsZoomActive(false);
-                      }}
-                      className={`flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold sm:font-medium transition-all whitespace-nowrap cursor-pointer ${
-                        viewMode === "compare"
-                          ? "bg-stone-900 text-white shadow-xs"
-                          : "text-stone-600 hover:text-stone-900 hover:bg-cream-100"
-                      }`}
-                    >
-                      <Columns className="w-3.5 h-3.5 shrink-0" />
-                      <span className="sm:hidden">Comparar</span>
-                      <span className="hidden sm:inline">Comparar Original</span>
                     </button>
 
                     <button
