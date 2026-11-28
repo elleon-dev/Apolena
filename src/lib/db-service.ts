@@ -1758,6 +1758,12 @@ export async function getPlatformSettings(): Promise<PlatformSettingsMap> {
           Array.isArray(rawAdmin.emails) && rawAdmin.emails.length > 0
             ? rawAdmin.emails
             : DEFAULT_PLATFORM_SETTINGS.ADMIN_NOTIFICATION_EMAILS.emails,
+        supplier_email:
+          typeof rawAdmin.supplier_email === "string" &&
+          rawAdmin.supplier_email.trim().includes("@")
+            ? rawAdmin.supplier_email.trim().toLowerCase()
+            : DEFAULT_PLATFORM_SETTINGS.ADMIN_NOTIFICATION_EMAILS
+                .supplier_email,
         whatsapp_support:
           rawAdmin.whatsapp_support ||
           DEFAULT_PLATFORM_SETTINGS.ADMIN_NOTIFICATION_EMAILS.whatsapp_support,
